@@ -611,18 +611,21 @@ input:checked + .toggle-slider:before{transform:translateX(20px);}
 .vocab-popup.show{display:block;animation:fadeUp .15s ease;}
 
 /* Calculator */
-#calcPanel{position:fixed;bottom:170px;right:16px;z-index:400;width:260px;background:var(--bg2);border:1px solid var(--border);border-radius:18px;box-shadow:var(--shadow);display:none;overflow:hidden;}
+#calcPanel{position:fixed;bottom:170px;right:16px;z-index:400;width:280px;background:var(--bg2);border:1px solid var(--border);border-radius:20px;box-shadow:var(--shadow);display:none;overflow:hidden;}
 #calcPanel.open{display:block;animation:slideUp .2s ease;}
-.calc-disp{background:var(--bg);padding:12px 14px;text-align:right;}
-.calc-expr{font-size:0.7rem;color:var(--txt3);min-height:14px;overflow:hidden;text-overflow:ellipsis;}
-.calc-res{font-family:'Sora',sans-serif;font-size:1.8rem;font-weight:700;min-height:38px;}
+.calc-disp{background:var(--bg);padding:14px 16px 10px;text-align:right;border-bottom:1px solid var(--border2);}
+.calc-expr{font-size:0.68rem;color:var(--txt3);min-height:16px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.calc-res{font-family:'Sora',sans-serif;font-size:2rem;font-weight:700;min-height:42px;color:var(--txt);}
 .calc-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border2);}
-.ck{background:var(--bg2);border:none;font-family:'Outfit',sans-serif;font-size:0.9rem;font-weight:600;color:var(--txt);padding:13px 6px;cursor:pointer;text-align:center;transition:background .1s;}
-.ck:active{background:var(--bg4);}
-.ck.op{color:var(--brand);}
-.ck.eq{background:var(--brand);color:#fff;}
+.ck{background:var(--bg2);border:none;font-family:'Outfit',sans-serif;font-size:0.92rem;font-weight:600;color:var(--txt);padding:14px 6px;cursor:pointer;text-align:center;transition:all .1s;user-select:none;}
+.ck:hover{background:var(--bg3);}
+.ck:active{background:var(--bg4);transform:scale(.95);}
+.ck.op{color:var(--brand);font-size:1rem;}
+.ck.eq{background:var(--brand);color:#fff;font-size:1.1rem;}
+.ck.eq:hover{filter:brightness(1.15);}
 .ck.cl{color:var(--red);}
-.ck.use{background:var(--gold);color:#1a0800;font-size:0.74rem;font-weight:700;grid-column:span 4;padding:11px;}
+.ck.use{background:var(--bg3);color:var(--txt2);font-size:0.72rem;font-weight:700;grid-column:span 4;padding:10px;}
+.ck.use:hover{background:var(--bg4);}
 
 #calcToggle{position:fixed;bottom:158px;right:16px;z-index:401;width:42px;height:42px;border-radius:50%;background:var(--bg2);border:1px solid var(--border);box-shadow:var(--shadow);font-size:1rem;cursor:pointer;display:none;align-items:center;justify-content:center;color:var(--txt2);transition:all .2s;}
 #calcToggle:hover{border-color:var(--brand);color:var(--brand);}
@@ -949,7 +952,7 @@ tbody td{padding:11px 12px;border-bottom:1px solid var(--border2);}
         <div class="detail-tab" id="dt-business" onclick="switchDetail('business')">🏪 Business</div>
         <div class="detail-tab" id="dt-reports" onclick="switchDetail('reports')">📊 Reports</div>
         <div class="detail-tab" id="dt-networth" onclick="switchDetail('networth')">💎 Net Worth</div>
-      <div class="detail-tab" id="dt-calendar" onclick="switchDetail('calendar')">📅 Calendar</div>
+        <div class="detail-tab" id="dt-calendar" onclick="switchDetail('calendar')">📅 Calendar</div>
       </div>
 
       <!-- CREDITS -->
@@ -976,9 +979,8 @@ tbody td{padding:11px 12px;border-bottom:1px solid var(--border2);}
           <div class="filter-chip" id="cfc-overdue" onclick="setCreditFilter('overdue')">Overdue</div>
         </div>
         <div id="creditList"></div>
-      </div>
 
-        <!-- Debt Payoff Planner inside Credits section -->
+        <!-- Debt Payoff Planner inside ds-credits -->
         <div style="margin-top:16px;">
           <button class="btn ghost sm" onclick="document.getElementById('debtPlannerWrap').style.display=document.getElementById('debtPlannerWrap').style.display==='none'?'block':'none'" style="width:100%;margin-bottom:8px;">📊 Debt Payoff Planner</button>
           <div id="debtPlannerWrap" style="display:none;">
@@ -995,7 +997,7 @@ tbody td{padding:11px 12px;border-bottom:1px solid var(--border2);}
             </div>
           </div>
         </div>
-      </div>
+      </div><!-- /ds-credits -->
 
       <!-- GOALS -->
       <div class="detail-section" id="ds-goals">
@@ -1215,15 +1217,43 @@ tbody td{padding:11px 12px;border-bottom:1px solid var(--border2);}
 
 <!-- CALCULATOR -->
 <div id="calcPanel">
-  <div class="calc-disp"><div class="calc-expr" id="calcExpr"></div><div class="calc-res" id="calcRes">0</div></div>
-  <div class="calc-grid">
-    <button class="ck cl" onclick="calcClear()">C</button><button class="ck cl" onclick="calcBack()">⌫</button><button class="ck op" onclick="calcPct()">%</button><button class="ck op" onclick="calcOp('/')">÷</button>
-    <button class="ck" onclick="calcN('7')">7</button><button class="ck" onclick="calcN('8')">8</button><button class="ck" onclick="calcN('9')">9</button><button class="ck op" onclick="calcOp('*')">×</button>
-    <button class="ck" onclick="calcN('4')">4</button><button class="ck" onclick="calcN('5')">5</button><button class="ck" onclick="calcN('6')">6</button><button class="ck op" onclick="calcOp('-')">−</button>
-    <button class="ck" onclick="calcN('1')">1</button><button class="ck" onclick="calcN('2')">2</button><button class="ck" onclick="calcN('3')">3</button><button class="ck op" onclick="calcOp('+')">+</button>
-    <button class="ck" onclick="calcN('0')" style="grid-column:span 2;">0</button><button class="ck" onclick="calcDot()">.</button><button class="ck eq" onclick="calcEq()">=</button>
-    <button class="ck use" onclick="calcUse()">✓ Use this amount →</button>
+  <!-- Display -->
+  <div class="calc-disp">
+    <div class="calc-expr" id="calcExpr" style="min-height:16px;font-size:0.7rem;color:var(--txt3);text-align:right;padding:0 2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></div>
+    <div class="calc-res" id="calcRes" style="font-family:'Sora',sans-serif;font-size:2rem;font-weight:700;text-align:right;min-height:40px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">0</div>
   </div>
+  <!-- Keypad -->
+  <div class="calc-grid">
+    <button class="ck cl" onclick="calcClear()">C</button>
+    <button class="ck cl" onclick="calcBack()">⌫</button>
+    <button class="ck op" onclick="calcPct()">%</button>
+    <button class="ck op" onclick="calcOp('/')">÷</button>
+    <button class="ck" onclick="calcN('7')">7</button>
+    <button class="ck" onclick="calcN('8')">8</button>
+    <button class="ck" onclick="calcN('9')">9</button>
+    <button class="ck op" onclick="calcOp('*')">×</button>
+    <button class="ck" onclick="calcN('4')">4</button>
+    <button class="ck" onclick="calcN('5')">5</button>
+    <button class="ck" onclick="calcN('6')">6</button>
+    <button class="ck op" onclick="calcOp('-')">−</button>
+    <button class="ck" onclick="calcN('1')">1</button>
+    <button class="ck" onclick="calcN('2')">2</button>
+    <button class="ck" onclick="calcN('3')">3</button>
+    <button class="ck op" onclick="calcOp('+')">+</button>
+    <button class="ck" onclick="calcN('0')" style="grid-column:span 2;">0</button>
+    <button class="ck" onclick="calcDot()">.</button>
+    <button class="ck eq" onclick="calcEq()">=</button>
+  </div>
+  <!-- Use buttons -->
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;background:var(--border2);">
+    <button class="ck" onclick="calcUseAs('in')"  style="background:rgba(6,214,160,.12);color:var(--green);font-size:0.7rem;font-weight:700;padding:11px 4px;">💚 Income</button>
+    <button class="ck" onclick="calcUseAs('out')" style="background:rgba(239,71,111,.12);color:var(--red);font-size:0.7rem;font-weight:700;padding:11px 4px;">💸 Expense</button>
+    <button class="ck" onclick="calcUseAs('save')" style="background:rgba(14,165,233,.12);color:var(--brand);font-size:0.7rem;font-weight:700;padding:11px 4px;">💰 Savings</button>
+  </div>
+  <!-- Use in current field -->
+  <button class="ck use" onclick="calcUse()" style="background:var(--bg3);color:var(--txt2);font-size:0.72rem;padding:10px;">✓ Use in current field</button>
+  <!-- History -->
+  <div id="calcHistory" style="padding:6px 10px 8px;max-height:72px;overflow-y:auto;border-top:1px solid var(--border2);"></div>
 </div>
 
 <!-- VOCABULARY POPUP -->
@@ -1840,7 +1870,9 @@ const jH=x=>{
   return {'Content-Type':'application/json','X-Master-Key':key,'X-Access-Key':key,...(x||{})};
 };
 
-async function getRegistry(){if(!JSONBIN_MASTER_KEY||!REGISTRY_BIN_ID)return null;try{const r=await fetch(`${JBIN}/b/${REGISTRY_BIN_ID}/latest`,{headers:{'X-Master-Key':JSONBIN_MASTER_KEY,'X-Bin-Meta':'false'}});if(!r.ok)return null;const d=await r.json();return d.record||d;}catch{return null;}}
+function getAdminKey(){return JSONBIN_MASTER_KEY||localStorage.getItem('tfi_admin_mkey')||'';}
+function getRegistryId(){return REGISTRY_BIN_ID||localStorage.getItem('tfi_admin_regid')||'';}
+async function getRegistry(){const key=getAdminKey();const regId=getRegistryId();if(!key||!regId)return null;try{const r=await fetch(`${JBIN}/b/${regId}/latest`,{headers:{'X-Master-Key':key,'X-Access-Key':key,'X-Bin-Meta':'false'}});if(!r.ok)return null;const d=await r.json();return d.record||d;}catch{return null;}}
 async function setRegistry(data){if(!JSONBIN_MASTER_KEY||!REGISTRY_BIN_ID)return false;try{const r=await fetch(`${JBIN}/b/${REGISTRY_BIN_ID}`,{method:'PUT',headers:jH(),body:JSON.stringify(data)});return r.ok;}catch{return false;}}
 async function findUser(email){const reg=await getRegistry();if(!reg?.users)return null;return reg.users.find(u=>u.email===email)||null;}
 async function registerUser(email,name,binId){const reg=await getRegistry()||{users:[]};if(!reg.users)reg.users=[];reg.users=reg.users.filter(u=>u.email!==email);reg.users.push({email,name,binId,joinedAt:Date.now(),lastActive:Date.now()});return setRegistry(reg);}
@@ -2288,7 +2320,7 @@ function renderHome(){
   ['homeMonth','moneyMonth','planMonth','bizMonth'].forEach(buildMonthSel);
   renderMotivation();
   const m=curM('homeMonth');
-  const{income,savings,spending,balance,count}=calcMonth(m);
+  const{income,savings,spending,balance,available,count}=calcMonth(m);
   const h=new Date().getHours();const name=(currentUser?.name||'').split(' ')[0];
   const h2=new Date().getHours();const greet=h2<12?'Good morning':h2<17?'Good afternoon':'Good evening';
   set('heroGreeting',greet+(name?', '+name:'')+'!');
@@ -2481,7 +2513,7 @@ function setTxFilter(f){
 function deleteTx(id){if(!confirm('Delete this transaction?'))return;S.txs=S.txs.filter(t=>t.id!==id);autoSave();renderMoney();renderHome();}
 function renderMoney(){
   buildMonthSel('moneyMonth');const m=curM('moneyMonth');
-  const{income,savings,spending,balance,count}=calcMonth(m);
+  const{income,savings,spending,balance,available,count}=calcMonth(m);
   const mI=document.getElementById('mIn');if(mI)mI.textContent=fmt(income);
   const mO=document.getElementById('mOut');if(mO)mO.textContent=fmt(spending);
   const mB=document.getElementById('mBal');if(mB){mB.textContent=fmt(balance);mB.style.color=balance>=0?'var(--green)':'var(--red)';}
@@ -3432,23 +3464,231 @@ function useTemplate(i){
 // ══════════════════════════════════════════════════════
 // CALCULATOR
 // ══════════════════════════════════════════════════════
-let calcState={expr:'',cur:'0',hasResult:false};
-function toggleCalc(){const p=document.getElementById('calcPanel');p.classList.toggle('open');document.getElementById('calcToggle').textContent=p.classList.contains('open')?'✕':'🧮';}
-function updateCalc(){document.getElementById('calcExpr').textContent=calcState.expr;document.getElementById('calcRes').textContent=calcState.cur;}
-function calcN(n){if(calcState.hasResult){calcState.expr='';calcState.hasResult=false;}if(calcState.cur==='0'&&n!=='.')calcState.cur=n;else calcState.cur+=n;updateCalc();}
-function calcDot(){if(calcState.hasResult){calcState.cur='0';calcState.hasResult=false;}if(!calcState.cur.includes('.'))calcState.cur+='.';updateCalc();}
-function calcOp(op){calcState.expr=(calcState.expr||'')+calcState.cur+' '+{'+':'+','-':'−','*':'×','/':'÷'}[op]+' ';calcState.cur='0';calcState.hasResult=false;updateCalc();}
-function calcEq(){try{const expr=calcState.expr+calcState.cur;const clean=expr.replace(/÷/g,'/').replace(/×/g,'*').replace(/−/g,'-');const r=Function('"use strict";return('+clean+')')();calcState.expr=expr+' =';calcState.cur=isFinite(r)?parseFloat(r.toFixed(6)).toString():'Error';calcState.hasResult=true;updateCalc();}catch{calcState.cur='Error';updateCalc();}}
-function calcClear(){calcState={expr:'',cur:'0',hasResult:false};updateCalc();}
-function calcBack(){if(calcState.hasResult){calcClear();return;}calcState.cur=calcState.cur.length>1?calcState.cur.slice(0,-1):'0';updateCalc();}
-function calcPct(){const v=parseFloat(calcState.cur);if(!isNaN(v)){calcState.cur=(v/100).toString();updateCalc();}}
+// ══════════════════════════════════════════════════════
+// CALCULATOR — full rewrite, no eval/Function(), CSP safe
+// ══════════════════════════════════════════════════════
+let calcState={
+  nums:[],      // stack of numbers
+  ops:[],       // stack of operators
+  cur:'0',      // current input string
+  expr:'',      // display expression
+  hasResult:false,
+  history:[]    // last 5 results
+};
+const CALC_OPS={'+':1,'-':1,'*':2,'/':2};
+
+// Safe math evaluator — no eval, no Function()
+function calcEvaluate(nums, ops){
+  // Apply all pending operations respecting precedence
+  // We already handle precedence via the shunting approach in calcOp
+  // Here we just apply remaining ops left to right
+  let result=nums[0];
+  for(let i=0;i<ops.length;i++){
+    const a=result, b=nums[i+1];
+    if(ops[i]==='+') result=a+b;
+    else if(ops[i]==='-') result=a-b;
+    else if(ops[i]==='*') result=a*b;
+    else if(ops[i]==='/') result=b!==0?a/b:NaN;
+  }
+  return result;
+}
+
+// Apply higher-precedence pending operations first
+function calcResolvePending(pendingOp){
+  const cur=parseFloat(calcState.cur)||0;
+  if(calcState.nums.length===0){
+    calcState.nums.push(cur);
+    calcState.ops.push(pendingOp);
+    calcState.cur='0';
+    return;
+  }
+  const lastOp=calcState.ops[calcState.ops.length-1];
+  // If last op has >= precedence, resolve it first
+  if(lastOp&&CALC_OPS[lastOp]>=CALC_OPS[pendingOp]){
+    calcState.nums.push(cur);
+    const b=calcState.nums.pop();
+    const a=calcState.nums.pop();
+    const op=calcState.ops.pop();
+    let res;
+    if(op==='+')res=a+b;
+    else if(op==='-')res=a-b;
+    else if(op==='*')res=a*b;
+    else if(op==='/')res=b!==0?a/b:NaN;
+    else res=b;
+    calcState.nums.push(isFinite(res)?res:NaN);
+    calcState.ops.push(pendingOp);
+    calcState.cur='0';
+    // Update display with running result
+    const disp=isFinite(res)?calcFmtNum(res):'Error';
+    calcState.expr=disp+' '+calcDisplayOp(pendingOp)+' ';
+  } else {
+    calcState.nums.push(cur);
+    calcState.ops.push(pendingOp);
+    calcState.cur='0';
+    calcState.expr+=cur+' '+calcDisplayOp(pendingOp)+' ';
+  }
+}
+
+function calcDisplayOp(op){return{'+':'+','-':'−','*':'×','/':'÷'}[op]||op;}
+function calcFmtNum(n){
+  if(!isFinite(n))return'Error';
+  const s=parseFloat(n.toFixed(8)).toString();
+  // Add thousand separators for display
+  const parts=s.split('.');
+  parts[0]=parts[0].replace(/\B(?=(\d{3})+(?!\d))/g,',');
+  return parts.join('.');
+}
+
+function toggleCalc(){
+  const p=document.getElementById('calcPanel');
+  p.classList.toggle('open');
+  const btn=document.getElementById('calcToggle');
+  if(btn)btn.textContent=p.classList.contains('open')?'✕':'🧮';
+}
+
+function updateCalc(){
+  const exprEl=document.getElementById('calcExpr');
+  const resEl=document.getElementById('calcRes');
+  if(exprEl)exprEl.textContent=calcState.expr;
+  if(resEl){
+    const display=calcState.cur==='0'&&calcState.hasResult?calcFmtNum(calcState.nums[0]||0):calcFmtNum(parseFloat(calcState.cur)||0);
+    resEl.textContent=calcState.cur;
+    // Color result
+    resEl.style.color=calcState.cur==='Error'?'var(--red)':'var(--txt)';
+  }
+}
+
+function calcN(n){
+  if(calcState.hasResult){
+    // Start fresh after result
+    calcState.nums=[];calcState.ops=[];calcState.expr='';calcState.hasResult=false;
+  }
+  if(calcState.cur==='0'&&n!=='.')calcState.cur=n;
+  else if(calcState.cur.length<15)calcState.cur+=n;
+  updateCalc();
+}
+
+function calcDot(){
+  if(calcState.hasResult){calcState.cur='0';calcState.hasResult=false;calcState.nums=[];calcState.ops=[];calcState.expr='';}
+  if(!calcState.cur.includes('.'))calcState.cur+='.';
+  updateCalc();
+}
+
+function calcOp(op){
+  if(calcState.cur==='Error')return;
+  calcResolvePending(op);
+  calcState.hasResult=false;
+  updateCalc();
+}
+
+function calcEq(){
+  if(calcState.cur==='Error'||(!calcState.nums.length&&calcState.cur==='0'))return;
+  const cur=parseFloat(calcState.cur)||0;
+  const fullExpr=calcState.expr+(calcState.cur!=='0'?calcState.cur:'');
+  // Build final result
+  let nums=[...calcState.nums,cur];
+  let ops=[...calcState.ops];
+  // Resolve all remaining ops left to right (lower precedence already resolved)
+  let result=nums[0];
+  for(let i=0;i<ops.length;i++){
+    const b=nums[i+1];
+    if(ops[i]==='+')result+=b;
+    else if(ops[i]==='-')result-=b;
+    else if(ops[i]==='*')result*=b;
+    else if(ops[i]==='/')result=b!==0?result/b:NaN;
+  }
+  if(!isFinite(result)){calcState.cur='Error';calcState.expr='';updateCalc();return;}
+  const resultStr=calcFmtNum(result);
+  const resultRaw=parseFloat(result.toFixed(8)).toString();
+  // Save to history
+  calcState.history.unshift({expr:fullExpr,result:resultStr});
+  if(calcState.history.length>5)calcState.history.pop();
+  // Set state
+  calcState.expr=fullExpr+' =';
+  calcState.cur=resultRaw;
+  calcState.nums=[result];
+  calcState.ops=[];
+  calcState.hasResult=true;
+  updateCalc();
+  renderCalcHistory();
+}
+
+function calcClear(){
+  calcState={nums:[],ops:[],cur:'0',expr:'',hasResult:false,history:calcState.history||[]};
+  updateCalc();
+}
+
+function calcBack(){
+  if(calcState.hasResult){calcClear();return;}
+  if(calcState.cur==='Error'){calcState.cur='0';}
+  else calcState.cur=calcState.cur.length>1?calcState.cur.slice(0,-1):'0';
+  updateCalc();
+}
+
+function calcPct(){
+  const v=parseFloat(calcState.cur);
+  if(isNaN(v))return;
+  // If there's a base number in stack, calculate percentage of it
+  const base=calcState.nums.length?calcState.nums[calcState.nums.length-1]:100;
+  calcState.cur=(v/100*base).toString();
+  updateCalc();
+}
+
+function renderCalcHistory(){
+  const el=document.getElementById('calcHistory');if(!el)return;
+  if(!calcState.history.length){el.innerHTML='';return;}
+  el.innerHTML=calcState.history.map(h=>
+    `<div style="display:flex;justify-content:space-between;padding:3px 0;font-size:0.68rem;color:var(--txt3);cursor:pointer;border-bottom:1px solid var(--border2);" onclick="calcUseHistory('${h.result.replace(/,/g,'')}')">
+      <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:55%;">${h.expr}</span>
+      <span style="color:var(--brand);font-weight:700;">${h.result}</span>
+    </div>`
+  ).join('');
+}
+
+function calcUseHistory(val){
+  calcState.cur=val;calcState.hasResult=true;calcState.expr='';
+  calcState.nums=[parseFloat(val)];calcState.ops=[];
+  updateCalc();
+}
+
+// Use current result in a field
 function calcUse(){
-  const val=calcState.cur;if(val==='Error'||val==='0')return;
-  const amtEl=document.getElementById('addAmtDisplay');
-  if(amtEl&&document.getElementById('addSheet').classList.contains('open')){addAmtStr=val;updateAddDisplay();toggleCalc();return;}
-  const fields=['fillEnvAmt','spendEnvAmt','creditAmt','bizAmt','gTarget','budgetAmt','markPaidAmt','nwItemAmt','oblAmt','tmplAmt','recAmt'];
-  for(const id of fields){const el=document.getElementById(id);if(el&&el.offsetParent!==null){el.value=parseFloat(val);break;}}
+  const val=calcState.cur;
+  if(val==='Error'||val==='0')return;
+  const numVal=parseFloat(val.replace(/,/g,''));
+  // If add sheet is open, inject into amount
+  if(document.getElementById('addSheet').classList.contains('open')){
+    addAmtStr=String(numVal);updateAddDisplay();toggleCalc();return;
+  }
+  // Try to find currently visible/focused input field
+  const fields=['fillEnvAmt','spendEnvAmt','creditAmt','bizAmt','gTarget',
+                 'budgetAmt','markPaidAmt','nwItemAmt','oblAmt','tmplAmt','recAmt',
+                 'chalAmt','dpDebt','dpPayment'];
+  for(const id of fields){
+    const el=document.getElementById(id);
+    if(el&&el.closest('.overlay.open,.modal')){el.value=numVal;el.focus();toggleCalc();return;}
+  }
+  // Fallback: copy to clipboard
+  navigator.clipboard?.writeText(String(numVal)).then(()=>showWin('📋 Copied!',calcFmtNum(numVal)+' copied to clipboard')).catch(()=>{});
   toggleCalc();
+}
+
+// Use result as a new income, expense, or savings transaction
+function calcUseAs(type){
+  const val=calcState.cur;
+  if(val==='Error'||val==='0'){showWin('⚠️','Calculate something first, then use it.');return;}
+  const numVal=parseFloat(val.replace(/,/g,''));
+  if(isNaN(numVal)||numVal<=0){showWin('⚠️','Result must be a positive number.');return;}
+  toggleCalc();
+  // Open add sheet with this type and pre-fill amount
+  setTimeout(()=>{
+    openAddSheet(type);
+    addAmtStr=String(numVal);
+    updateAddDisplay();
+    // Show what we pre-filled
+    const typeLabels={in:'income',out:'expense',save:'savings'};
+    showWin('🧮 Amount ready!',calcFmtNum(numVal)+' set as '+typeLabels[type]+'. Fill in the details and save.');
+  },200);
 }
 
 // ══════════════════════════════════════════════════════
