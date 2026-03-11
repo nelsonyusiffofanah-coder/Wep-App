@@ -1658,28 +1658,109 @@ tbody td{padding:11px 12px;border-bottom:1px solid var(--border2);}
 <div id="adminPanel" style="display:none;position:fixed;inset:0;z-index:9995;background:var(--bg);overflow-y:auto;padding:20px;">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px;">
     <div><div style="font-family:'Sora',sans-serif;font-size:1.2rem;font-weight:800;">🔐 Admin Panel</div><div style="font-size:0.74rem;color:var(--txt3);">Admin: <span id="adminEmailShow" style="filter:blur(4px);cursor:pointer;" onclick="this.style.filter=this.style.filter?'':'blur(4px)'">•••</span></div></div>
-    <div style="display:flex;gap:8px;"><button class="btn ghost sm" onclick="openO('oAdminBroadcast')">📢 Broadcast</button><button class="btn ghost sm" onclick="openO('oAdminSettings')">⚙️ App Settings</button><button class="btn ghost sm" onclick="closeAdminPanel()">✕ Close</button></div>
-  </div>
-  <div style="background:var(--gold-dim);border:1px solid rgba(240,180,41,.2);border-radius:10px;padding:10px 14px;font-size:0.76px;color:var(--gold);margin-bottom:16px;font-size:0.76rem;">🔒 All financial data is end-to-end encrypted. As admin you can see user activity but never financial data.</div>
-  <div class="admin-stat-grid" id="adminStats"></div>
-  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:16px;">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
-      <div style="font-weight:700;font-size:0.9rem;">All Users</div>
-      <input class="tx-search" id="adminSearch" placeholder="Search users…" style="width:180px;border-radius:8px;padding:7px 12px;" oninput="renderAdminUsers()"/>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <button class="btn ghost sm" onclick="renderAdminStats()">🔄 Refresh</button>
+      <button class="btn ghost sm" onclick="openO('oAdminBroadcast')">📢 Broadcast</button>
+      <button class="btn ghost sm" onclick="openO('oAdminSettings')">⚙️ Settings</button>
+      <button class="btn ghost sm" onclick="closeAdminPanel()">✕ Close</button>
     </div>
-    <div style="overflow-x:auto;"><table><thead><tr><th>User</th><th>Joined</th><th>Last Active</th><th>Status</th><th>Actions</th></tr></thead><tbody id="adminUsersBody"></tbody></table></div>
-    <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border2);">
-      <button class="btn ghost sm" onclick="toggleAdminChangePw()">Change Admin Password</button>
-      <div id="adminChangePwSection" style="display:none;margin-top:12px;">
-        <input class="field" id="adminOldPw" type="password" placeholder="Current password" style="margin-bottom:8px;"/>
-        <input class="field" id="adminNew1" type="password" placeholder="New password (min 8)" style="margin-bottom:8px;"/>
-        <input class="field" id="adminNew2" type="password" placeholder="Confirm new password" style="margin-bottom:8px;"/>
-        <div class="err" id="adminPwErr"></div>
-        <button class="btn sm" onclick="doAdminChangePw()">Update</button>
+  </div>
+
+  <!-- Cloud Setup Banner (shows when keys not set) -->
+  <div id="adminSetupBanner" style="display:none;background:var(--orange-dim);border:1px solid rgba(255,159,28,.3);border-radius:12px;padding:14px 16px;margin-bottom:16px;">
+    <div style="font-weight:700;font-size:0.86rem;color:var(--orange);margin-bottom:6px;">⚠️ Cloud Not Connected — Admin cannot see users yet</div>
+    <div style="font-size:0.78rem;color:var(--txt2);margin-bottom:12px;">To see users, you need to connect a JSONBin account. This is where all user registrations are stored.</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <button class="btn sm gold" onclick="openO('oAdminCloudSetup')">🔑 Connect JSONBin Now</button>
+      <a href="https://jsonbin.io" target="_blank" class="btn ghost sm">Get Free API Key →</a>
+    </div>
+  </div>
+
+  <div style="background:var(--gold-dim);border:1px solid rgba(240,180,41,.2);border-radius:10px;padding:10px 14px;font-size:0.76rem;color:var(--gold);margin-bottom:16px;">🔒 All financial data is end-to-end encrypted. As admin you can see user activity but never their financial data.</div>
+
+  <!-- Stats -->
+  <div class="admin-stat-grid" id="adminStats"></div>
+
+  <!-- Users Table -->
+  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:16px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+      <div style="font-weight:700;font-size:0.9rem;">👥 All Users</div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <select id="adminFilterStatus" onchange="renderAdminUsers()" style="background:var(--bg3);border:1px solid var(--border2);border-radius:8px;color:var(--txt);font-size:0.76rem;padding:6px 10px;">
+          <option value="all">All Users</option>
+          <option value="online">Online Now</option>
+          <option value="today">Active Today</option>
+          <option value="week">Active This Week</option>
+          <option value="inactive">Inactive</option>
+        </select>
+        <input class="tx-search" id="adminSearch" placeholder="Search name/email…" style="width:160px;border-radius:8px;padding:7px 12px;" oninput="renderAdminUsers()"/>
       </div>
+    </div>
+    <div style="overflow-x:auto;">
+      <table style="width:100%;border-collapse:collapse;">
+        <thead><tr style="background:var(--bg3);">
+          <th style="padding:10px 12px;text-align:left;font-size:0.74rem;color:var(--txt3);">User</th>
+          <th style="padding:10px 8px;text-align:left;font-size:0.74rem;color:var(--txt3);">Country</th>
+          <th style="padding:10px 8px;text-align:left;font-size:0.74rem;color:var(--txt3);">Type</th>
+          <th style="padding:10px 8px;text-align:left;font-size:0.74rem;color:var(--txt3);">Joined</th>
+          <th style="padding:10px 8px;text-align:left;font-size:0.74rem;color:var(--txt3);">Last Active</th>
+          <th style="padding:10px 8px;text-align:left;font-size:0.74rem;color:var(--txt3);">Status</th>
+          <th style="padding:10px 8px;text-align:right;font-size:0.74rem;color:var(--txt3);">Actions</th>
+        </tr></thead>
+        <tbody id="adminUsersBody"></tbody>
+      </table>
+    </div>
+    <div id="adminUserCount" style="font-size:0.72rem;color:var(--txt3);margin-top:10px;text-align:right;"></div>
+  </div>
+
+  <!-- Activity Log -->
+  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:16px;">
+    <div style="font-weight:700;font-size:0.9rem;margin-bottom:12px;">📋 Recent Activity</div>
+    <div id="adminActivityLog" style="font-size:0.78rem;color:var(--txt2);line-height:2;">Loading…</div>
+  </div>
+
+  <!-- Admin Password + Cloud Setup -->
+  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:16px;">
+    <div style="font-weight:700;font-size:0.9rem;margin-bottom:12px;">🔧 Admin Settings</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+      <button class="btn ghost sm" onclick="toggleAdminChangePw()">🔑 Change Password</button>
+      <button class="btn ghost sm" onclick="openO('oAdminCloudSetup')">☁️ Cloud Setup</button>
+    </div>
+    <div id="adminChangePwSection" style="display:none;margin-top:12px;">
+      <input class="field" id="adminOldPw" type="password" placeholder="Current password" style="margin-bottom:8px;"/>
+      <input class="field" id="adminNew1" type="password" placeholder="New password (min 8)" style="margin-bottom:8px;"/>
+      <input class="field" id="adminNew2" type="password" placeholder="Confirm new password" style="margin-bottom:8px;"/>
+      <div class="err" id="adminPwErr"></div>
+      <button class="btn sm" onclick="doAdminChangePw()">Update Password</button>
     </div>
   </div>
 </div>
+
+<!-- Admin Cloud Setup -->
+<div class="overlay" id="oAdminCloudSetup"><div class="modal">
+  <div class="modal-title">☁️ Admin Cloud Setup</div>
+  <div class="modal-sub">Connect JSONBin to store and view all user registrations. <a href="https://jsonbin.io" target="_blank" style="color:var(--brand);">Get a free account at jsonbin.io →</a></div>
+  <div style="background:var(--brand-dim);border:1px solid var(--border);border-radius:10px;padding:12px;font-size:0.76rem;color:var(--txt2);margin-bottom:14px;line-height:1.7;">
+    <strong>How to get your keys:</strong><br>
+    1. Go to <strong>jsonbin.io</strong> and sign up free<br>
+    2. Click your avatar → <strong>API Keys</strong> → copy your <strong>Secret Key</strong><br>
+    3. Create a new bin → copy the <strong>Bin ID</strong> from the URL<br>
+    4. Paste both below and click Save
+  </div>
+  <label class="field-label">JSONBin Master / Secret Key</label>
+  <input class="field" id="setupMasterKey" type="password" placeholder="$2a$10$…"/>
+  <label class="field-label">Registry Bin ID</label>
+  <input class="field" id="setupRegistryId" placeholder="64abc123…"/>
+  <div id="setupKeysStatus" style="font-size:0.76rem;min-height:18px;margin-bottom:8px;"></div>
+  <div class="btn-row">
+    <button class="btn" onclick="saveAdminCloudSetup()">💾 Save & Connect</button>
+    <button class="btn ghost" onclick="closeO('oAdminCloudSetup')">Cancel</button>
+  </div>
+  <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border2);">
+    <div style="font-size:0.72rem;color:var(--txt3);margin-bottom:6px;">Currently saved keys:</div>
+    <div style="font-size:0.72rem;color:var(--txt2);" id="currentKeysDisplay">Loading…</div>
+  </div>
+</div></div>
 
 <!-- Admin Broadcast -->
 <div class="overlay" id="oAdminBroadcast"><div class="modal">
@@ -1873,9 +1954,9 @@ const jH=x=>{
 function getAdminKey(){return JSONBIN_MASTER_KEY||localStorage.getItem('tfi_admin_mkey')||'';}
 function getRegistryId(){return REGISTRY_BIN_ID||localStorage.getItem('tfi_admin_regid')||'';}
 async function getRegistry(){const key=getAdminKey();const regId=getRegistryId();if(!key||!regId)return null;try{const r=await fetch(`${JBIN}/b/${regId}/latest`,{headers:{'X-Master-Key':key,'X-Access-Key':key,'X-Bin-Meta':'false'}});if(!r.ok)return null;const d=await r.json();return d.record||d;}catch{return null;}}
-async function setRegistry(data){if(!JSONBIN_MASTER_KEY||!REGISTRY_BIN_ID)return false;try{const r=await fetch(`${JBIN}/b/${REGISTRY_BIN_ID}`,{method:'PUT',headers:jH(),body:JSON.stringify(data)});return r.ok;}catch{return false;}}
+async function setRegistry(data){const key=getAdminKey();const regId=getRegistryId();if(!key||!regId)return false;try{const r=await fetch(`${JBIN}/b/${regId}`,{method:'PUT',headers:{'Content-Type':'application/json','X-Master-Key':key,'X-Access-Key':key},body:JSON.stringify(data)});return r.ok;}catch{return false;}}
 async function findUser(email){const reg=await getRegistry();if(!reg?.users)return null;return reg.users.find(u=>u.email===email)||null;}
-async function registerUser(email,name,binId){const reg=await getRegistry()||{users:[]};if(!reg.users)reg.users=[];reg.users=reg.users.filter(u=>u.email!==email);reg.users.push({email,name,binId,joinedAt:Date.now(),lastActive:Date.now()});return setRegistry(reg);}
+async function registerUser(email,name,binId){const reg=await getRegistry()||{users:[]};if(!reg.users)reg.users=[];reg.users=reg.users.filter(u=>u.email!==email);reg.users.push({email,name,binId,country:S?.country||'',userType:S?.userType||'other',joinedAt:Date.now(),lastActive:Date.now()});return setRegistry(reg);}
 async function createBin(email,data,keyOverride){
   const key=keyOverride||S?.jsonbinKey||JSONBIN_MASTER_KEY;
   if(!key)throw new Error('No API key — please enter your JSONBin Secret Key');
@@ -1921,7 +2002,23 @@ async function manualSync(){
 async function silentSync(){
   const key=S?.jsonbinKey||JSONBIN_MASTER_KEY;
   if(!key||!currentUser?.binId||currentUser.binId==='local')return;
-  try{const ce=await pullBin(currentUser.binId);if(ce){const cd=dec(ce,currentPassword);if(cd){S={...S,...mergeState(S,cd)};fixState();saveLocal();renderAll();}}await pushBin(currentUser.binId,enc(S,currentPassword));S.lastSync=new Date().toISOString();S.pushedAt=Date.now();saveLocal();updateCloudUI();}catch{}
+  try{
+    const ce=await pullBin(currentUser.binId);
+    if(ce){const cd=dec(ce,currentPassword);if(cd){S={...S,...mergeState(S,cd)};fixState();saveLocal();renderAll();}}
+    await pushBin(currentUser.binId,enc(S,currentPassword));
+    S.lastSync=new Date().toISOString();S.pushedAt=Date.now();saveLocal();updateCloudUI();
+    // Update lastActive in registry so admin can see activity
+    updateLastActive();
+  }catch{}
+}
+async function updateLastActive(){
+  try{
+    const regKey=getAdminKey();const regId=getRegistryId();
+    if(!regKey||!regId||!currentUser?.email)return;
+    const reg=await getRegistry();if(!reg?.users)return;
+    const idx=reg.users.findIndex(u=>u.email===currentUser.email);
+    if(idx>=0){reg.users[idx].lastActive=Date.now();await setRegistry(reg);}
+  }catch{}
 }
 
 function updateCloudUI(){
@@ -2074,7 +2171,7 @@ async function doSignIn(){
       currentUser={name:session.name,email,binId:session.binId};currentPassword=pw;
       sessionSet(email,session.name,session.binId);
       localStorage.getItem(PIN_KEY)?showPinScreen():(hideAuth(),renderAll(),updateUserUI(),updateCloudUI());
-      setTimeout(silentSync,1500);return;
+      setTimeout(silentSync,1500);setTimeout(updateLastActive,3000);return;
     }else{err.textContent='Incorrect password.';return;}
   }
   if(!JSONBIN_MASTER_KEY||!REGISTRY_BIN_ID){err.textContent='No account on this device. Sign up first.';return;}
@@ -2261,7 +2358,16 @@ const fmtM=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
 const mLabel=m=>{const[y,mo]=m.split('-');return new Date(+y,+mo-1,1).toLocaleString('default',{month:'long',year:'numeric'});};
 const curM=id=>document.getElementById(id)?.value||fmtM(new Date());
 const catById=id=>S.cats.find(c=>c.id===id)||{name:id,color:'#888',pct:0};
-const openO=id=>document.getElementById(id)?.classList.add('open');
+function openO(id){
+  document.getElementById(id)?.classList.add('open');
+  if(id==='oAdminCloudSetup'){
+    const mk=getAdminKey();const ri=getRegistryId();
+    const disp=document.getElementById('currentKeysDisplay');
+    if(disp){disp.innerHTML=mk&&ri?`Master Key: <strong>${mk.slice(0,8)}…</strong> &nbsp;|&nbsp; Registry ID: <strong>${ri}</strong>`:'No keys saved yet.';}
+    const status=document.getElementById('setupKeysStatus');
+    if(status)status.textContent='';
+  }
+}
 const closeO=id=>document.getElementById(id)?.classList.remove('open');
 const tAgo=ts=>{const d=Date.now()-ts;if(d<60000)return'Just now';if(d<3600000)return Math.floor(d/60000)+'m ago';if(d<86400000)return Math.floor(d/3600000)+'h ago';if(d<604800000)return Math.floor(d/86400000)+'d ago';return new Date(ts).toLocaleDateString('en',{month:'short',day:'numeric'});};
 
@@ -3895,6 +4001,10 @@ function openAdminPanel(email){
   const ep=localStorage.getItem(ADMIN_EMAIL_P)||email;
   const es=document.getElementById('adminEmailShow');
   if(es){es.textContent=ep;es.style.filter='blur(4px)';}
+  // Show setup banner if keys not configured
+  const hasCreds=!!(getAdminKey()&&getRegistryId());
+  const banner=document.getElementById('adminSetupBanner');
+  if(banner)banner.style.display=hasCreds?'none':'block';
   renderAdminStats();
 }
 function closeAdminPanel(){document.getElementById('adminPanel').style.display='none';document.body.style.overflow='';}
@@ -3907,56 +4017,182 @@ function doAdminChangePw(){
   if(n1===DEFAULT_ADMIN){err.textContent='Cannot reuse default password.';return;}
   localStorage.setItem(ADMIN_KEY,sha(n1));document.getElementById('adminChangePwSection').style.display='none';alert('✅ Password updated!');
 }
+
+// ── Admin Cloud Setup ─────────────────────────────────
+function openO_adminCloud(){
+  openO('oAdminCloudSetup');
+  const mk=getAdminKey();const ri=getRegistryId();
+  const disp=document.getElementById('currentKeysDisplay');
+  if(disp){
+    if(mk&&ri){disp.innerHTML=`Master Key: <strong>${mk.slice(0,8)}…</strong> &nbsp;|&nbsp; Registry ID: <strong>${ri}</strong>`;}
+    else{disp.textContent='No keys saved yet.';}
+  }
+}
+async function saveAdminCloudSetup(){
+  const key=document.getElementById('setupMasterKey').value.trim();
+  const regId=document.getElementById('setupRegistryId').value.trim();
+  const status=document.getElementById('setupKeysStatus');
+  if(!key||!regId){status.style.color='var(--red)';status.textContent='Please enter both fields.';return;}
+  status.style.color='var(--txt3)';status.textContent='⏳ Testing connection…';
+  // Test the key by fetching the registry bin
+  try{
+    const r=await fetch(`${JBIN}/b/${regId}/latest`,{headers:{'X-Master-Key':key,'X-Access-Key':key,'X-Bin-Meta':'false'}});
+    if(!r.ok){status.style.color='var(--red)';status.textContent='❌ Could not connect — check your keys and Bin ID.';return;}
+    // Save to localStorage
+    localStorage.setItem('tfi_admin_mkey',key);
+    localStorage.setItem('tfi_admin_regid',regId);
+    status.style.color='var(--green)';status.textContent='✅ Connected successfully!';
+    const disp=document.getElementById('currentKeysDisplay');
+    if(disp)disp.innerHTML=`Master Key: <strong>${key.slice(0,8)}…</strong> &nbsp;|&nbsp; Registry ID: <strong>${regId}</strong>`;
+    const banner=document.getElementById('adminSetupBanner');
+    if(banner)banner.style.display='none';
+    setTimeout(()=>{closeO('oAdminCloudSetup');renderAdminStats();},1200);
+  }catch(e){status.style.color='var(--red)';status.textContent='❌ Error: '+e.message;}
+}
+
+// ── Admin Stats ───────────────────────────────────────
 async function renderAdminStats(){
   const el=document.getElementById('adminStats');
-  if(el)el.innerHTML='<div style="color:var(--txt3);font-size:0.82rem;grid-column:1/-1;padding:12px;">Loading users…</div>';
-  const reg=await getRegistry();const users=reg?.users||[];const now=Date.now();
+  if(el)el.innerHTML='<div style="color:var(--txt3);font-size:0.82rem;grid-column:1/-1;padding:12px;text-align:center;">⏳ Loading users…</div>';
+  const reg=await getRegistry();
+  if(!reg){
+    if(el)el.innerHTML='<div style="color:var(--red);font-size:0.82rem;grid-column:1/-1;padding:12px;text-align:center;">⚠️ Not connected to cloud. Click "Cloud Setup" to configure.</div>';
+    const tbody=document.getElementById('adminUsersBody');
+    if(tbody)tbody.innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--txt3);padding:24px;">Connect cloud storage first to see users.</td></tr>';
+    return;
+  }
+  const users=reg?.users||[];const now=Date.now();
   const stats=[
     {l:'Total Users',v:users.length,c:'var(--brand)',i:'👥'},
-    {l:'Active Today',v:users.filter(u=>u.lastActive&&now-u.lastActive<86400000).length,c:'var(--green)',i:'🟢'},
-    {l:'This Week',v:users.filter(u=>u.lastActive&&now-u.lastActive<604800000).length,c:'var(--gold)',i:'📅'},
-    {l:'New This Month',v:users.filter(u=>{if(!u.joinedAt)return false;const d=new Date(u.joinedAt),n=new Date();return d.getMonth()===n.getMonth()&&d.getFullYear()===n.getFullYear();}).length,c:'#38BDF8',i:'🆕'},
+    {l:'Online Now',v:users.filter(u=>u.lastActive&&now-u.lastActive<300000).length,c:'var(--green)',i:'🟢'},
+    {l:'Active Today',v:users.filter(u=>u.lastActive&&now-u.lastActive<86400000).length,c:'var(--gold)',i:'📅'},
+    {l:'This Week',v:users.filter(u=>u.lastActive&&now-u.lastActive<604800000).length,c:'#38BDF8',i:'📆'},
+    {l:'New This Month',v:users.filter(u=>{if(!u.joinedAt)return false;const d=new Date(u.joinedAt),n=new Date();return d.getMonth()===n.getMonth()&&d.getFullYear()===n.getFullYear();}).length,c:'var(--purple)',i:'🆕'},
+    {l:'Suspended',v:users.filter(u=>u.suspended).length,c:'var(--red)',i:'🚫'},
   ];
   if(el)el.innerHTML=stats.map(s=>`<div class="admin-stat"><div class="admin-stat-ico">${s.i}</div><div style="font-size:.66rem;color:var(--txt3);text-transform:uppercase;letter-spacing:1.2px;font-weight:700;margin-bottom:5px;">${s.l}</div><div style="font-family:'Sora',sans-serif;font-size:2rem;font-weight:700;color:${s.c};">${s.v}</div></div>`).join('');
-  window._adminUsers=users;renderAdminUsers(users);
+  window._adminUsers=users;
+  renderAdminUsers(users);
+  renderActivityLog(users);
 }
+
+// ── Admin Users Table ─────────────────────────────────
 function renderAdminUsers(users){
   if(!users)users=window._adminUsers||[];
   const search=(document.getElementById('adminSearch')?.value||'').toLowerCase();
-  const filtered=users.filter(u=>!search||u.name.toLowerCase().includes(search));
-  const tbody=document.getElementById('adminUsersBody');const now=Date.now();
-  if(!filtered.length){tbody.innerHTML='<tr><td colspan="5" style="text-align:center;color:var(--txt3);padding:24px;">No users found</td></tr>';return;}
+  const filter=document.getElementById('adminFilterStatus')?.value||'all';
+  const now=Date.now();
+  let filtered=users.filter(u=>{
+    if(search&&!u.name.toLowerCase().includes(search)&&!u.email.toLowerCase().includes(search))return false;
+    if(filter==='online')return u.lastActive&&now-u.lastActive<300000;
+    if(filter==='today')return u.lastActive&&now-u.lastActive<86400000;
+    if(filter==='week')return u.lastActive&&now-u.lastActive<604800000;
+    if(filter==='inactive')return !u.lastActive||now-u.lastActive>604800000;
+    return true;
+  });
+  // Sort by lastActive desc
+  filtered.sort((a,b)=>(b.lastActive||0)-(a.lastActive||0));
+  const tbody=document.getElementById('adminUsersBody');
+  const countEl=document.getElementById('adminUserCount');
+  if(countEl)countEl.textContent=`Showing ${filtered.length} of ${users.length} users`;
+  if(!filtered.length){tbody.innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--txt3);padding:24px;">No users match this filter.</td></tr>';return;}
+  const typeIcons={farmer:'🌾',trader:'🛒',salary:'💼',business:'🏪',poultry:'🐔',student:'🎓',other:'👤'};
   tbody.innerHTML=filtered.map(u=>{
-    const ini=u.name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);const col=PALETTE[Math.abs(hp(u.email))%PALETTE.length];
+    const ini=(u.name||'?').split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+    const col=PALETTE[Math.abs(hp(u.email||''))%PALETTE.length];
     const joined=u.joinedAt?new Date(u.joinedAt).toLocaleDateString('en',{month:'short',day:'numeric',year:'numeric'}):'—';
-    const la=u.lastActive?tAgo(u.lastActive):'Never';const online=u.lastActive&&now-u.lastActive<300000;
-    const stc=online?'var(--green)':u.lastActive&&now-u.lastActive<86400000?'var(--gold)':'var(--txt3)';
-    return`<tr>
-      <td style="padding:11px 12px;"><div style="display:flex;align-items:center;gap:9px;"><div style="width:30px;height:30px;border-radius:50%;background:${col};display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:800;color:#fff;flex-shrink:0;">${ini}</div><div><div style="font-weight:600;font-size:.83rem;">${u.name}</div><div style="font-size:.7rem;color:var(--txt3);">${u.email}</div></div></div></td>
-      <td style="padding:11px 12px;font-size:.8rem;color:var(--txt3);">${joined}</td>
-      <td style="padding:11px 12px;font-size:.8rem;color:var(--txt3);">${la}</td>
-      <td style="padding:11px 12px;"><span style="display:inline-flex;align-items:center;gap:4px;font-size:.74rem;font-weight:600;color:${stc};"><span style="width:5px;height:5px;border-radius:50%;background:${stc};"></span>${online?'Online':u.lastActive&&now-u.lastActive<86400000?'Today':'Offline'}</span></td>
-      <td style="padding:11px 12px;text-align:right;">
-        <button onclick="adminSuspend('${u.email}')" style="background:var(--orange-dim);border:1px solid rgba(255,159,28,.2);border-radius:6px;color:var(--orange);font-size:.7rem;padding:4px 9px;cursor:pointer;margin-right:4px;">Suspend</button>
+    const la=u.lastActive?tAgo(u.lastActive):'Never';
+    const online=u.lastActive&&now-u.lastActive<300000;
+    const activeToday=u.lastActive&&now-u.lastActive<86400000;
+    const stc=online?'var(--green)':activeToday?'var(--gold)':'var(--txt3)';
+    const stLabel=online?'🟢 Online':activeToday?'🟡 Today':'⚫ Offline';
+    const typeIcon=typeIcons[u.userType||'other']||'👤';
+    const suspended=u.suspended?'opacity:0.5;':'';
+    return`<tr style="${suspended}border-bottom:1px solid var(--border2);">
+      <td style="padding:10px 12px;">
+        <div style="display:flex;align-items:center;gap:9px;">
+          <div style="width:32px;height:32px;border-radius:50%;background:${col};display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:800;color:#fff;flex-shrink:0;">${ini}</div>
+          <div>
+            <div style="font-weight:600;font-size:.83rem;">${u.name||'—'}${u.suspended?` <span style="font-size:0.64rem;color:var(--red);background:var(--red-dim);padding:1px 5px;border-radius:4px;">Suspended</span>`:''}</div>
+            <div style="font-size:.7rem;color:var(--txt3);">${u.email||'—'}</div>
+          </div>
+        </div>
+      </td>
+      <td style="padding:10px 8px;font-size:.78rem;color:var(--txt2);">${u.country||'—'}</td>
+      <td style="padding:10px 8px;font-size:.78rem;">${typeIcon} ${u.userType||'—'}</td>
+      <td style="padding:10px 8px;font-size:.78rem;color:var(--txt3);">${joined}</td>
+      <td style="padding:10px 8px;font-size:.78rem;color:var(--txt3);">${la}</td>
+      <td style="padding:10px 8px;"><span style="font-size:.74rem;font-weight:600;color:${stc};">${stLabel}</span></td>
+      <td style="padding:10px 8px;text-align:right;white-space:nowrap;">
+        ${!u.suspended
+          ?`<button onclick="adminSuspend('${u.email}')" style="background:var(--orange-dim);border:1px solid rgba(255,159,28,.2);border-radius:6px;color:var(--orange);font-size:.7rem;padding:4px 9px;cursor:pointer;margin-right:4px;">Suspend</button>`
+          :`<button onclick="adminUnsuspend('${u.email}')" style="background:var(--green-dim);border:1px solid rgba(6,214,160,.2);border-radius:6px;color:var(--green);font-size:.7rem;padding:4px 9px;cursor:pointer;margin-right:4px;">Unsuspend</button>`
+        }
         <button onclick="adminRemove('${u.email}')" style="background:var(--red-dim);border:1px solid rgba(239,71,111,.2);border-radius:6px;color:var(--red);font-size:.7rem;padding:4px 9px;cursor:pointer;">Remove</button>
       </td>
     </tr>`;
   }).join('');
 }
+
+// ── Activity Log ──────────────────────────────────────
+function renderActivityLog(users){
+  const el=document.getElementById('adminActivityLog');if(!el)return;
+  if(!users||!users.length){el.textContent='No activity yet.';return;}
+  const now=Date.now();
+  // Build log entries from user data
+  const events=[];
+  users.forEach(u=>{
+    if(u.joinedAt)events.push({time:u.joinedAt,text:`🆕 <strong>${u.name}</strong> joined the app`,type:'join'});
+    if(u.lastActive&&u.lastActive!==u.joinedAt)events.push({time:u.lastActive,text:`✅ <strong>${u.name}</strong> was last active ${tAgo(u.lastActive)}`,type:'active'});
+    if(u.suspended&&u.suspendedAt)events.push({time:u.suspendedAt,text:`🚫 <strong>${u.name}</strong> was suspended`,type:'suspend'});
+  });
+  // Sort by time desc, take last 20
+  events.sort((a,b)=>b.time-a.time);
+  const recent=events.slice(0,20);
+  if(!recent.length){el.textContent='No activity recorded yet.';return;}
+  el.innerHTML=recent.map(e=>`<div style="padding:6px 0;border-bottom:1px solid var(--border2);display:flex;justify-content:space-between;align-items:center;gap:10px;">
+    <span>${e.text}</span>
+    <span style="font-size:0.68rem;color:var(--txt3);white-space:nowrap;">${new Date(e.time).toLocaleDateString('en',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})}</span>
+  </div>`).join('');
+}
+
 async function adminRemove(email){
   const users=window._adminUsers||[];const u=users.find(x=>x.email===email);
-  if(!u||!confirm('Remove "'+u.name+'" permanently?'))return;
-  const reg=await getRegistry()||{users:[]};reg.users=(reg.users||[]).filter(x=>x.email!==email);
+  if(!u||!confirm('Remove "'+u.name+'" permanently? This cannot be undone.'))return;
+  const reg=await getRegistry()||{users:[]};
+  reg.users=(reg.users||[]).filter(x=>x.email!==email);
+  // Log removal
+  if(!reg.activityLog)reg.activityLog=[];
+  reg.activityLog.unshift({time:Date.now(),action:'removed',email,name:u.name});
   await setRegistry(reg);window._adminUsers=reg.users;renderAdminUsers(reg.users);renderAdminStats();
+  alert('✅ User removed.');
 }
-async function adminSuspend(email){alert('Suspend feature: Set a "suspended" flag on the user record.\nThis will show a "Your account is suspended — contact support" message when they try to log in.\n\n(Full implementation in next update)');}
+async function adminSuspend(email){
+  const users=window._adminUsers||[];const u=users.find(x=>x.email===email);
+  if(!u||!confirm('Suspend "'+u.name+'"? They will see a suspension message when they try to log in.'))return;
+  const reg=await getRegistry()||{users:[]};
+  const idx=reg.users.findIndex(x=>x.email===email);
+  if(idx>=0){reg.users[idx].suspended=true;reg.users[idx].suspendedAt=Date.now();}
+  await setRegistry(reg);window._adminUsers=reg.users;renderAdminUsers(reg.users);renderAdminStats();
+  alert('✅ User suspended. They will see a suspension notice on next login.');
+}
+async function adminUnsuspend(email){
+  const users=window._adminUsers||[];const u=users.find(x=>x.email===email);
+  if(!u)return;
+  const reg=await getRegistry()||{users:[]};
+  const idx=reg.users.findIndex(x=>x.email===email);
+  if(idx>=0){delete reg.users[idx].suspended;delete reg.users[idx].suspendedAt;}
+  await setRegistry(reg);window._adminUsers=reg.users;renderAdminUsers(reg.users);renderAdminStats();
+  alert('✅ User unsuspended.');
+}
 async function sendBroadcast(){
   const msg=document.getElementById('broadcastMsg').value.trim();
   if(!msg){alert('Enter a message.');return;}
   const reg=await getRegistry()||{users:[]};
   if(!(reg.users||[]).length){alert('No users to broadcast to.');return;}
   reg.broadcastMessage={text:msg,sentAt:Date.now()};
-  await setRegistry(reg);closeO('oAdminBroadcast');alert('✅ Broadcast sent to '+reg.users.length+' user'+(reg.users.length!==1?'s':'')+'.');
+  await setRegistry(reg);closeO('oAdminBroadcast');
+  alert('✅ Broadcast sent to '+reg.users.length+' user'+(reg.users.length!==1?'s':'')+'.\nThey will see it when they next open the app.');
 }
 function saveAdminSettings(){
   const phone=document.getElementById('adminSupportPhone').value.trim();
