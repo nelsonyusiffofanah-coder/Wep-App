@@ -1286,7 +1286,7 @@ tbody td{padding:11px 12px;border-bottom:1px solid var(--border2);}
           <span class="settings-section-arrow" id="arr-sFinance">›</span>
         </div>
         <div class="settings-section-body" id="sFinance">
-          <div class="settings-item" onclick="openO('oCurrency')"><div class="sett-ico" style="background:var(--gold-dim);">💱</div><div class="sett-info"><div class="sett-name">Currency</div><div class="sett-sub" id="currLbl">₦ Nigerian Naira</div></div><div class="sett-right">›</div></div>
+          <div class="settings-item" onclick="openO('oCurrency')"><div class="sett-ico" style="background:var(--gold-dim);">💱</div><div class="sett-info"><div class="sett-name">Currency &amp; Country</div><div class="sett-sub" id="currLbl">₦ Nigerian Naira · 🌍 Not set</div></div><div class="sett-right">›</div></div>
           <div class="settings-item" onclick="openO('oBudget')"><div class="sett-ico" style="background:var(--green-dim);">🎯</div><div class="sett-info"><div class="sett-name">Monthly Budget</div><div class="sett-sub" id="budgetLbl">Not set</div></div><div class="sett-right">›</div></div>
           <div class="settings-item" onclick="openO('oManageCats');renderCatManager();"><div class="sett-ico" style="background:var(--brand-dim);">🏷️</div><div class="sett-info"><div class="sett-name">Manage Categories</div><div class="sett-sub">Add, remove, set allocation %</div></div><div class="sett-right">›</div></div>
           <div class="settings-item" onclick="openO('oRecurring')"><div class="sett-ico" style="background:var(--purple-dim);">📅</div><div class="sett-info"><div class="sett-name">Recurring Transactions</div><div class="sett-sub">Auto-add repeating transactions</div></div><div class="sett-right">›</div></div>
@@ -1641,15 +1641,39 @@ tbody td{padding:11px 12px;border-bottom:1px solid var(--border2);}
 
 <!-- Currency -->
 <div class="overlay" id="oCurrency"><div class="modal">
-  <div class="modal-title">💱 Currency</div>
-  <select class="field" id="currencySelect" onchange="saveCurrency()">
+  <div class="modal-title">💱 Currency &amp; Country</div>
+  <label class="field-label">Currency</label>
+  <select class="field" id="currencySelect" style="margin-bottom:14px;">
     <option value="₦">₦ Nigerian Naira</option><option value="Le">Le Sierra Leone Leone</option>
     <option value="GH₵">GH₵ Ghana Cedi</option><option value="KSh">KSh Kenyan Shilling</option>
     <option value="R">R South African Rand</option><option value="FCFA">FCFA CFA Franc</option>
     <option value="Br">Br Ethiopian Birr</option><option value="USh">USh Ugandan Shilling</option>
     <option value="$">$ US Dollar</option><option value="£">£ British Pound</option>
   </select>
-  <button class="btn full" onclick="closeO('oCurrency');renderAll()">Done</button>
+  <label class="field-label">Your Country</label>
+  <select class="field" id="countrySelect" style="margin-bottom:16px;">
+    <option value="">Select your country</option>
+    <option value="Nigeria">🇳🇬 Nigeria</option>
+    <option value="Sierra Leone">🇸🇱 Sierra Leone</option>
+    <option value="Ghana">🇬🇭 Ghana</option>
+    <option value="Kenya">🇰🇪 Kenya</option>
+    <option value="South Africa">🇿🇦 South Africa</option>
+    <option value="Ethiopia">🇪🇹 Ethiopia</option>
+    <option value="Uganda">🇺🇬 Uganda</option>
+    <option value="Tanzania">🇹🇿 Tanzania</option>
+    <option value="Rwanda">🇷🇼 Rwanda</option>
+    <option value="Zambia">🇿🇲 Zambia</option>
+    <option value="Zimbabwe">🇿🇼 Zimbabwe</option>
+    <option value="Cameroon">🇨🇲 Cameroon</option>
+    <option value="Senegal">🇸🇳 Senegal</option>
+    <option value="United Kingdom">🇬🇧 United Kingdom</option>
+    <option value="United States">🇺🇸 United States</option>
+    <option value="Other">🌍 Other</option>
+  </select>
+  <div class="btn-row">
+    <button class="btn" onclick="saveCurrencyAndCountry()">Save</button>
+    <button class="btn ghost" onclick="closeO('oCurrency')">Cancel</button>
+  </div>
 </div></div>
 
 <!-- Budget -->
@@ -2890,6 +2914,19 @@ function finishOnboard(){
   S.onboardDone=true;
   saveLocal();hideAuth();
   renderAll();updateUserUI();updateCloudUI();
+  // Push updated profile (country + userType now known) to publicProfiles
+  if(fbDb&&currentUser?.uid){
+    const profileUpdate={
+      country:S.country||'',
+      userType:S.userType||'other',
+      name:currentUser.name||'',
+      email:currentUser.email||'',
+      uid:currentUser.uid,
+      lastActive:new Date().toISOString()
+    };
+    fbDb.collection('publicProfiles').doc(currentUser.uid).set(profileUpdate,{merge:true}).catch(()=>{});
+    fbDb.collection('users').doc(currentUser.uid).set(profileUpdate,{merge:true}).catch(()=>{});
+  }
   setTimeout(()=>openO('oSetupPin'),600);
   const greetings={
     student:'Your student budget is ready. Track your allowance and school expenses!',
@@ -3961,13 +3998,16 @@ function renderSettings(){
   const mbl=document.getElementById('modBills');if(mbl)mbl.checked=!!S.modules?.bills;
   // Labels
   const currMap={'₦':'₦ Nigerian Naira','Le':'Le Sierra Leone','GH₵':'GH₵ Ghana Cedi','KSh':'KSh Kenya','R':'R South Africa','FCFA':'FCFA CFA Franc','Br':'Br Ethiopia','USh':'USh Uganda','$':'$ US Dollar','£':'£ Pound'};
-  set('currLbl',currMap[S.currency||'₦']||S.currency);
+  const currLabel=currMap[S.currency||'₦']||S.currency;
+  const countryLabel=S.country||'Not set';
+  set('currLbl',currLabel+' · 🌍 '+countryLabel);
   set('budgetLbl',S.monthlyBudget>0?fmt(S.monthlyBudget)+' / month':'Not set');
   set('pinStatusLbl',localStorage.getItem(PIN_KEY)?'Active ✅':'Not set');
   const aiSec=document.getElementById('aiSection');if(aiSec)aiSec.style.display=S.modules?.ai?'block':'none';
   set('aiKeyLbl',S.groqKey?'Groq connected ✅':S.geminiKey?'Gemini connected ✅':'Not connected');
-  // Update currency selects
+  // Update currency + country selects (pre-fill current values)
   const cs=document.getElementById('currencySelect');if(cs)cs.value=S.currency||'₦';
+  const cty=document.getElementById('countrySelect');if(cty&&S.country)cty.value=S.country;
   const ba=document.getElementById('budgetAmt');if(ba)ba.value=S.monthlyBudget||'';
   updateCloudUI();
   // Support contact
@@ -4198,12 +4238,23 @@ function initTheme(){
   const t=S.theme||localStorage.getItem('tfi_theme')||'midnight';
   document.documentElement.setAttribute('data-theme',t);
 }
-function saveCurrency(){
-  const val=document.getElementById('currencySelect').value;
-  S.currency=val;
-  localStorage.setItem('tfi_currency',val); // persist separately for resilience
-  saveLocal();closeO('oCurrency');renderAll();
-  showWin('💱 Currency updated!','All amounts now showing in '+val);
+function saveCurrency(){saveCurrencyAndCountry();}// legacy alias
+function saveCurrencyAndCountry(){
+  const cur=document.getElementById('currencySelect').value;
+  const country=document.getElementById('countrySelect')?.value||S.country||'';
+  S.currency=cur;
+  if(country)S.country=country;
+  localStorage.setItem('tfi_currency',cur);
+  saveLocal();
+  closeO('oCurrency');
+  renderAll();
+  // Push updated country+currency to publicProfiles so admin panel shows it
+  if(fbDb&&currentUser?.uid){
+    const upd={currency:cur,country:country||S.country||'',lastActive:new Date().toISOString(),name:currentUser.name||'',email:currentUser.email||'',uid:currentUser.uid,userType:S.userType||'other'};
+    fbDb.collection('publicProfiles').doc(currentUser.uid).set(upd,{merge:true}).catch(()=>{});
+    fbDb.collection('users').doc(currentUser.uid).set(upd,{merge:true}).catch(()=>{});
+  }
+  showWin('✅ Saved!','Currency: '+cur+(country?' · Country: '+country:''));
 }
 function saveBudget(){S.monthlyBudget=parseFloat(document.getElementById('budgetAmt').value)||0;autoSave();closeO('oBudget');renderSettings();}
 function saveAIKey(){
@@ -4880,7 +4931,7 @@ async function renderAdminStats(){
             <span style="color:var(--brand);font-weight:600;">${u.name||'User'}</span>
             <span style="color:var(--txt3);font-size:0.74rem;"> · ${u.email||u.phone||'—'}</span>
           </div>
-          <span style="color:var(--txt2);font-size:0.72rem;">${tAgo(toMs(u.lastActive))}</span>
+          <span style="color:var(--txt2);font-size:0.72rem;">${tAgo(toMs(u.lastActive))||''}</span>
         </div>`).join('')
       :'<div style="color:var(--txt3);">No activity yet.</div>';
   }
@@ -4891,19 +4942,23 @@ async function renderAdminStats(){
 // ── Admin Users Table ─────────────────────────────────
 function renderAdminUsers(users){
   if(!users)users=window._adminUsers||[];
+  const toMs=v=>v?(typeof v==='number'?v:new Date(v).getTime()||0):0;
   const search=(document.getElementById('adminSearch')?.value||'').toLowerCase();
   const filter=document.getElementById('adminFilterStatus')?.value||'all';
   const now=Date.now();
   let filtered=users.filter(u=>{
-    if(search&&!u.name.toLowerCase().includes(search)&&!u.email.toLowerCase().includes(search))return false;
-    if(filter==='online')return u.lastActive&&now-u.lastActive<300000;
-    if(filter==='today')return u.lastActive&&now-u.lastActive<86400000;
-    if(filter==='week')return u.lastActive&&now-u.lastActive<604800000;
-    if(filter==='inactive')return !u.lastActive||now-u.lastActive>604800000;
+    const laMs=toMs(u.lastActive);
+    const nm=(u.name||'').toLowerCase();
+    const em=(u.email||u.phone||'').toLowerCase();
+    if(search&&!nm.includes(search)&&!em.includes(search))return false;
+    if(filter==='online')return laMs&&(now-laMs)<300000;
+    if(filter==='today')return laMs&&(now-laMs)<86400000;
+    if(filter==='week')return laMs&&(now-laMs)<604800000;
+    if(filter==='inactive')return !laMs||(now-laMs)>604800000;
     return true;
   });
   // Sort by lastActive desc
-  filtered.sort((a,b)=>(b.lastActive||0)-(a.lastActive||0));
+  filtered.sort((a,b)=>toMs(b.lastActive)-toMs(a.lastActive));
   const tbody=document.getElementById('adminUsersBody');
   const countEl=document.getElementById('adminUserCount');
   if(countEl)countEl.textContent=`Showing ${filtered.length} of ${users.length} users`;
@@ -4912,10 +4967,12 @@ function renderAdminUsers(users){
   tbody.innerHTML=filtered.map(u=>{
     const ini=(u.name||'?').split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
     const col=PALETTE[Math.abs(hp(u.email||''))%PALETTE.length];
-    const joined=u.joinedAt?new Date(u.joinedAt).toLocaleDateString('en',{month:'short',day:'numeric',year:'numeric'}):'—';
-    const la=u.lastActive?tAgo(u.lastActive):'Never';
-    const online=u.lastActive&&now-u.lastActive<300000;
-    const activeToday=u.lastActive&&now-u.lastActive<86400000;
+    const laMs=toMs(u.lastActive);
+    const jaMs=toMs(u.joinedAt);
+    const joined=jaMs?new Date(jaMs).toLocaleDateString('en',{month:'short',day:'numeric',year:'numeric'}):'—';
+    const la=laMs?tAgo(laMs):'Never';
+    const online=laMs&&(now-laMs)<300000;
+    const activeToday=laMs&&(now-laMs)<86400000;
     const stc=online?'var(--green)':activeToday?'var(--gold)':'var(--txt3)';
     const stLabel=online?'🟢 Online':activeToday?'🟡 Today':'⚫ Offline';
     const typeIcon=typeIcons[u.userType||'other']||'👤';
@@ -4954,9 +5011,10 @@ function renderActivityLog(users){
   // Build log entries from user data
   const events=[];
   users.forEach(u=>{
-    if(u.joinedAt)events.push({time:u.joinedAt,text:`🆕 <strong>${u.name}</strong> joined the app`,type:'join'});
-    if(u.lastActive&&u.lastActive!==u.joinedAt)events.push({time:u.lastActive,text:`✅ <strong>${u.name}</strong> was last active ${tAgo(u.lastActive)}`,type:'active'});
-    if(u.suspended&&u.suspendedAt)events.push({time:u.suspendedAt,text:`🚫 <strong>${u.name}</strong> was suspended`,type:'suspend'});
+    const _toMs=v=>v?(typeof v==='number'?v:new Date(v).getTime()||0):0;
+    if(u.joinedAt)events.push({time:_toMs(u.joinedAt),text:`🆕 <strong>${u.name||'User'}</strong> joined the app`,type:'join'});
+    if(u.lastActive)events.push({time:_toMs(u.lastActive),text:`✅ <strong>${u.name||'User'}</strong> was last active ${tAgo(_toMs(u.lastActive))}`,type:'active'});
+    if(u.suspended&&u.suspendedAt)events.push({time:_toMs(u.suspendedAt),text:`🚫 <strong>${u.name||'User'}</strong> was suspended`,type:'suspend'});
   });
   // Sort by time desc, take last 20
   events.sort((a,b)=>b.time-a.time);
@@ -5132,8 +5190,10 @@ function initApp(){
         // Background tasks
         setTimeout(()=>pullFirestore(fbUser.uid,localKey).then(()=>{renderAll();updateCloudUI();}),1000);
         setTimeout(()=>{
-          fbDb?.collection('users').doc(fbUser.uid).set({lastActive:new Date().toISOString()},{merge:true}).catch(()=>{});
-          fbDb?.collection('publicProfiles').doc(fbUser.uid).set({lastActive:new Date().toISOString()},{merge:true}).catch(()=>{});
+          const _laNow=new Date().toISOString();
+          const _profileRefresh={lastActive:_laNow,name:currentUser?.name||'',email:currentUser?.email||fbUser.email||'',uid:fbUser.uid,country:S?.country||'',userType:S?.userType||'other'};
+          fbDb?.collection('users').doc(fbUser.uid).set(_profileRefresh,{merge:true}).catch(()=>{});
+          fbDb?.collection('publicProfiles').doc(fbUser.uid).set(_profileRefresh,{merge:true}).catch(()=>{});
         },2000);
         setTimeout(checkBroadcast,3000);
         setTimeout(applyRecurringTxs,4000);
