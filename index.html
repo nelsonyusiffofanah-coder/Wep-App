@@ -238,18 +238,19 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
    APP SHELL
 ════════════════════════════════════════════════════════ */
 #app{display:none;min-height:100vh;position:relative;z-index:1;}
-header{position:sticky;top:0;z-index:100;background:rgba(5,13,24,.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:12px 18px;display:flex;align-items:center;gap:10px;}
+header{position:sticky;top:0;z-index:100;background:rgba(5,13,24,.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:10px 12px;display:flex;align-items:center;gap:8px;min-width:0;}
 [data-theme="light"] header,[data-theme="classic"] header{background:rgba(240,249,255,.92);}
+.h-brand{display:flex;align-items:center;gap:9px;cursor:pointer;flex-shrink:0;}
 .h-brand{display:flex;align-items:center;gap:9px;cursor:pointer;flex:1;}
 .h-logo{width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,var(--brand),var(--brand3));display:flex;align-items:center;justify-content:center;font-size:1rem;box-shadow:0 2px 8px var(--brand-glow);}
 .h-name{font-family:'Sora',sans-serif;font-size:0.96rem;font-weight:800;}
 .h-name span{color:var(--brand);}
 .h-score{background:var(--brand-dim);border:1px solid var(--border);border-radius:20px;padding:3px 10px;font-size:0.72rem;font-weight:700;color:var(--brand);display:flex;align-items:center;gap:4px;cursor:pointer;}
-.h-actions{display:flex;align-items:center;gap:6px;}
-.ico-btn{background:var(--bg3);border:1px solid var(--border2);border-radius:8px;width:34px;height:34px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:0.9rem;transition:all .2s;color:var(--txt2);}
+.h-actions{display:flex;align-items:center;gap:4px;flex-shrink:0;}
+.ico-btn{background:var(--bg3);border:1px solid var(--border2);border-radius:8px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:0.85rem;transition:all .2s;color:var(--txt2);flex-shrink:0;}
 .ico-btn:hover{border-color:var(--brand);color:var(--brand);}
-.user-av{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.72rem;font-weight:800;color:#fff;cursor:pointer;flex-shrink:0;}
-.sync-pill{background:var(--brand-dim);border:1px solid var(--border);border-radius:20px;padding:5px 10px;font-size:0.7rem;font-weight:700;color:var(--brand);cursor:pointer;display:none;align-items:center;gap:4px;transition:all .2s;}
+.user-av{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.68rem;font-weight:800;color:#fff;cursor:pointer;flex-shrink:0;}
+.sync-pill{background:var(--brand-dim);border:1px solid var(--border);border-radius:20px;padding:4px 8px;font-size:0.68rem;font-weight:700;color:var(--brand);cursor:pointer;display:none;align-items:center;gap:4px;transition:all .2s;flex-shrink:0;}
 .sync-pill:hover{background:var(--brand);color:#fff;}
 
 main{padding:18px 16px 100px;max-width:680px;margin:0 auto;}
@@ -931,13 +932,8 @@ tbody td{padding:11px 12px;border-bottom:1px solid var(--border2);}
     </div>
     <div style="flex:1;"></div>
     <div class="sync-pill" id="syncPill" onclick="manualSync()">☁️ Sync</div>
-    <div class="h-actions">
-      <div class="ico-btn" onclick="toggleCalc()">🧮</div>
-      <div class="ico-btn" onclick="openReportCard()">📋</div>
-      <div class="ico-btn" onclick="toggleTheme()" id="themeBtn">🌙</div>
-      <div class="ico-btn notif-bell" onclick="openNotifInbox()" title="Notifications">🔔<span id="notifBadge"></span></div>
-      <div class="ico-btn" onclick="openHelp()">❓</div>
-      <div class="user-av" id="userAv" onclick="openProfile()"></div>
+    <div class="h-actions" id="hActionsBar">
+      <!-- rendered by renderHeaderActions() -->
     </div>
   </header>
 
@@ -1237,6 +1233,14 @@ tbody td{padding:11px 12px;border-bottom:1px solid var(--border2);}
             <div id="themeActivePreview" style="width:22px;height:22px;border-radius:6px;border:2px solid var(--border);"></div>
             <div class="sett-right">›</div>
           </div>
+        </div>
+        <div class="settings-item" onclick="openHeaderCustomizerModal()" style="cursor:pointer;">
+          <div class="sett-ico" style="background:var(--orange-dim);">⚙️</div>
+          <div class="sett-info">
+            <div class="sett-name">Header Bar Icons</div>
+            <div class="sett-sub" id="headerBarSub">Choose which icons appear in the top bar</div>
+          </div>
+          <div class="sett-right">›</div>
         </div>
       </div>
 
@@ -1796,6 +1800,22 @@ tbody td{padding:11px 12px;border-bottom:1px solid var(--border2);}
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;" id="themeGridFemale"></div>
   </div>
   <button class="btn ghost full" onclick="closeO('oThemePicker')">Close</button>
+</div></div>
+
+<!-- ══════════════════════════════════════════════════
+     HEADER BAR CUSTOMIZER
+══════════════════════════════════════════════════ -->
+<div class="overlay" id="oHeaderCustomizer"><div class="modal" style="max-width:360px;">
+  <div class="modal-title">⚙️ Header Bar Icons</div>
+  <div class="modal-sub">Choose which icons appear in the top bar. Notification bell and profile are always shown.</div>
+  <div id="headerCustomizerList" style="margin-bottom:16px;"></div>
+  <div style="background:var(--bg3);border-radius:10px;padding:10px 12px;font-size:0.75rem;color:var(--txt3);margin-bottom:14px;">
+    💡 Tip — hidden icons are still accessible from the <strong style="color:var(--txt2);">⋯ More</strong> button that appears in the bar.
+  </div>
+  <div class="btn-row">
+    <button class="btn" onclick="saveHeaderActions();closeO('oHeaderCustomizer')">Save</button>
+    <button class="btn ghost" onclick="resetHeaderActions();closeO('oHeaderCustomizer')">Reset</button>
+  </div>
 </div></div>
 
 <!-- ══════════════════════════════════════════════════
@@ -3844,6 +3864,11 @@ function renderSettings(){
   const thPrevEl=document.getElementById('themeActivePreview');
   if(thNameEl)thNameEl.textContent=activeTheme.name+' — '+activeTheme.desc;
   if(thPrevEl)thPrevEl.style.background=activeTheme.preview[0];
+  // Header bar subtitle
+  const hPrefs=getHeaderActionPrefs();
+  const hVisible=hPrefs.filter(p=>p.visible).length;
+  const hSub=document.getElementById('headerBarSub');
+  if(hSub)hSub.textContent=hVisible+' of '+ALL_HEADER_ACTIONS.length+' icons showing';
   // Modules
   const mb=document.getElementById('modBiz');if(mb)mb.checked=!!S.modules?.business;
   const mc=document.getElementById('modCredit');if(mc)mc.checked=!!S.modules?.credit;
@@ -3875,9 +3900,7 @@ function applyTheme(t){
   document.documentElement.setAttribute('data-theme',t);
   localStorage.setItem('tfi_theme',t);
   saveLocal();
-  const darkThemes=['midnight','dark','carbon','forest','ember'];
-  const btn=document.getElementById('themeBtn');
-  if(btn)btn.textContent=darkThemes.includes(t)?'🌙':'☀️';
+  renderHeaderActions();// updates moon/sun icon
   renderSettings();
 }
 function toggleTheme(){
@@ -4736,7 +4759,7 @@ function renderAll(){
   renderHome();renderMoney();
   if(document.getElementById('tab-plan')?.classList.contains('active'))renderPlan();
   if(document.getElementById('tab-details')?.classList.contains('active'))renderDetails();
-  renderSettings();updateUserUI();updateCloudUI();
+  renderSettings();updateUserUI();updateCloudUI();renderHeaderActions();
   const score=calcScore();set('healthScoreNum',score);
   const hs=document.getElementById('healthScore');if(hs)hs.style.color=gradeColor(score);
 }
@@ -5101,6 +5124,144 @@ async function openAdminFeedback(){
   }catch(e){document.getElementById('afList').innerHTML='<div style="color:var(--red);padding:12px;">Error: '+e.message+'</div>';}
 }
 
+// ══════════════════════════════════════════════════════
+// HEADER BAR — dynamic rendering + customizer
+// ══════════════════════════════════════════════════════
+const HEADER_ACTIONS_KEY='tfi_header_actions';
+
+// All possible actions — id, icon, label, onclick
+const ALL_HEADER_ACTIONS=[
+  {id:'calc',   icon:'🧮', label:'Calculator',   fn:'toggleCalc()'},
+  {id:'report', icon:'📋', label:'Report Card',  fn:'openReportCard()'},
+  {id:'theme',  icon:'🌙', label:'Theme Toggle', fn:'toggleTheme()', idAttr:'themeBtn'},
+  {id:'help',   icon:'❓', label:'Help',         fn:'openHelp()'},
+];
+// Always shown — notification bell + profile avatar (not toggleable)
+
+function getHeaderActionPrefs(){
+  try{
+    const saved=localStorage.getItem(HEADER_ACTIONS_KEY);
+    if(saved)return JSON.parse(saved);
+  }catch{}
+  // Default: all on
+  return ALL_HEADER_ACTIONS.map(a=>({id:a.id,visible:true}));
+}
+
+function saveHeaderActions(){
+  const prefs=ALL_HEADER_ACTIONS.map(a=>{
+    const cb=document.getElementById('hac-'+a.id);
+    return{id:a.id,visible:cb?cb.checked:true};
+  });
+  localStorage.setItem(HEADER_ACTIONS_KEY,JSON.stringify(prefs));
+  renderHeaderActions();
+  // Update subtitle
+  const visible=prefs.filter(p=>p.visible).length;
+  const sub=document.getElementById('headerBarSub');
+  if(sub)sub.textContent=visible+' of '+ALL_HEADER_ACTIONS.length+' icons showing';
+}
+
+function resetHeaderActions(){
+  localStorage.removeItem(HEADER_ACTIONS_KEY);
+  renderHeaderActions();
+  openO('oHeaderCustomizer');// re-open to refresh checkboxes
+}
+
+function openHeaderCustomizer(){
+  const prefs=getHeaderActionPrefs();
+  const container=document.getElementById('headerCustomizerList');
+  if(!container)return;
+  container.innerHTML=ALL_HEADER_ACTIONS.map(a=>{
+    const pref=prefs.find(p=>p.id===a.id);
+    const checked=pref?pref.visible:true;
+    return`<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border2);">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div style="width:36px;height:36px;background:var(--bg3);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:1rem;">${a.icon}</div>
+        <div>
+          <div style="font-size:0.84rem;font-weight:600;">${a.label}</div>
+          <div style="font-size:0.72rem;color:var(--txt3);">${checked?'Showing in bar':'Hidden'}</div>
+        </div>
+      </div>
+      <label class="toggle"><input type="checkbox" id="hac-${a.id}" ${checked?'checked':''} onchange="refreshCustomizerLabels()"/><span class="toggle-slider"></span></label>
+    </div>`;
+  }).join('');
+}
+
+function refreshCustomizerLabels(){
+  ALL_HEADER_ACTIONS.forEach(a=>{
+    const cb=document.getElementById('hac-'+a.id);
+    const parent=cb?.closest('div[style*="border-bottom"]');
+    const sub=parent?.querySelector('div[style*="color:var(--txt3)"]');
+    if(sub)sub.textContent=cb?.checked?'Showing in bar':'Hidden';
+  });
+}
+
+function renderHeaderActions(){
+  const bar=document.getElementById('hActionsBar');
+  if(!bar)return;
+  const prefs=getHeaderActionPrefs();
+  const darkThemes=['midnight','dark','carbon','forest','ember'];
+  const themeIcon=darkThemes.includes(S?.theme||'midnight')?'🌙':'☀️';
+
+  let html='';
+  // Render visible actions
+  const visibleActions=ALL_HEADER_ACTIONS.filter(a=>{
+    const p=prefs.find(x=>x.id===a.id);
+    return p?p.visible:true;
+  });
+  const hiddenActions=ALL_HEADER_ACTIONS.filter(a=>{
+    const p=prefs.find(x=>x.id===a.id);
+    return p&&!p.visible;
+  });
+
+  visibleActions.forEach(a=>{
+    const icon=a.id==='theme'?themeIcon:a.icon;
+    const idAttr=a.idAttr?`id="${a.idAttr}"`:'';
+    html+=`<div class="ico-btn" ${idAttr} onclick="${a.fn}" title="${a.label}">${icon}</div>`;
+  });
+
+  // If any hidden, show ⋯ overflow button that opens a mini menu
+  if(hiddenActions.length){
+    html+=`<div class="ico-btn" onclick="toggleHeaderOverflow()" id="hOverflowBtn" title="More">⋯</div>
+    <div id="hOverflowMenu" style="display:none;position:absolute;top:56px;right:12px;background:var(--bg2);border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);z-index:500;padding:6px;min-width:140px;">
+      ${hiddenActions.map(a=>{
+        const icon=a.id==='theme'?themeIcon:a.icon;
+        return`<div onclick="${a.fn};closeHeaderOverflow()" style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;cursor:pointer;font-size:0.82rem;color:var(--txt);" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background=''">${icon} ${a.label}</div>`;
+      }).join('')}
+    </div>`;
+  }
+
+  // Always: notification bell + profile
+  html+=`<div class="ico-btn notif-bell" onclick="openNotifInbox()" title="Notifications">🔔<span id="notifBadge" style="display:none;"></span></div>`;
+  html+=`<div class="user-av" id="userAv" onclick="openProfile()"></div>`;
+
+  bar.innerHTML=html;
+  // Restore badge count
+  updateNotifBadge();
+}
+
+function toggleHeaderOverflow(){
+  const m=document.getElementById('hOverflowMenu');
+  if(!m)return;
+  const isOpen=m.style.display!=='none';
+  m.style.display=isOpen?'none':'block';
+  if(!isOpen){
+    // close on outside click
+    setTimeout(()=>document.addEventListener('click',closeHeaderOverflow,{once:true}),10);
+  }
+}
+function closeHeaderOverflow(){
+  const m=document.getElementById('hOverflowMenu');
+  if(m)m.style.display='none';
+}
+
+// Override openO for header customizer to pre-render list
+const _origOpenO=window.openO;
+// Patch openO calls for oHeaderCustomizer
+function openHeaderCustomizerModal(){
+  openHeaderCustomizer();
+  openO('oHeaderCustomizer');
+}
+
 function checkStreakWin(){
   const streak=calcStreak();const prevStreak=parseInt(localStorage.getItem('tfi_last_streak_win')||'0');
   if((streak===7||streak===14||streak===30||streak===60||streak===100)&&streak>prevStreak){
@@ -5351,6 +5512,8 @@ function renderTxItem(t){
 <script>
 // Firebase is now loaded — initialize the app
 initApp();
+// Render header bar immediately (before auth completes)
+renderHeaderActions();
 </script>
 </body>
 </html>
