@@ -269,25 +269,25 @@ main{padding:18px 16px 100px;max-width:680px;margin:0 auto;}
 @keyframes fadeUp{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
 @keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
 @keyframes slideInRight{from{transform:translateX(100%);opacity:0;}to{transform:translateX(0);opacity:1;}}
-/* ── Notification Bell Badge ── */
+@keyframes slideInUp{from{transform:translateY(40px);opacity:0;}to{transform:translateY(0);opacity:1;}}
+/* Notification bell */
 .notif-bell{position:relative;}
-#notifBadge{position:absolute;top:-4px;right:-4px;background:#EF476F;color:#fff;font-size:0.5rem;font-weight:800;min-width:15px;height:15px;border-radius:8px;display:flex;align-items:center;justify-content:center;padding:0 3px;border:2px solid var(--bg);pointer-events:none;line-height:1;}
-/* ── Notification Inbox Slide Panel ── */
-#notifInbox{position:fixed;inset:0;z-index:890;display:none;}
-#notifInbox.open{display:block;}
-#notifInboxOverlay{position:absolute;inset:0;background:rgba(0,0,0,.45);}
-#notifInboxSheet{position:absolute;top:0;right:0;bottom:0;width:100%;max-width:400px;background:var(--bg);display:flex;flex-direction:column;box-shadow:-6px 0 40px rgba(0,0,0,.3);animation:slideInRight .3s ease;}
-/* ── Notification Item ── */
-.notif-item{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:10px;cursor:pointer;transition:all .2s;position:relative;}
-.notif-item.unread{border-left:3px solid var(--brand);background:var(--brand-dim);}
+#notifBadge{position:absolute;top:-5px;right:-5px;background:#EF476F;color:#fff;font-size:0.52rem;font-weight:900;min-width:16px;height:16px;border-radius:10px;display:none;align-items:center;justify-content:center;padding:0 3px;border:2px solid var(--bg);pointer-events:none;line-height:1;z-index:2;}
+/* Notification inbox panel */
+#notifInbox{position:fixed;inset:0;z-index:890;display:none;pointer-events:none;}
+#notifInbox.open{display:block;pointer-events:all;}
+#notifInboxOverlay{position:absolute;inset:0;background:rgba(0,0,0,.5);animation:fadeIn .2s;}
+#notifInboxSheet{position:absolute;top:0;right:0;bottom:0;width:92%;max-width:380px;background:var(--bg);display:flex;flex-direction:column;box-shadow:-8px 0 40px rgba(0,0,0,.35);animation:slideInRight .25s ease;}
+/* Notification item */
+.notif-item{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:10px;cursor:pointer;transition:all .15s;position:relative;}
+.notif-item.unread{border-left:3px solid var(--brand);}
 .notif-item:active{transform:scale(.98);}
-.notif-dot{width:8px;height:8px;border-radius:50%;background:var(--brand);flex-shrink:0;margin-top:5px;}
-.notif-type-chip{display:inline-flex;align-items:center;gap:4px;font-size:0.64rem;font-weight:700;padding:2px 8px;border-radius:6px;margin-bottom:6px;}
-/* ── Notification filter tabs ── */
-.nft{padding:5px 12px;border-radius:20px;font-size:0.72rem;font-weight:700;cursor:pointer;background:var(--bg3);color:var(--txt3);border:1px solid var(--border2);transition:all .2s;white-space:nowrap;}
+/* Filter chips */
+.nft{padding:5px 12px;border-radius:20px;font-size:0.7rem;font-weight:700;cursor:pointer;background:var(--bg3);color:var(--txt3);border:1px solid var(--border2);transition:all .15s;white-space:nowrap;flex-shrink:0;}
 .nft.active{background:var(--brand);color:#fff;border-color:var(--brand);}
-/* ── Broadcast type select ── */
-.bcast-type{flex:1;text-align:center;padding:8px 4px;border-radius:10px;cursor:pointer;background:var(--bg3);color:var(--txt3);font-size:0.74rem;font-weight:700;border:2px solid transparent;transition:all .2s;}
+/* Broadcast type buttons */
+.bcast-type{flex:1;text-align:center;padding:8px 4px;border-radius:10px;cursor:pointer;font-size:0.72rem;font-weight:700;border:2px solid transparent;transition:all .2s;background:var(--bg3);color:var(--txt3);}
+.bcast-type.active{color:#fff;}
 @keyframes slideUp{from{transform:translateY(20px);opacity:0;}to{transform:none;opacity:1;}}
 @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.3;}}
 @keyframes shake{0%,100%{transform:none;}20%,60%{transform:translateX(-6px);}40%,80%{transform:translateX(6px);}}
@@ -935,9 +935,7 @@ tbody td{padding:11px 12px;border-bottom:1px solid var(--border2);}
       <div class="ico-btn" onclick="toggleCalc()">🧮</div>
       <div class="ico-btn" onclick="openReportCard()">📋</div>
       <div class="ico-btn" onclick="toggleTheme()" id="themeBtn">🌙</div>
-      <div class="ico-btn notif-bell" onclick="openNotifInbox()" title="Notifications">
-        🔔<span id="notifBadge" style="display:none;"></span>
-      </div>
+      <div class="ico-btn notif-bell" onclick="openNotifInbox()" title="Notifications">🔔<span id="notifBadge"></span></div>
       <div class="ico-btn" onclick="openHelp()">❓</div>
       <div class="user-av" id="userAv" onclick="openProfile()"></div>
     </div>
@@ -1228,8 +1226,18 @@ tbody td{padding:11px 12px;border-bottom:1px solid var(--border2);}
 
       <!-- Themes -->
       <div class="settings-section">
-        <div class="settings-section-title">Theme</div>
-        <div class="theme-grid" id="themeGrid"></div>
+        <div class="settings-section-title">Appearance</div>
+        <div class="settings-item" onclick="openThemeModal()" style="cursor:pointer;">
+          <div class="sett-ico" style="background:var(--brand-dim);" id="themeSwatchIco">🎨</div>
+          <div class="sett-info">
+            <div class="sett-name">Theme</div>
+            <div class="sett-sub" id="themeActiveName">Loading…</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <div id="themeActivePreview" style="width:22px;height:22px;border-radius:6px;border:2px solid var(--border);"></div>
+            <div class="sett-right">›</div>
+          </div>
+        </div>
       </div>
 
       <!-- Modules -->
@@ -1746,34 +1754,81 @@ tbody td{padding:11px 12px;border-bottom:1px solid var(--border2);}
   </div>
 </div>
 
-<!-- ════════════ NOTIFICATION INBOX ════════════ -->
+<!-- ══════════════════════════════════════════════════
+     NOTIFICATION INBOX (slide from right)
+══════════════════════════════════════════════════ -->
 <div id="notifInbox">
   <div id="notifInboxOverlay" onclick="closeNotifInbox()"></div>
   <div id="notifInboxSheet">
-    <!-- Header -->
-    <div style="padding:18px 16px 12px;border-bottom:1px solid var(--border);flex-shrink:0;">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+    <div style="padding:16px 14px 10px;border-bottom:1px solid var(--border);flex-shrink:0;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
         <div>
           <div style="font-family:'Sora',sans-serif;font-size:1rem;font-weight:800;">🔔 Notifications</div>
-          <div id="notifCountLabel" style="font-size:0.72rem;color:var(--txt3);margin-top:1px;"></div>
+          <div id="notifCountLabel" style="font-size:0.7rem;color:var(--txt3);margin-top:1px;"></div>
         </div>
         <div style="display:flex;align-items:center;gap:8px;">
-          <button id="markAllBtn" onclick="markAllRead()" style="display:none;background:var(--bg3);border:1px solid var(--border2);color:var(--txt3);font-size:0.72rem;padding:5px 10px;border-radius:8px;cursor:pointer;">Mark all read</button>
+          <button id="markAllBtn" onclick="markAllNotifsRead()" style="display:none;background:var(--bg3);border:1px solid var(--border2);color:var(--txt3);font-size:0.7rem;padding:5px 10px;border-radius:8px;cursor:pointer;white-space:nowrap;">Mark all read</button>
           <div onclick="closeNotifInbox()" class="ico-btn">✕</div>
         </div>
       </div>
-      <!-- Filter tabs -->
-      <div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;">
+      <div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;">
         <div class="nft active" id="nft-all" onclick="filterNotifs('all')">All</div>
         <div class="nft" id="nft-unread" onclick="filterNotifs('unread')">🔴 Unread</div>
         <div class="nft" id="nft-broadcast" onclick="filterNotifs('broadcast')">📢 Broadcast</div>
         <div class="nft" id="nft-welcome" onclick="filterNotifs('welcome')">👋 Welcome</div>
       </div>
     </div>
-    <!-- List -->
-    <div id="notifList" style="flex:1;overflow-y:auto;padding:14px 14px 30px;"></div>
+    <div id="notifList" style="flex:1;overflow-y:auto;padding:12px 12px 40px;-webkit-overflow-scrolling:touch;"></div>
   </div>
 </div>
+
+<!-- ══════════════════════════════════════════════════
+     THEME PICKER MODAL
+══════════════════════════════════════════════════ -->
+<div class="overlay" id="oThemePicker"><div class="modal" style="max-width:380px;">
+  <div class="modal-title">🎨 Choose Theme</div>
+  <div style="margin-bottom:12px;">
+    <div style="font-size:0.66rem;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--txt3);margin-bottom:8px;">⚡ Bold & Dark</div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;" id="themeGridMale"></div>
+  </div>
+  <div style="margin-bottom:16px;">
+    <div style="font-size:0.66rem;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--txt3);margin-bottom:8px;">🌸 Soft & Light</div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;" id="themeGridFemale"></div>
+  </div>
+  <button class="btn ghost full" onclick="closeO('oThemePicker')">Close</button>
+</div></div>
+
+<!-- ══════════════════════════════════════════════════
+     FEEDBACK MODAL
+══════════════════════════════════════════════════ -->
+<div class="overlay" id="oFeedback"><div class="modal">
+  <div class="modal-title">💬 Send Feedback</div>
+  <div class="modal-sub">Help us improve. Your message goes straight to the team.</div>
+  <label class="field-label">Type</label>
+  <div style="display:flex;gap:6px;margin-bottom:14px;">
+    <div class="bcast-type active" id="fbt-suggestion" onclick="setFbkType('suggestion')" style="background:var(--brand);border-color:var(--brand);color:#fff;">💡 Idea</div>
+    <div class="bcast-type" id="fbt-bug" onclick="setFbkType('bug')">🐛 Bug</div>
+    <div class="bcast-type" id="fbt-praise" onclick="setFbkType('praise')">⭐ Praise</div>
+    <div class="bcast-type" id="fbt-other" onclick="setFbkType('other')">💬 Other</div>
+  </div>
+  <input type="hidden" id="fbkType" value="suggestion">
+  <label class="field-label">Your Message</label>
+  <textarea class="field" id="fbkText" style="resize:none;min-height:100px;" placeholder="Tell us what's on your mind…"></textarea>
+  <label class="field-label">Rate your experience</label>
+  <div style="display:flex;justify-content:center;gap:14px;margin:6px 0 16px;" id="fbkStarRow">
+    <span onclick="setFbkStar(1)" id="fs-1" style="font-size:2rem;cursor:pointer;transition:transform .15s;">⭐</span>
+    <span onclick="setFbkStar(2)" id="fs-2" style="font-size:2rem;cursor:pointer;transition:transform .15s;">⭐</span>
+    <span onclick="setFbkStar(3)" id="fs-3" style="font-size:2rem;cursor:pointer;transition:transform .15s;">⭐</span>
+    <span onclick="setFbkStar(4)" id="fs-4" style="font-size:2rem;cursor:pointer;transition:transform .15s;">⭐</span>
+    <span onclick="setFbkStar(5)" id="fs-5" style="font-size:2rem;cursor:pointer;transition:transform .15s;">⭐</span>
+  </div>
+  <input type="hidden" id="fbkRating" value="5">
+  <div class="err" id="fbkErr" style="margin-bottom:8px;"></div>
+  <div class="btn-row">
+    <button class="btn" id="fbkSubmitBtn" onclick="submitFeedback()">📤 Submit Feedback</button>
+    <button class="btn ghost" onclick="closeO('oFeedback')">Cancel</button>
+  </div>
+</div></div>
 
 <!-- Admin Login -->
 <div id="adminLoginScreen" style="display:none;align-items:center;justify-content:center;">
@@ -1894,17 +1949,17 @@ tbody td{padding:11px 12px;border-bottom:1px solid var(--border2);}
 <!-- Admin Broadcast -->
 <div class="overlay" id="oAdminBroadcast"><div class="modal">
   <div class="modal-title">📢 Broadcast Message</div>
-  <div class="modal-sub">Message goes into every user's notification inbox instantly.</div>
-  <label class="field-label">Message Type</label>
+  <div class="modal-sub">Message goes into every user's notification inbox when they open the app.</div>
+  <label class="field-label">Type</label>
   <div style="display:flex;gap:6px;margin-bottom:14px;">
-    <div class="bcast-type" id="bct-info" onclick="setBcastType('info')" style="background:var(--brand);color:#fff;border-color:var(--brand);">📢 Info</div>
+    <div class="bcast-type active" id="bct-info" onclick="setBcastType('info')" style="background:var(--brand);border-color:var(--brand);color:#fff;">📢 Info</div>
     <div class="bcast-type" id="bct-update" onclick="setBcastType('update')">🚀 Update</div>
     <div class="bcast-type" id="bct-warning" onclick="setBcastType('warning')">⚠️ Warning</div>
     <div class="bcast-type" id="bct-promo" onclick="setBcastType('promo')">🎉 Promo</div>
   </div>
   <input type="hidden" id="bcastType" value="info">
   <label class="field-label">Title <span style="color:var(--txt3);font-weight:400;">(optional)</span></label>
-  <input class="field" id="bcastTitle" placeholder="e.g. App Updated" style="margin-bottom:10px;">
+  <input class="field" id="bcastTitle" placeholder="e.g. New Feature Available" style="margin-bottom:10px;">
   <label class="field-label">Message</label>
   <textarea class="field" id="broadcastMsg" style="resize:none;min-height:90px;" placeholder="Write your message to all users…"></textarea>
   <div class="btn-row">
@@ -1917,48 +1972,18 @@ tbody td{padding:11px 12px;border-bottom:1px solid var(--border2);}
 <div class="overlay" id="oAdminSettings"><div class="modal">
   <div class="modal-title">⚙️ App Settings</div>
   <div style="background:var(--green-dim);border:1px solid rgba(6,214,160,.2);border-radius:10px;padding:10px 13px;margin-bottom:14px;font-size:0.76rem;color:var(--green);">
-    ✅ Settings are saved to Firestore — all users see them instantly.
+    ✅ Settings push to Firestore — all users see them instantly.
   </div>
   <label class="field-label">📱 App Name</label>
-  <input class="field" id="adminAppName" placeholder="Trackinfin"/>
+  <input class="field" id="adminAppName" placeholder="Trackinfin" style="margin-bottom:10px;"/>
   <label class="field-label">📞 Support Phone <span style="color:var(--txt3);font-weight:400;">(shown in Help)</span></label>
-  <input class="field" id="adminSupportPhone" placeholder="+232 76 000 000"/>
+  <input class="field" id="adminSupportPhone" placeholder="+232 76 000 000" style="margin-bottom:10px;"/>
   <label class="field-label">👋 Welcome Message for New Users</label>
-  <textarea class="field" id="adminWelcomeMsg" style="resize:none;min-height:80px;" placeholder="Welcome to Trackinfin! Start by recording your first income."></textarea>
+  <textarea class="field" id="adminWelcomeMsg" style="resize:none;min-height:80px;" placeholder="Welcome to Trackinfin! Start recording your first income."></textarea>
   <div id="adminSettingsSaveStatus" style="font-size:0.74rem;margin-bottom:8px;display:none;"></div>
   <div class="btn-row">
-    <button class="btn" onclick="saveAdminSettings()">💾 Save & Push to Users</button>
+    <button class="btn" onclick="saveAdminSettings()">💾 Save & Push to All Users</button>
     <button class="btn ghost" onclick="closeO('oAdminSettings')">Cancel</button>
-  </div>
-</div></div>
-
-<!-- ════════════ FEEDBACK MODAL ════════════ -->
-<div class="overlay" id="oFeedback"><div class="modal">
-  <div class="modal-title">💬 Send Feedback</div>
-  <div class="modal-sub">Help us improve. Your feedback goes straight to the team.</div>
-  <label class="field-label">Type</label>
-  <div style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;">
-    <div class="bcast-type" id="fbt-suggestion" onclick="setFbkType('suggestion')" style="background:var(--brand);color:#fff;border-color:var(--brand);">💡 Idea</div>
-    <div class="bcast-type" id="fbt-bug" onclick="setFbkType('bug')">🐛 Bug</div>
-    <div class="bcast-type" id="fbt-praise" onclick="setFbkType('praise')">⭐ Praise</div>
-    <div class="bcast-type" id="fbt-other" onclick="setFbkType('other')">💬 Other</div>
-  </div>
-  <input type="hidden" id="fbkType" value="suggestion">
-  <label class="field-label">Your Message</label>
-  <textarea class="field" id="fbkText" style="resize:none;min-height:100px;" placeholder="Tell us what's on your mind…"></textarea>
-  <label class="field-label">How's your experience?</label>
-  <div style="display:flex;justify-content:center;gap:12px;margin-bottom:14px;" id="fbkStars">
-    <span onclick="setFbkStar(1)" id="fs-1" style="font-size:2rem;cursor:pointer;transition:transform .15s;">⭐</span>
-    <span onclick="setFbkStar(2)" id="fs-2" style="font-size:2rem;cursor:pointer;transition:transform .15s;">⭐</span>
-    <span onclick="setFbkStar(3)" id="fs-3" style="font-size:2rem;cursor:pointer;transition:transform .15s;">⭐</span>
-    <span onclick="setFbkStar(4)" id="fs-4" style="font-size:2rem;cursor:pointer;transition:transform .15s;">⭐</span>
-    <span onclick="setFbkStar(5)" id="fs-5" style="font-size:2rem;cursor:pointer;transition:transform .15s;">⭐</span>
-  </div>
-  <input type="hidden" id="fbkRating" value="5">
-  <div class="err" id="fbkErr"></div>
-  <div class="btn-row">
-    <button class="btn" onclick="submitFeedback()">📤 Submit</button>
-    <button class="btn ghost" onclick="closeO('oFeedback')">Cancel</button>
   </div>
 </div></div>
 
@@ -2773,29 +2798,15 @@ function finishOnboard(){
     poultry:'Your poultry tracker is ready. Track your stock and sales!',
   };
   showWin('🎉 Welcome to Trackinfin!',greetings[S.userType]||'Your app is ready. Start by adding your income.');
-  // Add welcome message to notification inbox (once for new users)
+  // Add welcome message to notification inbox (once per new user)
   setTimeout(async()=>{
     let welcomeText='Welcome to Trackinfin! Your financial journey starts now.';
     let appName='Trackinfin';
     try{
-      const doc=await fbDb?.collection('appConfig').doc('settings').get();
-      if(doc?.exists){
-        const cfg=doc.data();
-        if(cfg.welcomeMsg)welcomeText=cfg.welcomeMsg;
-        if(cfg.appName)appName=cfg.appName;
-        localStorage.setItem(APP_SETTINGS_K,JSON.stringify(cfg));
-      }
+      if(fbDb){const doc=await fbDb.collection('appConfig').doc('settings').get();if(doc.exists){const cfg=doc.data();if(cfg.welcomeMsg)welcomeText=cfg.welcomeMsg;if(cfg.appName)appName=cfg.appName;localStorage.setItem(APP_SETTINGS_K,JSON.stringify(cfg));}}
     }catch{}
-    addNotification({
-      id:'welcome_'+currentUser.uid,
-      type:'welcome',
-      title:'👋 Welcome to '+appName+'!',
-      text:welcomeText,
-      time:new Date().toISOString(),
-      read:false,
-      once:true // never repeat
-    });
-  },2000);
+    addNotification({id:'welcome_'+currentUser.uid,type:'welcome',title:'👋 Welcome to '+appName+'!',text:welcomeText,time:new Date().toISOString(),read:false});
+  },2500);
 }
 
 // ══════════════════════════════════════════════════════
@@ -3827,24 +3838,12 @@ function renderSettings(){
     const txCount=S.txs.length;const months=Math.ceil((Date.now()-parseInt(sessionGet()?.joinedAt||Date.now()))/(30*24*60*60*1000))||1;
     set('settingsMilestones',txCount+' transactions recorded · '+calcStreak()+' day streak');
   }
-  // Themes
-  const tg=document.getElementById('themeGrid');
-  if(tg){
-    const maleThemes=THEMES.filter(t=>t.gender==='male');
-    const femaleThemes=THEMES.filter(t=>t.gender==='female');
-    const renderThemeGroup=(themes,label)=>`
-      <div style="font-size:0.66rem;color:var(--txt3);font-weight:700;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px;grid-column:1/-1;">${label}</div>
-      ${themes.map(t=>`<div class="theme-opt${(S.theme||'midnight')===t.id?' selected':''}" onclick="applyTheme('${t.id}')" title="${t.desc}">
-        <div class="theme-preview" style="background:${t.preview[0]};display:flex;align-items:center;justify-content:center;gap:4px;border-radius:6px;">
-          <div style="width:14px;height:14px;border-radius:50%;background:${t.preview[1]};box-shadow:0 0 6px ${t.preview[1]}66;"></div>
-          <div style="width:9px;height:9px;border-radius:50%;background:${t.preview[2]};"></div>
-        </div>
-        <div class="theme-name">${t.name}</div>
-        ${(S.theme||'midnight')===t.id?'<div style="font-size:0.58rem;color:var(--brand);">Active</div>':''}
-      </div>`).join('')}`;
-    tg.style.gridTemplateColumns='repeat(4,1fr)';
-    tg.innerHTML=renderThemeGroup(maleThemes,'⚡ Bold')+renderThemeGroup(femaleThemes,'🌸 Soft');
-  }
+  // Theme — update settings row preview
+  const activeTheme=THEMES.find(t=>t.id===(S.theme||'midnight'))||THEMES[0];
+  const thNameEl=document.getElementById('themeActiveName');
+  const thPrevEl=document.getElementById('themeActivePreview');
+  if(thNameEl)thNameEl.textContent=activeTheme.name+' — '+activeTheme.desc;
+  if(thPrevEl)thPrevEl.style.background=activeTheme.preview[0];
   // Modules
   const mb=document.getElementById('modBiz');if(mb)mb.checked=!!S.modules?.business;
   const mc=document.getElementById('modCredit');if(mc)mc.checked=!!S.modules?.credit;
@@ -4683,7 +4682,7 @@ async function adminUnsuspend(email){
 }
 async function sendBroadcast(){
   const msg=document.getElementById('broadcastMsg').value.trim();
-  const title=document.getElementById('bcastTitle')?.value.trim()||'Message from Admin';
+  const title=(document.getElementById('bcastTitle')?.value||'').trim()||'Message from Admin';
   const type=document.getElementById('bcastType')?.value||'info';
   if(!msg){alert('Enter a message first.');return;}
   if(!fbDb){alert('Firebase not connected.');return;}
@@ -4699,7 +4698,6 @@ async function sendBroadcast(){
   }catch(e){alert('Error: '+e.message);}
 }
 function openAdminSettings(){
-  // Pre-fill current saved values
   const s=JSON.parse(localStorage.getItem(APP_SETTINGS_K)||'{}');
   const p=document.getElementById('adminSupportPhone');if(p)p.value=s.supportPhone||'';
   const w=document.getElementById('adminWelcomeMsg');if(w)w.value=s.welcomeMsg||'';
@@ -4719,10 +4717,10 @@ async function saveAdminSettings(){
     try{
       await fbDb.collection('appConfig').doc('settings').set(settings);
       if(st){st.style.color='var(--green)';st.textContent='✅ Saved and pushed to all users!';}
-      setTimeout(()=>closeO('oAdminSettings'),800);
-      showWin('✅ Settings saved!','Support number and welcome message updated for all users.');
+      setTimeout(()=>closeO('oAdminSettings'),900);
+      showWin('✅ Settings saved!','All users will see the updated support number and welcome message.');
     }catch(e){
-      if(st){st.style.color='var(--orange)';st.textContent='⚠️ Saved locally only: '+e.message;}
+      if(st){st.style.color='var(--orange)';st.textContent='⚠️ Local only (Firestore error): '+e.message;}
     }
   }else{
     closeO('oAdminSettings');
@@ -4813,7 +4811,6 @@ function initApp(){
           showPinScreen();
         }else{
           hideAuth();renderAll();updateUserUI();updateCloudUI();
-          updateNotifBadge();
         }
         // Background tasks
         setTimeout(()=>pullFirestore(fbUser.uid,localKey).then(()=>{renderAll();updateCloudUI();}),1000);
@@ -4824,6 +4821,7 @@ function initApp(){
         setTimeout(applyRecurringTxs,4000);
         setTimeout(checkStreakWin,5000);
         setTimeout(loadAppSettingsFromCloud,2000);
+        updateNotifBadge();
       }else{
         // No user signed in
         currentUser=null;currentPassword=null;
@@ -4856,7 +4854,7 @@ async function checkBroadcast(){
     const seen=localStorage.getItem('tfi_bcast_seen');
     if(seen&&seen>=bm.sentAt)return;
     localStorage.setItem('tfi_bcast_seen',bm.sentAt);
-    // Add to notification inbox
+    // Store in notification inbox
     addNotification({
       id:'bcast_'+bm.sentAt,
       type:'broadcast',
@@ -4871,23 +4869,17 @@ async function checkBroadcast(){
 // ══════════════════════════════════════════════════════
 // NOTIFICATION INBOX
 // ══════════════════════════════════════════════════════
-const NOTIF_KEY='tfi_notifications';
-
-function getNotifs(){
-  try{return JSON.parse(localStorage.getItem(NOTIF_KEY)||'[]');}catch{return[];}
-}
-function saveNotifs(arr){
-  localStorage.setItem(NOTIF_KEY,JSON.stringify(arr.slice(0,100)));// keep last 100
-}
+const NOTIF_KEY='tfi_notifs';
+function getNotifs(){try{return JSON.parse(localStorage.getItem(NOTIF_KEY)||'[]');}catch{return[];}}
+function saveNotifs(arr){localStorage.setItem(NOTIF_KEY,JSON.stringify(arr.slice(0,100)));}
 
 function addNotification(notif){
   const notifs=getNotifs();
-  // Don't duplicate same id
-  if(notifs.find(n=>n.id===notif.id))return;
+  if(notifs.find(n=>n.id===notif.id))return;// no duplicates
   notifs.unshift(notif);
   saveNotifs(notifs);
   updateNotifBadge();
-  // Show a brief toast hint
+  // Brief win toast so user notices
   showWin(notif.title,notif.text.length>80?notif.text.slice(0,80)+'…':notif.text);
 }
 
@@ -4895,25 +4887,19 @@ function updateNotifBadge(){
   const badge=document.getElementById('notifBadge');
   if(!badge)return;
   const unread=getNotifs().filter(n=>!n.read).length;
-  if(unread>0){
-    badge.style.display='flex';
-    badge.textContent=unread>9?'9+':String(unread);
-  }else{
-    badge.style.display='none';
-  }
+  if(unread>0){badge.style.display='flex';badge.textContent=unread>9?'9+':String(unread);}
+  else{badge.style.display='none';}
 }
 
 let _notifFilter='all';
-
 function openNotifInbox(){
-  const panel=document.getElementById('notifInbox');
-  if(panel){panel.classList.add('open');renderNotifList();}
+  const p=document.getElementById('notifInbox');
+  if(p){p.classList.add('open');renderNotifList();}
 }
 function closeNotifInbox(){
-  const panel=document.getElementById('notifInbox');
-  if(panel)panel.classList.remove('open');
+  const p=document.getElementById('notifInbox');
+  if(p)p.classList.remove('open');
 }
-
 function filterNotifs(f){
   _notifFilter=f;
   ['all','unread','broadcast','welcome'].forEach(k=>{
@@ -4922,7 +4908,6 @@ function filterNotifs(f){
   });
   renderNotifList();
 }
-
 function renderNotifList(){
   const listEl=document.getElementById('notifList');
   const countEl=document.getElementById('notifCountLabel');
@@ -4932,70 +4917,51 @@ function renderNotifList(){
   const unreadCount=notifs.filter(n=>!n.read).length;
   if(countEl)countEl.textContent=unreadCount>0?unreadCount+' unread':'All caught up ✅';
   if(markBtn)markBtn.style.display=unreadCount>0?'block':'none';
-  // Apply filter
   if(_notifFilter==='unread')notifs=notifs.filter(n=>!n.read);
   else if(_notifFilter==='broadcast')notifs=notifs.filter(n=>n.type==='broadcast');
   else if(_notifFilter==='welcome')notifs=notifs.filter(n=>n.type==='welcome');
   if(!notifs.length){
-    listEl.innerHTML=`<div style="text-align:center;padding:40px 20px;">
-      <div style="font-size:2.5rem;margin-bottom:12px;">🔔</div>
-      <div style="font-weight:700;font-size:0.9rem;margin-bottom:6px;">No notifications yet</div>
-      <div style="font-size:0.78rem;color:var(--txt3);">Broadcasts and welcome messages will appear here</div>
-    </div>`;
+    listEl.innerHTML=`<div style="text-align:center;padding:48px 20px;"><div style="font-size:3rem;margin-bottom:12px;">🔔</div><div style="font-weight:700;margin-bottom:6px;">No notifications yet</div><div style="font-size:0.78rem;color:var(--txt3);">Broadcasts and welcome messages will appear here</div></div>`;
     return;
   }
-  const typeInfo={
-    broadcast:{icon:'📢',label:'Broadcast',color:'var(--brand)'},
-    welcome:{icon:'👋',label:'Welcome',color:'var(--green)'},
-    info:{icon:'📢',label:'Info',color:'var(--brand)'},
-    update:{icon:'🚀',label:'Update',color:'var(--green)'},
-    warning:{icon:'⚠️',label:'Warning',color:'var(--orange)'},
-    promo:{icon:'🎉',label:'Promo',color:'var(--gold)'},
-  };
+  const TI={broadcast:{icon:'📢',label:'Broadcast',color:'var(--brand)'},welcome:{icon:'👋',label:'Welcome',color:'var(--green)'},info:{icon:'📢',label:'Info',color:'var(--brand)'},update:{icon:'🚀',label:'Update',color:'var(--green)'},warning:{icon:'⚠️',label:'Warning',color:'var(--orange)'},promo:{icon:'🎉',label:'Promo',color:'var(--gold)'}};
   listEl.innerHTML=notifs.map(n=>{
-    const ti=typeInfo[n.bcastType||n.type]||typeInfo.broadcast;
-    const timeStr=n.time?timeSince(n.time):'';
+    const ti=TI[n.bcastType||n.type]||TI.broadcast;
+    const ts=n.time?timeSinceNotif(n.time):'';
     return`<div class="notif-item${n.read?'':' unread'}" onclick="readNotif('${n.id}')">
       <div style="display:flex;align-items:flex-start;gap:10px;">
         <div style="width:38px;height:38px;border-radius:50%;background:${ti.color}22;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0;">${ti.icon}</div>
         <div style="flex:1;min-width:0;">
-          <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;flex-wrap:wrap;">
-            <span class="notif-type-chip" style="background:${ti.color}22;color:${ti.color};">${ti.label}</span>
-            <span style="font-size:0.68rem;color:var(--txt3);margin-left:auto;">${timeStr}</span>
+          <div style="display:flex;align-items:center;flex-wrap:wrap;gap:5px;margin-bottom:4px;">
+            <span style="background:${ti.color}22;color:${ti.color};font-size:0.64rem;font-weight:700;padding:2px 7px;border-radius:5px;">${ti.label}</span>
             ${!n.read?'<span style="width:7px;height:7px;border-radius:50%;background:var(--brand);display:inline-block;"></span>':''}
+            <span style="font-size:0.66rem;color:var(--txt3);margin-left:auto;">${ts}</span>
           </div>
-          <div style="font-weight:700;font-size:0.84rem;margin-bottom:4px;">${n.title}</div>
+          <div style="font-weight:700;font-size:0.84rem;margin-bottom:3px;">${n.title}</div>
           <div style="font-size:0.78rem;color:var(--txt2);line-height:1.5;">${n.text}</div>
         </div>
       </div>
     </div>`;
   }).join('');
 }
-
 function readNotif(id){
-  const notifs=getNotifs();
-  const n=notifs.find(x=>x.id===id);
+  const notifs=getNotifs();const n=notifs.find(x=>x.id===id);
   if(n&&!n.read){n.read=true;saveNotifs(notifs);updateNotifBadge();renderNotifList();}
 }
-
-function markAllRead(){
-  const notifs=getNotifs().map(n=>({...n,read:true}));
-  saveNotifs(notifs);updateNotifBadge();renderNotifList();
+function markAllNotifsRead(){
+  saveNotifs(getNotifs().map(n=>({...n,read:true})));
+  updateNotifBadge();renderNotifList();
 }
-
-function timeSince(iso){
-  const diff=Date.now()-new Date(iso).getTime();
-  const m=Math.floor(diff/60000);
-  if(m<1)return'just now';
-  if(m<60)return m+'m ago';
-  const h=Math.floor(m/60);
-  if(h<24)return h+'h ago';
-  const d=Math.floor(h/24);
-  if(d<7)return d+'d ago';
+function timeSinceNotif(iso){
+  const d=Date.now()-new Date(iso).getTime();
+  const m=Math.floor(d/60000);
+  if(m<1)return'just now';if(m<60)return m+'m ago';
+  const h=Math.floor(m/60);if(h<24)return h+'h ago';
+  const dy=Math.floor(h/24);if(dy<7)return dy+'d ago';
   return new Date(iso).toLocaleDateString('en',{month:'short',day:'numeric'});
 }
 
-// Load app settings from Firestore for all users
+// ── Load cloud app settings for all users ──────────────
 async function loadAppSettingsFromCloud(){
   if(!fbDb)return;
   try{
@@ -5003,25 +4969,47 @@ async function loadAppSettingsFromCloud(){
     if(!doc.exists)return;
     const cfg=doc.data();
     localStorage.setItem(APP_SETTINGS_K,JSON.stringify(cfg));
-    // Update support number display
     const phone=cfg.supportPhone||'';
-    const snd=document.getElementById('supportNumDisplay');
-    if(snd)snd.textContent=phone?'📞 '+phone:'Contact your administrator';
-    const swb=document.getElementById('supportWaBtn');
-    if(swb)swb.style.display=phone?'flex':'none';
+    const snd=document.getElementById('supportNumDisplay');if(snd)snd.textContent=phone?'📞 '+phone:'Contact your administrator';
+    const swb=document.getElementById('supportWaBtn');if(swb)swb.style.display=phone?'flex':'none';
   }catch(e){console.warn('loadAppSettingsFromCloud:',e.message);}
 }
 
-// ── Broadcast type toggle ──────────────────────────────
+// ── Broadcast type selector ────────────────────────────
 function setBcastType(t){
   document.getElementById('bcastType').value=t;
   const cols={info:'var(--brand)',update:'var(--green)',warning:'var(--orange)',promo:'var(--gold)'};
   ['info','update','warning','promo'].forEach(k=>{
-    const el=document.getElementById('bct-'+k);
-    if(!el)return;
-    if(k===t){el.style.background=cols[k];el.style.color='#fff';el.style.borderColor=cols[k];}
-    else{el.style.background='var(--bg3)';el.style.color='var(--txt3)';el.style.borderColor='transparent';}
+    const el=document.getElementById('bct-'+k);if(!el)return;
+    if(k===t){el.style.background=cols[k];el.style.color='#fff';el.style.borderColor=cols[k];el.classList.add('active');}
+    else{el.style.background='var(--bg3)';el.style.color='var(--txt3)';el.style.borderColor='transparent';el.classList.remove('active');}
   });
+}
+
+// ══════════════════════════════════════════════════════
+// THEME MODAL
+// ══════════════════════════════════════════════════════
+function openThemeModal(){
+  const male=THEMES.filter(t=>t.gender==='male');
+  const female=THEMES.filter(t=>t.gender==='female');
+  const renderGrid=(themes,gridId)=>{
+    const el=document.getElementById(gridId);if(!el)return;
+    el.innerHTML=themes.map(t=>`
+      <div onclick="applyTheme('${t.id}');renderThemeModalGrid();" title="${t.desc}" style="cursor:pointer;text-align:center;padding:10px 6px;border-radius:12px;border:2px solid ${(S.theme||'midnight')===t.id?'var(--brand)':'var(--border2)'};background:${(S.theme||'midnight')===t.id?'var(--brand-dim)':'var(--bg2)'};transition:all .2s;">
+        <div style="width:100%;aspect-ratio:1;border-radius:8px;background:${t.preview[0]};display:flex;align-items:center;justify-content:center;gap:3px;margin-bottom:6px;">
+          <div style="width:12px;height:12px;border-radius:50%;background:${t.preview[1]};box-shadow:0 0 6px ${t.preview[1]}66;"></div>
+          <div style="width:8px;height:8px;border-radius:50%;background:${t.preview[2]};"></div>
+        </div>
+        <div style="font-size:0.72rem;font-weight:700;color:var(--txt);">${t.name}</div>
+        ${(S.theme||'midnight')===t.id?'<div style="font-size:0.6rem;color:var(--brand);margin-top:2px;">✓ Active</div>':''}
+      </div>`).join('');
+  };
+  renderGrid(male,'themeGridMale');
+  renderGrid(female,'themeGridFemale');
+  openO('oThemePicker');
+}
+function renderThemeModalGrid(){
+  openThemeModal();// re-render to update active state
 }
 
 // ══════════════════════════════════════════════════════
@@ -5031,74 +5019,86 @@ function setFbkType(t){
   document.getElementById('fbkType').value=t;
   const cols={suggestion:'var(--brand)',bug:'var(--red)',praise:'var(--gold)',other:'var(--green)'};
   ['suggestion','bug','praise','other'].forEach(k=>{
-    const el=document.getElementById('fbt-'+k);
-    if(!el)return;
-    if(k===t){el.style.background=cols[k];el.style.color='#fff';el.style.borderColor=cols[k];}
-    else{el.style.background='var(--bg3)';el.style.color='var(--txt3)';el.style.borderColor='transparent';}
+    const el=document.getElementById('fbt-'+k);if(!el)return;
+    if(k===t){el.style.background=cols[k];el.style.color='#fff';el.style.borderColor=cols[k];el.classList.add('active');}
+    else{el.style.background='var(--bg3)';el.style.color='var(--txt3)';el.style.borderColor='transparent';el.classList.remove('active');}
   });
 }
 function setFbkStar(n){
   document.getElementById('fbkRating').value=n;
   for(let i=1;i<=5;i++){
-    const el=document.getElementById('fs-'+i);
-    if(el){
-      el.textContent=i<=n?'⭐':'☆';
-      el.style.transform=i===n?'scale(1.35)':'scale(1)';
-      setTimeout(()=>{if(el)el.style.transform='scale(1)';},200);
-    }
+    const el=document.getElementById('fs-'+i);if(!el)continue;
+    el.textContent=i<=n?'⭐':'☆';
+    el.style.transform=i===n?'scale(1.3)':'scale(1)';
+    setTimeout(()=>{if(el)el.style.transform='scale(1)';},200);
   }
 }
 async function submitFeedback(){
   const text=document.getElementById('fbkText').value.trim();
-  const type=document.getElementById('fbkType').value;
+  const type=document.getElementById('fbkType').value||'suggestion';
   const rating=parseInt(document.getElementById('fbkRating').value)||5;
   const err=document.getElementById('fbkErr');
+  const btn=document.getElementById('fbkSubmitBtn');
   if(!text){err.textContent='Please write your feedback first.';return;}
   err.textContent='';
-  const entry={text,type,rating,userName:currentUser?.name||'Anonymous',userEmail:currentUser?.email||currentUser?.phone||'',userCountry:S.country||'Unknown',sentAt:new Date().toISOString()};
+  if(btn){btn.textContent='Sending…';btn.disabled=true;}
+  const entry={
+    text,type,rating,
+    userName:currentUser?.name||'Anonymous',
+    userEmail:currentUser?.email||currentUser?.phone||'',
+    userCountry:S.country||S.cats?.[0]?.id||'Unknown',
+    userId:currentUser?.uid||'',
+    sentAt:new Date().toISOString()
+  };
   try{
     if(fbDb){
       await fbDb.collection('feedback').add(entry);
+      document.getElementById('fbkText').value='';
+      closeO('oFeedback');
+      showWin('🙏 Thank you!','Your feedback has been received.');
     }else{
-      const saved=JSON.parse(localStorage.getItem('tfi_pending_feedback')||'[]');
-      saved.push(entry);localStorage.setItem('tfi_pending_feedback',JSON.stringify(saved));
+      // offline queue
+      const q=JSON.parse(localStorage.getItem('tfi_fbk_queue')||'[]');
+      q.push(entry);localStorage.setItem('tfi_fbk_queue',JSON.stringify(q));
+      document.getElementById('fbkText').value='';
+      closeO('oFeedback');
+      showWin('💾 Saved!','Feedback saved — will send when you are online.');
     }
-    document.getElementById('fbkText').value='';
-    closeO('oFeedback');
-    showWin('🙏 Thank you!','Your feedback has been received by the team.');
-  }catch(e){err.textContent='Could not send. Try again.';}
+  }catch(e){err.textContent='Could not send. Check connection and try again.';}
+  finally{if(btn){btn.textContent='📤 Submit Feedback';btn.disabled=false;}}
 }
 
 // ── Admin Feedback Viewer ──────────────────────────────
 async function openAdminFeedback(){
-  // Show a simple inline list in a modal
-  const existing=document.getElementById('oAdminFeedbackModal');
-  if(existing)existing.remove();
+  const old=document.getElementById('oAdminFeedbackMod');if(old)old.remove();
   const modal=document.createElement('div');
-  modal.className='overlay';modal.id='oAdminFeedbackModal';modal.style.display='flex';
+  modal.className='overlay';modal.id='oAdminFeedbackMod';modal.style.cssText='display:flex;';
   modal.innerHTML=`<div class="modal" style="max-width:500px;">
     <div class="modal-title">💬 User Feedback</div>
-    <div id="adminFbkList" style="max-height:380px;overflow-y:auto;margin-bottom:12px;"><div style="color:var(--txt3);text-align:center;padding:20px;">Loading…</div></div>
-    <button class="btn ghost full" onclick="document.getElementById('oAdminFeedbackModal').remove()">Close</button>
+    <div id="afList" style="max-height:380px;overflow-y:auto;margin-bottom:12px;-webkit-overflow-scrolling:touch;">
+      <div style="text-align:center;color:var(--txt3);padding:20px;">Loading…</div>
+    </div>
+    <button class="btn ghost full" onclick="document.getElementById('oAdminFeedbackMod').remove()">Close</button>
   </div>`;
   document.body.appendChild(modal);
-  if(!fbDb){document.getElementById('adminFbkList').innerHTML='<div style="color:var(--red);padding:12px;">Firebase not connected.</div>';return;}
+  if(!fbDb){document.getElementById('afList').innerHTML='<div style="color:var(--red);padding:12px;">Firebase not connected.</div>';return;}
   try{
-    const snap=await fbDb.collection('feedback').orderBy('sentAt','desc').limit(40).get();
+    const snap=await fbDb.collection('feedback').orderBy('sentAt','desc').limit(50).get();
     const items=snap.docs.map(d=>d.data());
     const icons={suggestion:'💡',bug:'🐛',praise:'⭐',other:'💬'};
     const cols={suggestion:'var(--brand)',bug:'var(--red)',praise:'var(--gold)',other:'var(--green)'};
-    document.getElementById('adminFbkList').innerHTML=!items.length
-      ?'<div style="text-align:center;color:var(--txt3);padding:20px;">No feedback yet.</div>'
+    document.getElementById('afList').innerHTML=!items.length
+      ?'<div style="text-align:center;color:var(--txt3);padding:20px;">No feedback received yet.</div>'
       :items.map(f=>`<div style="background:var(--bg3);border-radius:12px;padding:12px;margin-bottom:8px;">
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;">
-            <span style="background:${cols[f.type]||'var(--brand)'}22;color:${cols[f.type]||'var(--brand)'};font-size:0.68rem;font-weight:700;padding:2px 8px;border-radius:6px;">${icons[f.type]||'💬'} ${f.type}</span>
-            <span style="font-size:0.68rem;color:var(--txt3);margin-left:auto;">${f.userCountry||''} · ${f.sentAt?new Date(f.sentAt).toLocaleDateString('en',{month:'short',day:'numeric'}):''}</span>
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:5px;flex-wrap:wrap;">
+            <span style="background:${cols[f.type]||'var(--brand)'}22;color:${cols[f.type]||'var(--brand)'};font-size:0.66rem;font-weight:700;padding:2px 8px;border-radius:5px;">${icons[f.type]||'💬'} ${f.type||'feedback'}</span>
+            <span style="font-size:0.68rem;color:var(--txt3);">${f.userCountry||''}</span>
+            <span style="font-size:0.68rem;color:var(--txt3);margin-left:auto;">${f.sentAt?new Date(f.sentAt).toLocaleDateString('en',{month:'short',day:'numeric'}):''}</span>
           </div>
           <div style="font-size:0.82rem;color:var(--txt);margin-bottom:4px;">${f.text}</div>
-          <div style="font-size:0.7rem;color:var(--txt3);">${f.userName||'Anonymous'}${ f.userEmail?' · '+f.userEmail:''} · ${'⭐'.repeat(f.rating||0)}</div>
+          <div style="font-size:0.7rem;color:var(--txt3);">${f.userName||'Anonymous'}${f.userEmail?' · '+f.userEmail:''} ${'⭐'.repeat(f.rating||0)}</div>
         </div>`).join('');
-  }catch(e){document.getElementById('adminFbkList').innerHTML='<div style="color:var(--red);padding:12px;">Error: '+e.message+'</div>';}
+  }catch(e){document.getElementById('afList').innerHTML='<div style="color:var(--red);padding:12px;">Error: '+e.message+'</div>';}
 }
 
 function checkStreakWin(){
