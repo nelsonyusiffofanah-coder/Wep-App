@@ -10,7 +10,7 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' https: data: blob:; worker-src 'self' blob:; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.firebaseapp.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://fonts.googleapis.com https://fonts.gstatic.com https://cdnjs.cloudflare.com https://api.groq.com https://generativelanguage.googleapis.com;"/>
 
 <!-- PWA Manifest — full with icons -->
-<link rel="manifest" href="data:application/manifest+json,%7B%0A%20%20%22name%22%3A%20%22Trackinfin%20%E2%80%94%20Your%20Money%2C%20Your%20Control%22%2C%0A%20%20%22short_name%22%3A%20%22Trackinfin%22%2C%0A%20%20%22description%22%3A%20%22Smart%20money%20tracking%20for%20African%20entrepreneurs.%22%2C%0A%20%20%22start_url%22%3A%20%22%2F%22%2C%0A%20%20%22display%22%3A%20%22standalone%22%2C%0A%20%20%22orientation%22%3A%20%22portrait%22%2C%0A%20%20%22background_color%22%3A%20%22%23050D18%22%2C%0A%20%20%22theme_color%22%3A%20%22%230EA5E9%22%2C%0A%20%20%22lang%22%3A%20%22en%22%2C%0A%20%20%22categories%22%3A%20%5B%22finance%22%2C%20%22productivity%22%5D%2C%0A%20%20%22icons%22%3A%20%5B%0A%20%20%20%20%7B%20%22src%22%3A%20%22%2Ficon-192.png%22%2C%20%22sizes%22%3A%20%22192x192%22%2C%20%22type%22%3A%20%22image%2Fpng%22%2C%20%22purpose%22%3A%20%22any%20maskable%22%20%7D%2C%0A%20%20%20%20%7B%20%22src%22%3A%20%22%2Ficon-512.png%22%2C%20%22sizes%22%3A%20%22512x512%22%2C%20%22type%22%3A%20%22image%2Fpng%22%2C%20%22purpose%22%3A%20%22any%20maskable%22%20%7D%0A%20%20%5D%2C%0A%20%20%22shortcuts%22%3A%20%5B%0A%20%20%20%20%7B%20%22name%22%3A%20%22Add%20Expense%22%2C%20%22short_name%22%3A%20%22Expense%22%2C%20%22url%22%3A%20%22%2F%3Faction%3Dexpense%22%2C%20%22icons%22%3A%20%5B%7B%22src%22%3A%22%2Ficon-192.png%22%2C%22sizes%22%3A%22192x192%22%7D%5D%20%7D%2C%0A%20%20%20%20%7B%20%22name%22%3A%20%22Add%20Income%22%2C%20%22short_name%22%3A%20%22Income%22%2C%20%22url%22%3A%20%22%2F%3Faction%3Dincome%22%2C%20%22icons%22%3A%20%5B%7B%22src%22%3A%22%2Ficon-192.png%22%2C%22sizes%22%3A%22192x192%22%7D%5D%20%7D%0A%20%20%5D%0A%7D"/>
+<link rel="manifest" href="data:application/manifest+json,%7B%22name%22%3A%22Trackinfin%20%E2%80%94%20Your%20Money%2C%20Your%20Control%22%2C%22short_name%22%3A%22Trackinfin%22%2C%22description%22%3A%22Smart%20money%20tracking%20for%20African%20entrepreneurs.%22%2C%22start_url%22%3A%22%2F%22%2C%22display%22%3A%22standalone%22%2C%22orientation%22%3A%22portrait%22%2C%22background_color%22%3A%22%23050D18%22%2C%22theme_color%22%3A%22%230EA5E9%22%2C%22lang%22%3A%22en%22%2C%22categories%22%3A%5B%22finance%22%2C%22productivity%22%5D%2C%22icons%22%3A%5B%7B%22src%22%3A%22%2Ficon-192.png%22%2C%22sizes%22%3A%22192x192%22%2C%22type%22%3A%22image%2Fpng%22%2C%22purpose%22%3A%22any%20maskable%22%7D%2C%7B%22src%22%3A%22%2Ficon-512.png%22%2C%22sizes%22%3A%22512x512%22%2C%22type%22%3A%22image%2Fpng%22%2C%22purpose%22%3A%22any%20maskable%22%7D%5D%2C%22shortcuts%22%3A%5B%7B%22name%22%3A%22Add%20Expense%22%2C%22short_name%22%3A%22Expense%22%2C%22url%22%3A%22%2F%3Faction%3Dexpense%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22%2Ficon-192.png%22%2C%22sizes%22%3A%22192x192%22%7D%5D%7D%2C%7B%22name%22%3A%22Add%20Income%22%2C%22short_name%22%3A%22Income%22%2C%22url%22%3A%22%2F%3Faction%3Dincome%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22%2Ficon-192.png%22%2C%22sizes%22%3A%22192x192%22%7D%5D%7D%5D%7D"/>
 
 <!-- iOS home screen support -->
 <link rel="apple-touch-icon" href="/icon-192.png"/>
@@ -24,10 +24,10 @@ if('serviceWorker' in navigator && location.protocol==='https:'){
   window.addEventListener('load',()=>{
     navigator.serviceWorker.register('/sw.js',{scope:'/'})
       .then(reg=>{
-        console.log('✅ SW registered:',reg.scope);
+        console.log('✅ SW registered, scope:',reg.scope);
         reg.update();
       })
-      .catch(e=>console.warn('SW registration failed (normal on first load):',e));
+      .catch(e=>console.warn('SW registration failed:',e));
   });
 }
 
@@ -2659,7 +2659,7 @@ async function verifySmsCode(){
     if(!cred.user.displayName)await cred.user.updateProfile({displayName:name});
     const isNew=cred.additionalUserInfo?.isNewUser;
     // Use phone as identifier, generate a local password key
-    const localKey='tfi_'+sha(cred.user.uid).slice(0,20); // same format as email
+    const localKey='tfi_'+sha(cred.user.uid).slice(0,20);
     await onFirebaseSignIn(cred.user,name,localKey);
     if(btn){btn.textContent='Verify Code →';btn.disabled=false;}
     if(isNew){
@@ -2732,81 +2732,70 @@ async function onFirebaseSignIn(fbUser, displayName, localKey){
     userType:S?.userType||'other'
   };
   fbDb.collection('users').doc(uid).set(profileData,{merge:true}).catch(()=>{});
-  fbDb?.collection('publicProfiles').doc(uid).set(profileData,{merge:true}).catch(()=>{});
+  fbDb.collection('publicProfiles').doc(uid).set(profileData,{merge:true}).catch(()=>{});
 }
 
 // ══════════════════════════════════════════════════════
 // FIRESTORE SYNC — replace JSONBin
 // ══════════════════════════════════════════════════════
 async function pullFirestore(uid,key){
-  if(!fbDb||!uid)return;
+  if(!fbDb||!uid||!key)return;
   try{
     const doc=await fbDb.collection('userData').doc(uid).get();
     if(doc.exists){
       const encData=doc.data().data;
       if(encData){
         const decData=dec(encData,key);
-        if(decData){S={...freshState(),...mergeState(S,decData)};fixState();saveLocal(uid,key);}
+        if(decData){
+          S={...freshState(),...mergeState(S,decData)};
+          fixState();
+          // Save locally WITHOUT triggering another push
+          const encKey='tfi_d_'+btoa(uid).replace(/[^a-z0-9]/gi,'');
+          try{localStorage.setItem(encKey,enc(S,key));}catch{}
+          console.log('✅ Firestore pull OK');
+        } else {
+          console.warn('pullFirestore: decryption failed — key mismatch?');
+        }
+      } else {
+        console.log('pullFirestore: no data in cloud yet');
       }
+    } else {
+      console.log('pullFirestore: no document yet for this user');
     }
-  }catch(e){console.warn('Firestore pull failed:',e);}
+  }catch(e){
+    console.warn('Firestore pull failed:',e.message);
+    if(e.code==='permission-denied')console.error('Check Firestore rules include userData collection');
+  }
 }
 
 async function pushFirestore(){
   if(!fbDb||!currentUser?.uid||!currentPassword)return;
   try{
     const encData=enc(S,currentPassword);
-    if(!encData){console.warn('pushFirestore: encryption failed');return;}
     await fbDb.collection('userData').doc(currentUser.uid).set({
       data:encData,
       updatedAt:new Date().toISOString(),
-      pushedAt:Date.now(),
-      uid:currentUser.uid
+      pushedAt:Date.now()
     });
-    S.lastSync=new Date().toISOString();
-    S.pushedAt=Date.now();
-    // Save lastSync locally without triggering another push
-    try{
-      const k='tfi_d_'+btoa(currentUser.uid).replace(/[^a-z0-9]/gi,'');
-      localStorage.setItem(k,enc(S,currentPassword));
-    }catch{}
-    updateCloudUI();
-    console.log('✅ Firestore push OK');
-  }catch(e){
-    console.warn('Firestore push failed:',e.message);
-    // If permission denied, show clear message
-    if(e.code==='permission-denied'){
-      console.error('Firestore rules blocking write. Check your rules include userData collection.');
-    }
-  }
+    S.lastSync=new Date().toISOString();S.pushedAt=Date.now();
+    saveLocal();updateCloudUI();
+  }catch(e){console.warn('Firestore push failed:',e);}
 }
 
 async function manualSync(){
-  if(!fbDb){showWin('⚠️ Not connected','Firebase not loaded. Check your internet and refresh.');return;}
-  if(!currentUser?.uid){showWin('⚠️ Not signed in','Sign in first to sync.');return;}
+  if(!fbDb){showWin('⚠️ Not connected','Firebase not loaded. Check internet and refresh the app.');return;}
+  if(!currentUser?.uid){showWin('⚠️ Not signed in','Sign in first to sync your data.');return;}
   const pill=document.getElementById('syncPill');
-  const row=document.getElementById('syncStatusRow');
-  const lst=document.getElementById('lastSyncTxt');
-  if(pill){pill.textContent='⏳ Syncing…';pill.style.background='var(--gold-dim)';}
+  if(pill){pill.textContent='⏳';pill.style.background='var(--gold-dim)';}
   try{
-    // Pull first to get latest from other devices
     await pullFirestore(currentUser.uid,currentPassword);
-    renderAll();
-    // Then push our latest
     await pushFirestore();
-    const syncTime=new Date().toLocaleString('en',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
-    if(pill){pill.textContent='☁️ Sync';pill.style.background='var(--brand-dim)';}
-    if(lst)lst.textContent='Last sync: '+syncTime;
-    if(row)row.style.display='flex';
-    updateCloudUI();
-    showWin('☁️ Synced!','Your data is up to date on all your devices.');
+    renderAll();
+    if(pill){pill.textContent='✅';pill.style.background='var(--green-dim)';setTimeout(()=>{pill.textContent='☁️ Sync';pill.style.background='var(--brand-dim)';},2500);}
+    showWin('☁️ Synced!','Your data is up to date on all devices.');
   }catch(e){
     if(pill){pill.textContent='☁️ Sync';pill.style.background='var(--brand-dim)';}
-    const msg=e.code==='permission-denied'
-      ?'Permission denied — check your Firestore security rules include userData collection.'
-      :e.message||'Unknown error';
-    showWin('⚠️ Sync failed',msg);
-    console.error('manualSync error:',e);
+    showWin('⚠️ Sync failed',e.message);
   }
 }
 
@@ -2819,6 +2808,7 @@ async function silentSync(){
   }catch{}
 }
 
+// Override saveLocal to also push to Firestore
 function saveLocal(){
   if(!currentUser||!currentPassword)return;
   const key=currentUser.uid||currentUser.email;
@@ -2826,13 +2816,10 @@ function saveLocal(){
   const e=enc(S,currentPassword);
   if(e)localStorage.setItem(encKey,e);
   localStorage.setItem('tfi_la',Date.now());
-  // Debounced push to Firestore (2 second delay to batch rapid changes)
+  // Push to Firestore debounced
   clearTimeout(window._fsTimer);
   window._fsTimer=setTimeout(()=>{
-    // Only push if we are fully authenticated
-    if(fbDb&&currentUser?.uid&&currentPassword){
-      pushFirestore().catch(()=>{});
-    }
+    if(fbDb&&currentUser?.uid&&currentPassword)pushFirestore().catch(()=>{});
   },2000);
 }
 
@@ -2994,7 +2981,10 @@ function nextOnboard(step){
     const d=document.getElementById('ob'+i);if(d)d.classList.toggle('active',i===step);
   });
 }
-function finishOnboard(){
+
+  // Push to Firestore immediately after onboarding
+  setTimeout(()=>{if(fbDb&&currentUser?.uid&&currentPassword)pushFirestore().catch(()=>{});},1000);
+}function finishOnboard(){
   S.userType=selectedUserType;
   S.currency=document.getElementById('obCurrency').value||'₦';
   S.country=document.getElementById('obCountry')?.value||'';
@@ -3037,7 +3027,7 @@ function finishOnboard(){
       uid:currentUser.uid,
       lastActive:new Date().toISOString()
     };
-    fbDb?.collection('publicProfiles').doc(currentUser.uid).set(profileUpdate,{merge:true}).catch(()=>{});
+    fbDb.collection('publicProfiles').doc(currentUser.uid).set(profileUpdate,{merge:true}).catch(()=>{});
     fbDb.collection('users').doc(currentUser.uid).set(profileUpdate,{merge:true}).catch(()=>{});
   }
   setTimeout(()=>openO('oSetupPin'),600);
@@ -4364,7 +4354,7 @@ function saveCurrencyAndCountry(){
   // Push updated country+currency to publicProfiles so admin panel shows it
   if(fbDb&&currentUser?.uid){
     const upd={currency:cur,country:country||S.country||'',lastActive:new Date().toISOString(),name:currentUser.name||'',email:currentUser.email||'',uid:currentUser.uid,userType:S.userType||'other'};
-    fbDb?.collection('publicProfiles').doc(currentUser.uid).set(upd,{merge:true}).catch(()=>{});
+    fbDb.collection('publicProfiles').doc(currentUser.uid).set(upd,{merge:true}).catch(()=>{});
     fbDb.collection('users').doc(currentUser.uid).set(upd,{merge:true}).catch(()=>{});
   }
   showWin('✅ Saved!','Currency: '+cur+(country?' · Country: '+country:''));
@@ -5012,7 +5002,7 @@ async function renderAdminStats(){
   let users=[];
   // Try publicProfiles first (no auth needed — open read rule)
   try{
-    const snap=await fbDb?.collection('publicProfiles').get();
+    const snap=await fbDb.collection('publicProfiles').get();
     snap.forEach(doc=>users.push({...doc.data(),uid:doc.id}));
   }catch(e1){
     // Fall back to users collection
@@ -5566,7 +5556,7 @@ async function submitFeedback(){
   if(fbDb&&currentUser?.uid){
     // Primary: write under publicProfiles subcollection (public write rule allows this)
     try{
-      await fbDb?.collection('publicProfiles').doc(currentUser.uid).collection('feedback').add(entry);
+      await fbDb.collection('publicProfiles').doc(currentUser.uid).collection('feedback').add(entry);
       saved=true;
     }catch(e1){console.warn('publicProfiles feedback write failed:',e1.message);}
     // Backup: merge into userData doc (user always owns this)
@@ -5604,7 +5594,7 @@ async function openAdminFeedback(){
 
   // 1. Read from publicProfiles/{uid}/feedback subcollections (primary storage)
   try{
-    const profilesSnap=await fbDb?.collection('publicProfiles').get();
+    const profilesSnap=await fbDb.collection('publicProfiles').get();
     for(const userDoc of profilesSnap.docs){
       try{
         const fbSnap=await userDoc.ref.collection('feedback').orderBy('sentAt','desc').limit(20).get();
