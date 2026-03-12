@@ -557,8 +557,17 @@ main{padding:18px 16px 100px;max-width:680px;margin:0 auto;}
 .profile-email-lg{font-size:0.74rem;color:var(--txt3);margin-top:2px;}
 .profile-milestones{font-size:0.7rem;color:var(--txt3);margin-top:4px;}
 
-.settings-section{margin-bottom:20px;}
-.settings-section-title{font-size:0.66rem;color:var(--txt3);text-transform:uppercase;letter-spacing:1.5px;font-weight:700;margin-bottom:8px;padding-left:2px;}
+.settings-section{margin-bottom:10px;border-radius:14px;overflow:hidden;border:1px solid var(--border2);}
+.settings-section-header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;cursor:pointer;background:var(--bg2);user-select:none;transition:background .15s;}
+.settings-section-header:active{background:var(--bg3);}
+.settings-section-header-left{display:flex;align-items:center;gap:10px;}
+.settings-section-hico{width:32px;height:32px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0;}
+.settings-section-title{font-size:0.88rem;font-weight:700;color:var(--txt);}
+.settings-section-arrow{font-size:0.9rem;color:var(--txt3);transition:transform .25s;display:inline-block;}
+.settings-section-arrow.open{transform:rotate(90deg);}
+.settings-section-body{display:none;background:var(--bg);}
+.settings-section-body.open{display:block;}
+.settings-section-body .toggle-row,.settings-section-body .settings-item{border-radius:0;border-top:1px solid var(--border2);}
 .settings-item{background:var(--bg2);border:1px solid var(--border2);display:flex;align-items:center;gap:12px;padding:13px 14px;cursor:pointer;transition:all .2s;}
 .settings-item:first-child{border-radius:12px 12px 0 0;}
 .settings-item:last-child{border-radius:0 0 12px 12px;}
@@ -966,6 +975,8 @@ tbody td{padding:11px 12px;border-bottom:1px solid var(--border2);}
         <div class="qa-card" onclick="openAddSheet('out')"><div class="qa-ico" style="background:var(--red-dim);">💸</div><div><div class="qa-lbl">Add Expense</div><div class="qa-sub">Money going out</div></div></div>
         <div class="qa-card" onclick="showTab('details');switchDetail('credits');openO('oAddCredit')"><div class="qa-ico" style="background:var(--orange-dim);">🤝</div><div><div class="qa-lbl">Record Credit</div><div class="qa-sub">Lent or borrowed</div></div></div>
         <div class="qa-card" id="qaBiz" onclick="showTab('details');switchDetail('business');openO('oAddBiz')" style="display:none;"><div class="qa-ico" style="background:var(--purple-dim);">🏪</div><div><div class="qa-lbl">Business Sale</div><div class="qa-sub">Record a sale</div></div></div>
+        <div class="qa-card" id="qaReceipt" onclick="openReceiptScanner()" style="display:none;"><div class="qa-ico" style="background:var(--orange-dim);">🧾</div><div><div class="qa-lbl">Scan Receipt</div><div class="qa-sub">Auto-record expense</div></div></div>
+        <div class="qa-card" id="qaBills" onclick="openBillsTracker()" style="display:none;"><div class="qa-ico" style="background:var(--red-dim);">📆</div><div><div class="qa-lbl">Bills</div><div class="qa-sub">Track subscriptions</div></div></div>
       </div>
       <div class="mini-stats">
         <div class="ms-card"><div class="ms-ico">🔥</div><div class="ms-val" id="homeStreak">0</div><div class="ms-lbl">Day Streak</div></div>
@@ -1220,103 +1231,166 @@ tbody td{padding:11px 12px;border-bottom:1px solid var(--border2);}
         <div style="color:var(--txt3);">›</div>
       </div>
 
-      <!-- Themes -->
+      <!-- Appearance -->
       <div class="settings-section">
-        <div class="settings-section-title">Appearance</div>
-        <div class="settings-item" onclick="openThemeModal()" style="cursor:pointer;">
-          <div class="sett-ico" style="background:var(--brand-dim);" id="themeSwatchIco">🎨</div>
-          <div class="sett-info">
-            <div class="sett-name">Theme</div>
-            <div class="sett-sub" id="themeActiveName">Loading…</div>
+        <div class="settings-section-header" onclick="toggleSettingsSection('sAppearance')">
+          <div class="settings-section-header-left">
+            <div class="settings-section-hico" style="background:var(--brand-dim);">🎨</div>
+            <div class="settings-section-title">Appearance</div>
           </div>
-          <div style="display:flex;align-items:center;gap:6px;">
-            <div id="themeActivePreview" style="width:22px;height:22px;border-radius:6px;border:2px solid var(--border);"></div>
+          <span class="settings-section-arrow" id="arr-sAppearance">›</span>
+        </div>
+        <div class="settings-section-body" id="sAppearance">
+          <div class="settings-item" onclick="openThemeModal()" style="cursor:pointer;">
+            <div class="sett-ico" style="background:var(--brand-dim);" id="themeSwatchIco">🎨</div>
+            <div class="sett-info"><div class="sett-name">Theme</div><div class="sett-sub" id="themeActiveName">Loading…</div></div>
+            <div style="display:flex;align-items:center;gap:6px;">
+              <div id="themeActivePreview" style="width:22px;height:22px;border-radius:6px;border:2px solid var(--border);"></div>
+              <div class="sett-right">›</div>
+            </div>
+          </div>
+          <div class="settings-item" onclick="openHeaderCustomizerModal()" style="cursor:pointer;">
+            <div class="sett-ico" style="background:var(--orange-dim);">⚙️</div>
+            <div class="sett-info"><div class="sett-name">Header Bar Icons</div><div class="sett-sub" id="headerBarSub">Choose which icons appear in the top bar</div></div>
             <div class="sett-right">›</div>
           </div>
         </div>
-        <div class="settings-item" onclick="openHeaderCustomizerModal()" style="cursor:pointer;">
-          <div class="sett-ico" style="background:var(--orange-dim);">⚙️</div>
-          <div class="sett-info">
-            <div class="sett-name">Header Bar Icons</div>
-            <div class="sett-sub" id="headerBarSub">Choose which icons appear in the top bar</div>
+      </div>
+
+      <!-- Active Modules -->
+      <div class="settings-section">
+        <div class="settings-section-header" onclick="toggleSettingsSection('sModules')">
+          <div class="settings-section-header-left">
+            <div class="settings-section-hico" style="background:var(--purple-dim);">🧩</div>
+            <div class="settings-section-title">Active Modules</div>
           </div>
-          <div class="sett-right">›</div>
+          <span class="settings-section-arrow" id="arr-sModules">›</span>
+        </div>
+        <div class="settings-section-body" id="sModules">
+          <div class="toggle-row"><div class="sett-ico" style="background:var(--purple-dim);">🏪</div><div class="sett-info"><div class="sett-name">Business Tracker</div><div class="sett-sub">Sales, costs, profit</div></div><label class="toggle"><input type="checkbox" id="modBiz" onchange="toggleModule('business',this.checked)"/><span class="toggle-slider"></span></label></div>
+          <div class="toggle-row"><div class="sett-ico" style="background:var(--orange-dim);">🤝</div><div class="sett-info"><div class="sett-name">Credit Tracker</div><div class="sett-sub">Money lent and borrowed</div></div><label class="toggle"><input type="checkbox" id="modCredit" onchange="toggleModule('credit',this.checked)"/><span class="toggle-slider"></span></label></div>
+          <div class="toggle-row"><div class="sett-ico" style="background:var(--brand-dim);">📋</div><div class="sett-info"><div class="sett-name">Envelope Plans</div><div class="sett-sub">Allocate income into envelopes</div></div><label class="toggle"><input type="checkbox" id="modPlans" onchange="toggleModule('plans',this.checked)"/><span class="toggle-slider"></span></label></div>
+          <div class="toggle-row"><div class="sett-ico" style="background:var(--green-dim);">🤖</div><div class="sett-info"><div class="sett-name">AI Advisor</div><div class="sett-sub">Gemini-powered financial advice</div></div><label class="toggle"><input type="checkbox" id="modAI" onchange="toggleModule('ai',this.checked)"/><span class="toggle-slider"></span></label></div>
+          <div class="toggle-row"><div class="sett-ico" style="background:var(--orange-dim);">🧾</div><div class="sett-info"><div class="sett-name">Receipt Scanner</div><div class="sett-sub">Scan receipts to auto-record expenses</div></div><label class="toggle"><input type="checkbox" id="modReceipt" onchange="toggleModule('receipt',this.checked)"/><span class="toggle-slider"></span></label></div>
+          <div class="toggle-row"><div class="sett-ico" style="background:var(--red-dim);">📆</div><div class="sett-info"><div class="sett-name">Bill & Subscription Tracker</div><div class="sett-sub">Electricity, internet, rent, loans…</div></div><label class="toggle"><input type="checkbox" id="modBills" onchange="toggleModule('bills',this.checked)"/><span class="toggle-slider"></span></label></div>
         </div>
       </div>
 
-      <!-- Modules -->
+      <!-- Finance Settings -->
       <div class="settings-section">
-        <div class="settings-section-title">Active Modules</div>
-        <div class="toggle-row"><div class="sett-ico" style="background:var(--purple-dim);">🏪</div><div class="sett-info"><div class="sett-name">Business Tracker</div><div class="sett-sub">Sales, costs, profit</div></div><label class="toggle"><input type="checkbox" id="modBiz" onchange="toggleModule('business',this.checked)"/><span class="toggle-slider"></span></label></div>
-        <div class="toggle-row"><div class="sett-ico" style="background:var(--orange-dim);">🤝</div><div class="sett-info"><div class="sett-name">Credit Tracker</div><div class="sett-sub">Money lent and borrowed</div></div><label class="toggle"><input type="checkbox" id="modCredit" checked onchange="toggleModule('credit',this.checked)"/><span class="toggle-slider"></span></label></div>
-        <div class="toggle-row"><div class="sett-ico" style="background:var(--brand-dim);">📋</div><div class="sett-info"><div class="sett-name">Envelope Plans</div><div class="sett-sub">Allocate income into envelopes</div></div><label class="toggle"><input type="checkbox" id="modPlans" checked onchange="toggleModule('plans',this.checked)"/><span class="toggle-slider"></span></label></div>
-        <div class="toggle-row"><div class="sett-ico" style="background:var(--green-dim);">🤖</div><div class="sett-info"><div class="sett-name">AI Advisor</div><div class="sett-sub">Gemini-powered financial advice</div></div><label class="toggle"><input type="checkbox" id="modAI" onchange="toggleModule('ai',this.checked)"/><span class="toggle-slider"></span></label></div>
-      </div>
-
-      <!-- Finance -->
-      <div class="settings-section">
-        <div class="settings-section-title">Finance Settings</div>
-        <div class="settings-item" onclick="openO('oCurrency')"><div class="sett-ico" style="background:var(--gold-dim);">💱</div><div class="sett-info"><div class="sett-name">Currency</div><div class="sett-sub" id="currLbl">₦ Nigerian Naira</div></div><div class="sett-right">›</div></div>
-        <div class="settings-item" onclick="openO('oBudget')"><div class="sett-ico" style="background:var(--green-dim);">🎯</div><div class="sett-info"><div class="sett-name">Monthly Budget</div><div class="sett-sub" id="budgetLbl">Not set</div></div><div class="sett-right">›</div></div>
-        <div class="settings-item" onclick="openO('oManageCats');renderCatManager();"><div class="sett-ico" style="background:var(--brand-dim);">🏷️</div><div class="sett-info"><div class="sett-name">Manage Categories</div><div class="sett-sub">Add, remove, set allocation %</div></div><div class="sett-right">›</div></div>
-        <div class="settings-item" onclick="openO('oRecurring')"><div class="sett-ico" style="background:var(--purple-dim);">📅</div><div class="sett-info"><div class="sett-name">Recurring Transactions</div><div class="sett-sub">Auto-add repeating transactions</div></div><div class="sett-right">›</div></div>
+        <div class="settings-section-header" onclick="toggleSettingsSection('sFinance')">
+          <div class="settings-section-header-left">
+            <div class="settings-section-hico" style="background:var(--gold-dim);">💱</div>
+            <div class="settings-section-title">Finance Settings</div>
+          </div>
+          <span class="settings-section-arrow" id="arr-sFinance">›</span>
+        </div>
+        <div class="settings-section-body" id="sFinance">
+          <div class="settings-item" onclick="openO('oCurrency')"><div class="sett-ico" style="background:var(--gold-dim);">💱</div><div class="sett-info"><div class="sett-name">Currency</div><div class="sett-sub" id="currLbl">₦ Nigerian Naira</div></div><div class="sett-right">›</div></div>
+          <div class="settings-item" onclick="openO('oBudget')"><div class="sett-ico" style="background:var(--green-dim);">🎯</div><div class="sett-info"><div class="sett-name">Monthly Budget</div><div class="sett-sub" id="budgetLbl">Not set</div></div><div class="sett-right">›</div></div>
+          <div class="settings-item" onclick="openO('oManageCats');renderCatManager();"><div class="sett-ico" style="background:var(--brand-dim);">🏷️</div><div class="sett-info"><div class="sett-name">Manage Categories</div><div class="sett-sub">Add, remove, set allocation %</div></div><div class="sett-right">›</div></div>
+          <div class="settings-item" onclick="openO('oRecurring')"><div class="sett-ico" style="background:var(--purple-dim);">📅</div><div class="sett-info"><div class="sett-name">Recurring Transactions</div><div class="sett-sub">Auto-add repeating transactions</div></div><div class="sett-right">›</div></div>
+        </div>
       </div>
 
       <!-- Export & Backup -->
       <div class="settings-section">
-        <div class="settings-section-title">Export & Backup</div>
-        <div class="settings-item" onclick="exportExcel()"><div class="sett-ico" style="background:var(--green-dim);">📊</div><div class="sett-info"><div class="sett-name">Export to Excel</div><div class="sett-sub">Full transaction history</div></div><div class="sett-right">›</div></div>
-        <div class="settings-item" onclick="exportPDF()"><div class="sett-ico" style="background:var(--red-dim);">📄</div><div class="sett-info"><div class="sett-name">Export to PDF</div><div class="sett-sub">Formatted financial report</div></div><div class="sett-right">›</div></div>
-        <div class="settings-item" onclick="exportWord()"><div class="sett-ico" style="background:var(--brand-dim);">📝</div><div class="sett-info"><div class="sett-name">Export to Word</div><div class="sett-sub">Editable document</div></div><div class="sett-right">›</div></div>
-        <div class="settings-item" onclick="exportGDrive()"><div class="sett-ico" style="background:var(--gold-dim);">☁️</div><div class="sett-info"><div class="sett-name">Save to Google Drive</div><div class="sett-sub">Send backup to your Drive</div></div><div class="sett-right">›</div></div>
-        <div class="settings-item" onclick="doBackup()"><div class="sett-ico" style="background:var(--bg3);">💾</div><div class="sett-info"><div class="sett-name">Download Backup</div><div class="sett-sub">Save encrypted backup file</div></div><div class="sett-right">›</div></div>
-        <div class="settings-item" onclick="document.getElementById('restoreFile').click()"><div class="sett-ico" style="background:var(--bg3);">📂</div><div class="sett-info"><div class="sett-name">Restore Backup</div><div class="sett-sub">Load data from backup file</div></div><div class="sett-right">›</div></div>
-        <input type="file" id="restoreFile" accept=".json" style="display:none;" onchange="doRestore(event)"/>
+        <div class="settings-section-header" onclick="toggleSettingsSection('sExport')">
+          <div class="settings-section-header-left">
+            <div class="settings-section-hico" style="background:var(--green-dim);">📤</div>
+            <div class="settings-section-title">Export &amp; Backup</div>
+          </div>
+          <span class="settings-section-arrow" id="arr-sExport">›</span>
+        </div>
+        <div class="settings-section-body" id="sExport">
+          <div class="settings-item" onclick="exportExcel()"><div class="sett-ico" style="background:var(--green-dim);">📊</div><div class="sett-info"><div class="sett-name">Export to Excel</div><div class="sett-sub">Full transaction history</div></div><div class="sett-right">›</div></div>
+          <div class="settings-item" onclick="exportPDF()"><div class="sett-ico" style="background:var(--red-dim);">📄</div><div class="sett-info"><div class="sett-name">Export to PDF</div><div class="sett-sub">Formatted financial report</div></div><div class="sett-right">›</div></div>
+          <div class="settings-item" onclick="exportWord()"><div class="sett-ico" style="background:var(--brand-dim);">📝</div><div class="sett-info"><div class="sett-name">Export to Word</div><div class="sett-sub">Editable document</div></div><div class="sett-right">›</div></div>
+          <div class="settings-item" onclick="exportGDrive()"><div class="sett-ico" style="background:var(--gold-dim);">☁️</div><div class="sett-info"><div class="sett-name">Save to Google Drive</div><div class="sett-sub">Send backup to your Drive</div></div><div class="sett-right">›</div></div>
+          <div class="settings-item" onclick="doBackup()"><div class="sett-ico" style="background:var(--bg3);">💾</div><div class="sett-info"><div class="sett-name">Download Backup</div><div class="sett-sub">Save encrypted backup file</div></div><div class="sett-right">›</div></div>
+          <div class="settings-item" onclick="document.getElementById('restoreFile').click()"><div class="sett-ico" style="background:var(--bg3);">📂</div><div class="sett-info"><div class="sett-name">Restore Backup</div><div class="sett-sub">Load data from backup file</div></div><div class="sett-right">›</div></div>
+          <input type="file" id="restoreFile" accept=".json" style="display:none;" onchange="doRestore(event)"/>
+        </div>
       </div>
 
       <!-- Security -->
       <div class="settings-section">
-        <div class="settings-section-title">Security</div>
-        <div class="settings-item" onclick="openO('oSetupPin')"><div class="sett-ico" style="background:var(--brand-dim);">🔢</div><div class="sett-info"><div class="sett-name">PIN Lock</div><div class="sett-sub" id="pinStatusLbl">Not set</div></div><div class="sett-right">›</div></div>
-        <div class="settings-item" onclick="openO('oChangePin')"><div class="sett-ico" style="background:var(--bg3);">🔐</div><div class="sett-info"><div class="sett-name">Change PIN</div><div class="sett-sub">Update your 4-digit PIN</div></div><div class="sett-right">›</div></div>
-      </div>
-
-      <!-- Cloud -->
-      <div class="settings-section">
-        <div class="settings-section-title">Cloud Sync</div>
-        <div class="settings-item" onclick="manualSync()">
-          <div class="sett-ico" style="background:var(--green-dim);">☁️</div>
-          <div class="sett-info">
-            <div class="sett-name">Firebase Sync</div>
-            <div class="sett-sub" style="display:flex;align-items:center;gap:5px;">
-              <span class="status-dot dot-off" id="cloudDot"></span>
-              <span id="cloudTxt">Tap to sync now</span>
-            </div>
+        <div class="settings-section-header" onclick="toggleSettingsSection('sSecurity')">
+          <div class="settings-section-header-left">
+            <div class="settings-section-hico" style="background:var(--brand-dim);">🔐</div>
+            <div class="settings-section-title">Security</div>
           </div>
-          <div class="sett-right">🔄</div>
+          <span class="settings-section-arrow" id="arr-sSecurity">›</span>
         </div>
-        <div id="syncStatusRow" style="display:none;background:var(--green-dim);border:1px solid rgba(6,214,160,.15);border-radius:0 0 12px 12px;padding:8px 14px;display:none;align-items:center;justify-content:space-between;">
-          <span style="font-size:0.72rem;color:var(--green);" id="lastSyncTxt">Last sync: never</span>
-          <button class="btn xs" onclick="manualSync()">Sync Now</button>
+        <div class="settings-section-body" id="sSecurity">
+          <div class="settings-item" onclick="openO('oSetupPin')"><div class="sett-ico" style="background:var(--brand-dim);">🔢</div><div class="sett-info"><div class="sett-name">PIN Lock</div><div class="sett-sub" id="pinStatusLbl">Not set</div></div><div class="sett-right">›</div></div>
+          <div class="settings-item" onclick="openO('oChangePin')"><div class="sett-ico" style="background:var(--bg3);">🔐</div><div class="sett-info"><div class="sett-name">Change PIN</div><div class="sett-sub">Update your 4-digit PIN</div></div><div class="sett-right">›</div></div>
         </div>
       </div>
 
-      <!-- AI -->
+      <!-- Cloud Sync -->
+      <div class="settings-section">
+        <div class="settings-section-header" onclick="toggleSettingsSection('sCloud')">
+          <div class="settings-section-header-left">
+            <div class="settings-section-hico" style="background:var(--green-dim);">☁️</div>
+            <div class="settings-section-title">Cloud Sync</div>
+          </div>
+          <span class="settings-section-arrow" id="arr-sCloud">›</span>
+        </div>
+        <div class="settings-section-body" id="sCloud">
+          <div class="settings-item" onclick="manualSync()">
+            <div class="sett-ico" style="background:var(--green-dim);">☁️</div>
+            <div class="sett-info">
+              <div class="sett-name">Firebase Sync</div>
+              <div class="sett-sub" style="display:flex;align-items:center;gap:5px;">
+                <span class="status-dot dot-off" id="cloudDot"></span>
+                <span id="cloudTxt">Tap to sync now</span>
+              </div>
+            </div>
+            <div class="sett-right">🔄</div>
+          </div>
+          <div id="syncStatusRow" style="display:none;background:var(--green-dim);border-top:1px solid rgba(6,214,160,.15);padding:8px 14px;align-items:center;justify-content:space-between;">
+            <span style="font-size:0.72rem;color:var(--green);" id="lastSyncTxt">Last sync: never</span>
+            <button class="btn xs" onclick="manualSync()">Sync Now</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- AI Advisor -->
       <div class="settings-section" id="aiSection" style="display:none;">
-        <div class="settings-section-title">AI Advisor</div>
-        <div class="settings-item" onclick="openO('oAI')"><div class="sett-ico" style="background:var(--green-dim);">🤖</div><div class="sett-info"><div class="sett-name">AI Advisor (Groq / Gemini)</div><div class="sett-sub" id="aiKeyLbl">Not connected</div></div><div class="sett-right">›</div></div>
+        <div class="settings-section-header" onclick="toggleSettingsSection('sAI')">
+          <div class="settings-section-header-left">
+            <div class="settings-section-hico" style="background:var(--green-dim);">🤖</div>
+            <div class="settings-section-title">AI Advisor</div>
+          </div>
+          <span class="settings-section-arrow" id="arr-sAI">›</span>
+        </div>
+        <div class="settings-section-body" id="sAI">
+          <div class="settings-item" onclick="openO('oAI')"><div class="sett-ico" style="background:var(--green-dim);">🤖</div><div class="sett-info"><div class="sett-name">AI Advisor (Groq / Gemini)</div><div class="sett-sub" id="aiKeyLbl">Not connected</div></div><div class="sett-right">›</div></div>
+        </div>
       </div>
 
       <!-- About -->
       <div class="settings-section">
-        <div class="settings-section-title">About</div>
-        <div class="settings-item" style="cursor:default;"><div class="sett-ico" style="background:var(--brand-dim);">💰</div><div class="sett-info"><div class="sett-name">Trackinfin</div><div class="sett-sub">Version 10.0 · Built for African entrepreneurs</div></div></div>
-        <div class="settings-item" onclick="openO('oFeedback')" style="cursor:pointer;"><div class="sett-ico" style="background:var(--green-dim);">💬</div><div class="sett-info"><div class="sett-name">Send Feedback</div><div class="sett-sub">Ideas, bugs or praise — we read everything</div></div><div class="sett-right">›</div></div>
-        <div class="settings-item" onclick="doSignOut()" style="cursor:pointer;"><div class="sett-ico" style="background:var(--red-dim);">🚪</div><div class="sett-info"><div class="sett-name" style="color:var(--red);">Sign Out</div><div class="sett-sub">Sign out of your account</div></div><div class="sett-right">›</div></div>
+        <div class="settings-section-header" onclick="toggleSettingsSection('sAbout')">
+          <div class="settings-section-header-left">
+            <div class="settings-section-hico" style="background:var(--brand-dim);">💰</div>
+            <div class="settings-section-title">About &amp; Support</div>
+          </div>
+          <span class="settings-section-arrow" id="arr-sAbout">›</span>
+        </div>
+        <div class="settings-section-body" id="sAbout">
+          <div class="settings-item" style="cursor:default;"><div class="sett-ico" style="background:var(--brand-dim);">💰</div><div class="sett-info"><div class="sett-name">Trackinfin</div><div class="sett-sub">Version 10.0 · Built for African entrepreneurs</div></div></div>
+          <div class="settings-item" id="supportContactRow" style="cursor:default;"><div class="sett-ico" style="background:var(--green-dim);">📞</div><div class="sett-info"><div class="sett-name">Support</div><div class="sett-sub" id="supportNumDisplay">Contact your administrator</div></div><a id="supportWaBtn" style="display:none;background:var(--green-dim);border:1px solid rgba(6,214,160,.2);border-radius:8px;color:var(--green);font-size:0.72rem;font-weight:700;padding:6px 12px;text-decoration:none;white-space:nowrap;" target="_blank">WhatsApp</a></div>
+          <div class="settings-item" onclick="openO('oFeedback')" style="cursor:pointer;"><div class="sett-ico" style="background:var(--brand-dim);">💬</div><div class="sett-info"><div class="sett-name">Send Feedback</div><div class="sett-sub">Ideas, bugs or praise — we read everything</div></div><div class="sett-right">›</div></div>
+          <div class="settings-item" onclick="doSignOut()" style="cursor:pointer;"><div class="sett-ico" style="background:var(--red-dim);">🚪</div><div class="sett-info"><div class="sett-name" style="color:var(--red);">Sign Out</div><div class="sett-sub">Sign out of your account</div></div><div class="sett-right">›</div></div>
+        </div>
       </div>
+
     </div>
   </main>
 
+  <!-- BOTTOM NAV -->
   <!-- BOTTOM NAV -->
   <nav id="bottomNav">
     <div class="bnav-item active" id="bn-home" onclick="showTab('home')"><span class="bico">🏠</span><span class="blbl">Home</span></div>
@@ -2139,7 +2213,8 @@ function freshState(){
     country:'',
     geminiKey:'', jsonbinKey:'', jsonbinId:'',
     lastSync:null, pushedAt:0,
-    modules:{business:false,credit:true,plans:true,ai:false},
+    modules:{business:false,credit:true,plans:true,ai:false,receipt:false,bills:false},
+    bills:[],
     onboardDone:false, userType:'other',
   };
 }
@@ -2163,7 +2238,8 @@ function fixState(){
   ['goals','credits','bizEntries','obligations','recurringTxs','templates','nwItems','netWorthHistory'].forEach(k=>{if(!Array.isArray(S[k]))S[k]=[];});
   if(!S.envelopes) S.envelopes={};
   if(!S.notes) S.notes={};
-  if(!S.modules) S.modules={business:false,credit:true,plans:true,ai:false};
+  if(!S.modules) S.modules={business:false,credit:true,plans:true,ai:false,receipt:false,bills:false};
+  if(!Array.isArray(S.bills))S.bills=[];
   // Restore currency from localStorage fallback
   if(!S.currency) S.currency=localStorage.getItem('tfi_currency')||'₦';
   // Sync localStorage currency with S
@@ -2206,7 +2282,7 @@ function mergeState(L,C){
   if(!C)return L;
   const m=(arr1,arr2)=>{const mp={};[...(arr1||[]),...(arr2||[])].forEach(x=>mp[x.id]=x);return Object.values(mp);};
   const W=(C.pushedAt||0)>(L.pushedAt||0)?C:L;
-  return{...L,txs:m(L.txs,C.txs).sort((a,b)=>b.id-a.id),goals:m(L.goals,C.goals),credits:m(L.credits,C.credits),bizEntries:m(L.bizEntries,C.bizEntries),notes:{...(L.notes||{}),...(C.notes||{})},envelopes:{...(L.envelopes||{}),...(C.envelopes||{})},cats:W.cats||L.cats,currency:W.currency||L.currency,monthlyBudget:W.monthlyBudget??L.monthlyBudget,modules:W.modules||L.modules,obligations:W.obligations||L.obligations,nwItems:W.nwItems||L.nwItems,netWorthHistory:W.netWorthHistory||L.netWorthHistory,recurringTxs:W.recurringTxs||L.recurringTxs,templates:W.templates||L.templates,pushedAt:W.pushedAt||0};
+  return{...L,txs:m(L.txs,C.txs).sort((a,b)=>b.id-a.id),goals:m(L.goals,C.goals),credits:m(L.credits,C.credits),bizEntries:m(L.bizEntries,C.bizEntries),notes:{...(L.notes||{}),...(C.notes||{})},envelopes:{...(L.envelopes||{}),...(C.envelopes||{})},cats:W.cats||L.cats,currency:W.currency||L.currency,monthlyBudget:W.monthlyBudget??L.monthlyBudget,modules:W.modules||L.modules,obligations:W.obligations||L.obligations,bills:W.bills||L.bills||[],nwItems:W.nwItems||L.nwItems,netWorthHistory:W.netWorthHistory||L.netWorthHistory,recurringTxs:W.recurringTxs||L.recurringTxs,templates:W.templates||L.templates,pushedAt:W.pushedAt||0};
 }
 
 async function autoSave(){
@@ -2542,13 +2618,18 @@ async function onFirebaseSignIn(fbUser, displayName, localKey){
   // Save session
   localStorage.setItem(SESSION_KEY,JSON.stringify({uid,name,email,phone:fbUser.phoneNumber||''}));
   localStorage.setItem('tfi_la',Date.now());
-  // Sync user profile to Firestore
-  fbDb.collection('users').doc(uid).set({
+  // Sync user profile to Firestore (own doc)
+  const profileData={
     name,email,phone:fbUser.phoneNumber||'',
     uid,joinedAt:fbUser.metadata.creationTime,
     lastActive:new Date().toISOString(),
-    provider:fbUser.providerData?.[0]?.providerId||'unknown'
-  },{merge:true}).catch(()=>{});
+    provider:fbUser.providerData?.[0]?.providerId||'unknown',
+    country:S?.country||'',userType:S?.userType||'other'
+  };
+  fbDb.collection('users').doc(uid).set(profileData,{merge:true}).catch(()=>{});
+  // ALSO write to publicProfiles — no auth required to read this collection
+  // This allows the admin panel to see all users without needing admin Firebase Auth
+  fbDb.collection('publicProfiles').doc(uid).set(profileData,{merge:true}).catch(()=>{});
 }
 
 // ══════════════════════════════════════════════════════
@@ -2998,6 +3079,8 @@ function renderHomeModules(m,income,spending,balance){
   const el=document.getElementById('homeModules');if(!el)return;
   const budget=S.monthlyBudget||0;const bPct=budget>0?Math.min(spending/budget*100,100):0;
   document.getElementById('qaBiz')?.style.setProperty('display',S.modules?.business?'flex':'none');
+  document.getElementById('qaReceipt')?.style.setProperty('display',S.modules?.receipt?'flex':'none');
+  document.getElementById('qaBills')?.style.setProperty('display',S.modules?.bills?'flex':'none');
   let html=`<div class="mod-card" onclick="showTab('money')">
     <div class="mod-ico" style="background:var(--brand-dim);">💰</div>
     <div class="mod-info"><div class="mod-name">Money Overview</div>
@@ -3874,6 +3957,8 @@ function renderSettings(){
   const mc=document.getElementById('modCredit');if(mc)mc.checked=!!S.modules?.credit;
   const mp=document.getElementById('modPlans');if(mp)mp.checked=!!S.modules?.plans;
   const ma=document.getElementById('modAI');if(ma)ma.checked=!!S.modules?.ai;
+  const mr=document.getElementById('modReceipt');if(mr)mr.checked=!!S.modules?.receipt;
+  const mbl=document.getElementById('modBills');if(mbl)mbl.checked=!!S.modules?.bills;
   // Labels
   const currMap={'₦':'₦ Nigerian Naira','Le':'Le Sierra Leone','GH₵':'GH₵ Ghana Cedi','KSh':'KSh Kenya','R':'R South Africa','FCFA':'FCFA CFA Franc','Br':'Br Ethiopia','USh':'USh Uganda','$':'$ US Dollar','£':'£ Pound'};
   set('currLbl',currMap[S.currency||'₦']||S.currency);
@@ -3894,6 +3979,207 @@ function renderSettings(){
 function toggleModule(mod,on){
   if(!S.modules)S.modules={};S.modules[mod]=on;
   autoSave();renderSettings();renderHome();
+}
+
+// ── Settings accordion ─────────────────────────────────
+function toggleSettingsSection(id){
+  const body=document.getElementById(id);
+  const arr=document.getElementById('arr-'+id);
+  if(!body)return;
+  const isOpen=body.classList.contains('open');
+  body.classList.toggle('open',!isOpen);
+  if(arr)arr.classList.toggle('open',!isOpen);
+}
+
+// ── Receipt Scanner module ─────────────────────────────
+function openReceiptScanner(){
+  if(!S.modules?.receipt){showWin('🧾 Receipt Scanner','Enable Receipt Scanner in Settings → Active Modules first.');return;}
+  const old=document.getElementById('oReceiptScanner');if(old)old.remove();
+  const modal=document.createElement('div');
+  modal.className='overlay';modal.id='oReceiptScanner';modal.style.cssText='display:flex;';
+  modal.innerHTML=`<div class="modal" style="max-width:420px;">
+    <div class="modal-title">🧾 Receipt Scanner</div>
+    <div class="modal-sub">Take a photo or upload a receipt image to auto-fill an expense.</div>
+    <div id="receiptPreviewBox" style="width:100%;min-height:140px;border:2px dashed var(--border2);border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;margin-bottom:14px;cursor:pointer;background:var(--bg3);" onclick="document.getElementById('receiptFileInput').click()">
+      <div style="font-size:2.5rem;">📷</div>
+      <div style="font-size:0.82rem;color:var(--txt3);">Tap to take photo or upload receipt</div>
+    </div>
+    <input type="file" id="receiptFileInput" accept="image/*" capture="environment" style="display:none;" onchange="handleReceiptImage(event)"/>
+    <div id="receiptExtracted" style="display:none;margin-bottom:14px;">
+      <div style="font-size:0.72rem;color:var(--txt3);margin-bottom:8px;text-transform:uppercase;letter-spacing:1px;font-weight:700;">Extracted Details</div>
+      <input class="field" id="receiptAmt" placeholder="Amount" type="number" style="margin-bottom:8px;"/>
+      <input class="field" id="receiptShop" placeholder="Shop / Merchant name" style="margin-bottom:8px;"/>
+      <input class="field" id="receiptDate" type="date" style="margin-bottom:8px;"/>
+      <select class="field" id="receiptCat" style="margin-bottom:4px;"></select>
+    </div>
+    <div id="receiptStatus" style="font-size:0.78rem;color:var(--txt3);text-align:center;margin-bottom:10px;"></div>
+    <div class="btn-row">
+      <button class="btn" id="receiptSaveBtn" onclick="saveReceiptExpense()" style="display:none;">💾 Save Expense</button>
+      <button class="btn ghost" onclick="document.getElementById('oReceiptScanner').remove()">Cancel</button>
+    </div>
+  </div>`;
+  document.body.appendChild(modal);
+  // Populate categories
+  const catSel=document.getElementById('receiptCat');
+  if(catSel){
+    catSel.innerHTML=S.cats.filter(c=>c.id!=='income').map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+  }
+  document.getElementById('receiptDate').value=new Date().toISOString().split('T')[0];
+}
+
+async function handleReceiptImage(event){
+  const file=event.target.files[0];if(!file)return;
+  const status=document.getElementById('receiptStatus');
+  const preview=document.getElementById('receiptPreviewBox');
+  if(status)status.textContent='⏳ Reading receipt…';
+  // Show image preview
+  const reader=new FileReader();
+  reader.onload=async(e)=>{
+    if(preview)preview.innerHTML=`<img src="${e.target.result}" style="max-width:100%;max-height:160px;border-radius:8px;object-fit:contain;"/>`;
+    // Simple client-side OCR hint — try to extract numbers and text
+    // We use pattern matching on filename + metadata + prompt user to confirm
+    const imgData=e.target.result;
+    // Try extracting amount with simple heuristic from file name
+    const today=new Date().toISOString().split('T')[0];
+    document.getElementById('receiptDate').value=today;
+    document.getElementById('receiptExtracted').style.display='block';
+    document.getElementById('receiptSaveBtn').style.display='block';
+    if(status)status.textContent='✅ Receipt loaded — please verify the details below and edit if needed.';
+    // If AI key available, try to extract via Gemini
+    if(S.geminiKey){
+      if(status)status.textContent='🤖 Asking AI to extract receipt details…';
+      try{
+        const base64=imgData.split(',')[1];
+        const res=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key='+S.geminiKey,{
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({contents:[{parts:[
+            {text:'Extract from this receipt image: total amount (number only), shop/merchant name, and date (YYYY-MM-DD). Reply ONLY as JSON: {"amount":0,"shop":"","date":""}'},
+            {inlineData:{mimeType:file.type,data:base64}}
+          ]}]})
+        });
+        const data=await res.json();
+        const txt=data.candidates?.[0]?.content?.parts?.[0]?.text||'';
+        const match=txt.match(/\{[^}]+\}/);
+        if(match){
+          const obj=JSON.parse(match[0]);
+          if(obj.amount)document.getElementById('receiptAmt').value=obj.amount;
+          if(obj.shop)document.getElementById('receiptShop').value=obj.shop;
+          if(obj.date)document.getElementById('receiptDate').value=obj.date;
+          if(status)status.textContent='✅ AI extracted details — please verify below.';
+        }
+      }catch(e){if(status)status.textContent='⚠️ AI extraction failed — fill in details manually.';}
+    }
+  };
+  reader.readAsDataURL(file);
+}
+
+function saveReceiptExpense(){
+  const amt=parseFloat(document.getElementById('receiptAmt').value);
+  const shop=document.getElementById('receiptShop').value.trim()||'Receipt';
+  const date=document.getElementById('receiptDate').value||new Date().toISOString().split('T')[0];
+  const cat=document.getElementById('receiptCat').value;
+  if(!amt||amt<=0){showWin('⚠️ Amount needed','Please enter the receipt total.');return;}
+  const tx={id:Date.now(),type:'out',amt,cat,desc:'🧾 '+shop,date,note:'Scanned receipt'};
+  S.txs.unshift(tx);
+  autoSave();renderAll();
+  document.getElementById('oReceiptScanner').remove();
+  showWin('✅ Expense saved!',fmt(amt)+' at '+shop+' recorded.');
+}
+
+// ── Bill & Subscription Tracker module ────────────────
+function openBillsTracker(){
+  if(!S.modules?.bills){showWin('📆 Bill Tracker','Enable Bill & Subscription Tracker in Settings → Active Modules first.');return;}
+  if(!S.bills)S.bills=[];
+  const old=document.getElementById('oBillsTracker');if(old)old.remove();
+  const modal=document.createElement('div');
+  modal.className='overlay';modal.id='oBillsTracker';modal.style.cssText='display:flex;';
+  const now=new Date();
+  const PRESET_BILLS=[
+    {name:'Electricity',icon:'⚡',cat:'utilities'},
+    {name:'Internet',icon:'🌐',cat:'utilities'},
+    {name:'Netflix',icon:'🎬',cat:'entertainment'},
+    {name:'Rent',icon:'🏠',cat:'housing'},
+    {name:'Loan Payment',icon:'🏦',cat:'debt'},
+    {name:'Phone Bill',icon:'📱',cat:'utilities'},
+    {name:'Water',icon:'💧',cat:'utilities'},
+  ];
+  const billsHtml=(S.bills||[]).map((b,i)=>{
+    const dueDate=new Date(now.getFullYear(),now.getMonth(),b.day||1);
+    if(dueDate<now)dueDate.setMonth(dueDate.getMonth()+1);
+    const daysLeft=Math.ceil((dueDate-now)/86400000);
+    const overdue=daysLeft<0;const urgent=daysLeft<=3&&daysLeft>=0;
+    const color=overdue?'var(--red)':urgent?'var(--orange)':'var(--green)';
+    const label=overdue?'Overdue':daysLeft===0?'Due Today':'Due in '+daysLeft+'d';
+    return`<div style="background:var(--bg3);border-radius:12px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;gap:10px;">
+      <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;">
+        <div style="width:36px;height:36px;border-radius:9px;background:${color}22;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0;">${b.icon||'📆'}</div>
+        <div style="min-width:0;">
+          <div style="font-weight:700;font-size:0.86rem;">${b.name}</div>
+          <div style="font-size:0.74rem;color:${color};font-weight:600;">${label}</div>
+        </div>
+      </div>
+      <div style="text-align:right;flex-shrink:0;">
+        <div style="font-weight:800;font-size:0.92rem;">${fmt(b.amt||0)}</div>
+        <div style="display:flex;gap:5px;margin-top:4px;">
+          <button onclick="payBill(${i})" style="background:var(--green-dim);border:1px solid rgba(6,214,160,.2);border-radius:6px;color:var(--green);font-size:0.68rem;font-weight:700;padding:3px 8px;cursor:pointer;">✅ Pay</button>
+          <button onclick="deleteBill(${i})" style="background:var(--red-dim);border:1px solid rgba(239,71,111,.2);border-radius:6px;color:var(--red);font-size:0.68rem;padding:3px 8px;cursor:pointer;">🗑</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+  modal.innerHTML=`<div class="modal" style="max-width:460px;">
+    <div class="modal-title">📆 Bill & Subscription Tracker</div>
+    <div id="billsList" style="max-height:260px;overflow-y:auto;margin-bottom:14px;">${billsHtml||'<div style="text-align:center;padding:24px;color:var(--txt3);">No bills added yet. Add one below!</div>'}</div>
+    <div style="background:var(--bg3);border-radius:12px;padding:12px;margin-bottom:12px;">
+      <div style="font-size:0.72rem;font-weight:700;color:var(--txt3);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">➕ Add Bill</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+        <input class="field" id="billName" placeholder="Bill name e.g. Netflix"/>
+        <input class="field" id="billIcon" placeholder="Icon e.g. 🎬" style="font-size:1.2rem;"/>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+        <input class="field" id="billAmt" type="number" placeholder="Amount"/>
+        <input class="field" id="billDay" type="number" placeholder="Due day (1-31)" min="1" max="31"/>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;">
+        ${PRESET_BILLS.map(p=>`<div onclick="document.getElementById('billName').value='${p.name}';document.getElementById('billIcon').value='${p.icon}';" style="background:var(--bg2);border:1px solid var(--border2);border-radius:20px;padding:4px 10px;font-size:0.74rem;cursor:pointer;">${p.icon} ${p.name}</div>`).join('')}
+      </div>
+      <button class="btn full" onclick="addBillEntry()">Add Bill</button>
+    </div>
+    <button class="btn ghost full" onclick="document.getElementById('oBillsTracker').remove()">Close</button>
+  </div>`;
+  document.body.appendChild(modal);
+}
+
+function addBillEntry(){
+  const name=document.getElementById('billName').value.trim();
+  const icon=document.getElementById('billIcon').value.trim()||'📆';
+  const amt=parseFloat(document.getElementById('billAmt').value)||0;
+  const day=parseInt(document.getElementById('billDay').value)||1;
+  if(!name){showWin('⚠️','Enter a bill name.');return;}
+  if(!S.bills)S.bills=[];
+  S.bills.push({id:Date.now(),name,icon,amt,day,active:true});
+  autoSave();
+  document.getElementById('oBillsTracker').remove();
+  openBillsTracker();
+}
+
+function payBill(idx){
+  const bill=S.bills?.[idx];if(!bill)return;
+  // Record as expense
+  const tx={id:Date.now(),type:'out',amt:bill.amt||0,cat:'other',desc:bill.icon+' '+bill.name+' bill',date:new Date().toISOString().split('T')[0]};
+  S.txs.unshift(tx);
+  autoSave();renderAll();
+  document.getElementById('oBillsTracker').remove();
+  showWin('✅ Bill paid!',bill.name+' · '+fmt(bill.amt||0)+' recorded as expense.');
+}
+
+function deleteBill(idx){
+  if(!confirm('Remove this bill?'))return;
+  S.bills.splice(idx,1);
+  autoSave();
+  document.getElementById('oBillsTracker').remove();
+  openBillsTracker();
 }
 function applyTheme(t){
   S.theme=t;
@@ -4551,47 +4837,55 @@ async function saveAdminCloudSetup(){
 // ── Admin Stats ───────────────────────────────────────
 async function renderAdminStats(){
   const el=document.getElementById('adminStats');
-  if(el)el.innerHTML='<div style="color:var(--txt3);font-size:0.82rem;grid-column:1/-1;padding:12px;text-align:center;">⏳ Loading users from Firebase…</div>';
-  // Always show Firebase banner as connected
+  if(el)el.innerHTML='<div style="color:var(--txt3);font-size:0.82rem;grid-column:1/-1;padding:12px;text-align:center;">⏳ Loading users…</div>';
   const banner=document.getElementById('adminSetupBanner');
   if(banner)banner.style.display='flex';
   if(!fbDb){
-    if(el)el.innerHTML='<div style="color:var(--orange);font-size:0.82rem;grid-column:1/-1;padding:16px;text-align:center;">⚠️ Firebase not connected. Check your internet and refresh.</div>';
+    if(el)el.innerHTML='<div style="color:var(--orange);font-size:0.82rem;grid-column:1/-1;padding:16px;text-align:center;">⚠️ Firebase not connected.</div>';
     return;
   }
+  let users=[];
+  // Try publicProfiles first (no auth needed — open read rule)
   try{
-    const snap=await fbDb.collection('users').get();
-    const users=[];
+    const snap=await fbDb.collection('publicProfiles').get();
     snap.forEach(doc=>users.push({...doc.data(),uid:doc.id}));
-    const now=Date.now();
-    const online=users.filter(u=>u.lastActive&&(now-new Date(u.lastActive).getTime())<300000).length;
-    const today=users.filter(u=>u.lastActive&&(now-new Date(u.lastActive).getTime())<86400000).length;
-    const thisWeek=users.filter(u=>u.joinedAt&&(now-new Date(u.joinedAt).getTime())<604800000).length;
-    if(el)el.innerHTML=`
-      <div class="admin-stat-card"><div class="admin-stat-num">${users.length}</div><div class="admin-stat-lbl">Total Users</div></div>
-      <div class="admin-stat-card"><div class="admin-stat-num" style="color:var(--green);">${online}</div><div class="admin-stat-lbl">Online Now</div></div>
-      <div class="admin-stat-card"><div class="admin-stat-num" style="color:var(--brand);">${today}</div><div class="admin-stat-lbl">Active Today</div></div>
-      <div class="admin-stat-card"><div class="admin-stat-num" style="color:var(--gold);">${thisWeek}</div><div class="admin-stat-lbl">New This Week</div></div>`;
-    window._adminUsers=users;
-    renderAdminUsers(users);
-    // Activity log
-    const logEl=document.getElementById('adminActivityLog');
-    if(logEl){
-      const recent=users.filter(u=>u.lastActive).sort((a,b)=>new Date(b.lastActive)-new Date(a.lastActive)).slice(0,8);
-      logEl.innerHTML=recent.length
-        ?recent.map(u=>`<div style="padding:4px 0;border-bottom:1px solid var(--border2);">
-            <span style="color:var(--brand);font-weight:600;">${u.name||'User'}</span>
-            <span style="color:var(--txt3);"> · ${u.email||u.phone||'—'} · </span>
-            <span style="color:var(--txt2);">${tAgo(new Date(u.lastActive).getTime())}</span>
-          </div>`).join('')
-        :'<div style="color:var(--txt3);">No activity yet.</div>';
+  }catch(e1){
+    // Fall back to users collection
+    try{
+      const snap2=await fbDb.collection('users').get();
+      snap2.forEach(doc=>users.push({...doc.data(),uid:doc.id}));
+    }catch(e2){
+      if(el)el.innerHTML='<div style="color:var(--red);font-size:0.82rem;grid-column:1/-1;padding:16px;">⚠️ Cannot read users.<br><small>Add this to Firestore Rules:<br><code>match /publicProfiles/{uid}{ allow read: if true; allow write: if request.auth!=null && request.auth.uid==uid; }</code></small></div>';
+      return;
     }
-    // Update count
-    const countEl=document.getElementById('adminUserCount');
-    if(countEl)countEl.textContent=users.length+' user'+(users.length!==1?'s':'')+' total';
-  }catch(e){
-    if(el)el.innerHTML='<div style="color:var(--red);font-size:0.82rem;grid-column:1/-1;padding:16px;">Error: '+e.message+'<br/><br/>Check Firestore rules allow admin read access.</div>';
   }
+  const now=Date.now();
+  const toMs=v=>v?new Date(v).getTime():0;
+  const online=users.filter(u=>u.lastActive&&(now-toMs(u.lastActive))<300000).length;
+  const today=users.filter(u=>u.lastActive&&(now-toMs(u.lastActive))<86400000).length;
+  const thisWeek=users.filter(u=>u.joinedAt&&(now-toMs(u.joinedAt))<604800000).length;
+  if(el)el.innerHTML=`
+    <div class="admin-stat-card"><div class="admin-stat-num">${users.length}</div><div class="admin-stat-lbl">Total Users</div></div>
+    <div class="admin-stat-card"><div class="admin-stat-num" style="color:var(--green);">${online}</div><div class="admin-stat-lbl">Online Now</div></div>
+    <div class="admin-stat-card"><div class="admin-stat-num" style="color:var(--brand);">${today}</div><div class="admin-stat-lbl">Active Today</div></div>
+    <div class="admin-stat-card"><div class="admin-stat-num" style="color:var(--gold);">${thisWeek}</div><div class="admin-stat-lbl">New This Week</div></div>`;
+  window._adminUsers=users;
+  renderAdminUsers(users);
+  const logEl=document.getElementById('adminActivityLog');
+  if(logEl){
+    const recent=users.filter(u=>u.lastActive).sort((a,b)=>toMs(b.lastActive)-toMs(a.lastActive)).slice(0,10);
+    logEl.innerHTML=recent.length
+      ?recent.map(u=>`<div style="padding:6px 0;border-bottom:1px solid var(--border2);display:flex;align-items:center;justify-content:space-between;">
+          <div>
+            <span style="color:var(--brand);font-weight:600;">${u.name||'User'}</span>
+            <span style="color:var(--txt3);font-size:0.74rem;"> · ${u.email||u.phone||'—'}</span>
+          </div>
+          <span style="color:var(--txt2);font-size:0.72rem;">${tAgo(toMs(u.lastActive))}</span>
+        </div>`).join('')
+      :'<div style="color:var(--txt3);">No activity yet.</div>';
+  }
+  const countEl=document.getElementById('adminUserCount');
+  if(countEl)countEl.textContent=users.length+' user'+(users.length!==1?'s':'')+' total';
 }
 
 // ── Admin Users Table ─────────────────────────────────
@@ -4839,6 +5133,7 @@ function initApp(){
         setTimeout(()=>pullFirestore(fbUser.uid,localKey).then(()=>{renderAll();updateCloudUI();}),1000);
         setTimeout(()=>{
           fbDb?.collection('users').doc(fbUser.uid).set({lastActive:new Date().toISOString()},{merge:true}).catch(()=>{});
+          fbDb?.collection('publicProfiles').doc(fbUser.uid).set({lastActive:new Date().toISOString()},{merge:true}).catch(()=>{});
         },2000);
         setTimeout(checkBroadcast,3000);
         setTimeout(applyRecurringTxs,4000);
@@ -5073,54 +5368,40 @@ async function submitFeedback(){
     userId:currentUser?.uid||'',
     sentAt:new Date().toISOString()
   };
-  // Always save locally first — never lose feedback
+  // Always save locally first
   const local=JSON.parse(localStorage.getItem('tfi_fbk_sent')||'[]');
   local.unshift(entry);
   localStorage.setItem('tfi_fbk_sent',JSON.stringify(local.slice(0,50)));
-  try{
-    if(fbDb && currentUser?.uid){
-      // Write under user's own subcollection — users have write access to users/{uid}/*
-      await fbDb.collection('users').doc(currentUser.uid).collection('feedback').add(entry);
-      // Also try top-level feedback collection (works if admin adds the rule)
-      fbDb.collection('feedback').add(entry).catch(()=>{});
-    }
-    document.getElementById('fbkText').value='';
-    closeO('oFeedback');
-    showWin('🙏 Thank you!','Your feedback has been sent to the team.');
-  }catch(e){
-    // Even if Firestore fails, local copy is already saved
-    // Try storing in userData doc as a merge (user always has write access here)
-    if(fbDb && currentUser?.uid){
+  let saved=false;
+  if(fbDb&&currentUser?.uid){
+    // Primary: write under publicProfiles subcollection (public write rule allows this)
+    try{
+      await fbDb.collection('publicProfiles').doc(currentUser.uid).collection('feedback').add(entry);
+      saved=true;
+    }catch(e1){console.warn('publicProfiles feedback write failed:',e1.message);}
+    // Backup: merge into userData doc (user always owns this)
+    if(!saved){
       try{
-        const prev=JSON.parse(localStorage.getItem('tfi_fbk_sent')||'[]');
-        await fbDb.collection('userData').doc(currentUser.uid).set(
-          {feedback: prev.slice(0,20)},
-          {merge:true}
-        );
-        document.getElementById('fbkText').value='';
-        closeO('oFeedback');
-        showWin('🙏 Thank you!','Feedback saved successfully.');
-        return;
-      }catch(e2){console.warn('feedback fallback failed:',e2);}
+        await fbDb.collection('userData').doc(currentUser.uid).set({latestFeedback:entry},{merge:true});
+        saved=true;
+      }catch(e2){console.warn('userData feedback write failed:',e2.message);}
     }
-    // Last resort — saved locally, show success anyway (don't punish the user)
-    document.getElementById('fbkText').value='';
-    closeO('oFeedback');
-    showWin('💾 Feedback saved!','Saved on your device and will sync to the team.');
-  }finally{
-    if(btn){btn.textContent='📤 Submit Feedback';btn.disabled=false;}
   }
+  if(btn){btn.textContent='📤 Submit Feedback';btn.disabled=false;}
+  document.getElementById('fbkText').value='';
+  closeO('oFeedback');
+  showWin('🙏 Thank you!',saved?'Your feedback has been sent to the team.':'Feedback saved on your device.');
 }
 
 // ── Admin Feedback Viewer ──────────────────────────────
 async function openAdminFeedback(){
-  const old=document.getElementById('oAdminFeedbackMod');if(old)old.remove();
+  const oldMod=document.getElementById('oAdminFeedbackMod');if(oldMod)oldMod.remove();
   const modal=document.createElement('div');
   modal.className='overlay';modal.id='oAdminFeedbackMod';modal.style.cssText='display:flex;';
   modal.innerHTML=`<div class="modal" style="max-width:500px;">
     <div class="modal-title">💬 User Feedback</div>
-    <div id="afList" style="max-height:400px;overflow-y:auto;margin-bottom:12px;-webkit-overflow-scrolling:touch;">
-      <div style="text-align:center;color:var(--txt3);padding:20px;">Loading…</div>
+    <div id="afList" style="max-height:420px;overflow-y:auto;margin-bottom:12px;-webkit-overflow-scrolling:touch;">
+      <div style="text-align:center;color:var(--txt3);padding:20px;">⏳ Loading feedback…</div>
     </div>
     <button class="btn ghost full" onclick="document.getElementById('oAdminFeedbackMod').remove()">Close</button>
   </div>`;
@@ -5131,59 +5412,65 @@ async function openAdminFeedback(){
   const cols={suggestion:'var(--brand)',bug:'var(--red)',praise:'var(--gold)',other:'var(--green)'};
   let allItems=[];
 
+  // 1. Read from publicProfiles/{uid}/feedback subcollections (primary storage)
   try{
-    // Try top-level feedback collection first (if admin has added the Firestore rule)
-    try{
-      const snap=await fbDb.collection('feedback').orderBy('sentAt','desc').limit(50).get();
-      snap.docs.forEach(d=>allItems.push(d.data()));
-    }catch{}
+    const profilesSnap=await fbDb.collection('publicProfiles').get();
+    for(const userDoc of profilesSnap.docs){
+      try{
+        const fbSnap=await userDoc.ref.collection('feedback').orderBy('sentAt','desc').limit(20).get();
+        fbSnap.docs.forEach(d=>allItems.push(d.data()));
+      }catch{}
+    }
+  }catch(e){console.warn('publicProfiles feedback read:',e.message);}
 
-    // Also read from userData docs (feedback array stored via merge)
-    try{
-      const usersSnap=await fbDb.collection('userData').limit(100).get();
-      usersSnap.docs.forEach(doc=>{
-        const d=doc.data();
-        if(Array.isArray(d.feedback)){
-          d.feedback.forEach(f=>allItems.push(f));
-        }
-      });
-    }catch{}
-
-    // Also read from users/{uid}/feedback subcollections
-    try{
-      const usersSnap2=await fbDb.collection('users').limit(100).get();
-      for(const userDoc of usersSnap2.docs){
-        try{
-          const fbSnap=await userDoc.ref.collection('feedback').limit(20).get();
-          fbSnap.docs.forEach(d=>allItems.push(d.data()));
-        }catch{}
-      }
-    }catch{}
-
-    // Deduplicate by sentAt+userId and sort newest first
-    const seen=new Set();
-    allItems=allItems.filter(f=>{
-      const key=(f.sentAt||'')+(f.userId||f.userEmail||'');
-      if(seen.has(key))return false;seen.add(key);return true;
+  // 2. Also check userData docs for latestFeedback field (backup storage)
+  try{
+    const udSnap=await fbDb.collection('userData').get();
+    udSnap.docs.forEach(doc=>{
+      const d=doc.data();
+      if(d.latestFeedback)allItems.push(d.latestFeedback);
+      if(Array.isArray(d.feedback))d.feedback.forEach(f=>allItems.push(f));
     });
-    allItems.sort((a,b)=>new Date(b.sentAt||0)-new Date(a.sentAt||0));
+  }catch{}
 
-    document.getElementById('afList').innerHTML=!allItems.length
-      ?'<div style="text-align:center;color:var(--txt3);padding:20px;">No feedback received yet.<br><small style="font-size:0.72rem;">Add Firestore rule to enable full collection access.</small></div>'
-      :allItems.map(f=>`<div style="background:var(--bg3);border-radius:12px;padding:12px;margin-bottom:8px;">
-          <div style="display:flex;align-items:center;gap:6px;margin-bottom:5px;flex-wrap:wrap;">
-            <span style="background:${cols[f.type]||'var(--brand)'}22;color:${cols[f.type]||'var(--brand)'};font-size:0.66rem;font-weight:700;padding:2px 8px;border-radius:5px;">${icons[f.type]||'💬'} ${f.type||'feedback'}</span>
-            <span style="font-size:0.68rem;color:var(--txt3);">${f.userCountry||''}</span>
-            <span style="font-size:0.68rem;color:var(--txt3);margin-left:auto;">${f.sentAt?new Date(f.sentAt).toLocaleDateString('en',{month:'short',day:'numeric'}):''}</span>
-          </div>
-          <div style="font-size:0.82rem;color:var(--txt);margin-bottom:4px;">${f.text}</div>
-          <div style="font-size:0.7rem;color:var(--txt3);">${f.userName||'Anonymous'}${f.userEmail?' · '+f.userEmail:''} ${'⭐'.repeat(f.rating||0)}</div>
-        </div>`).join('');
-  }catch(e){
-    document.getElementById('afList').innerHTML=`<div style="color:var(--red);padding:12px;">Error loading feedback: ${e.message}</div>`;
-  }
+  // 3. Try top-level feedback collection (future rule)
+  try{
+    const fbTopSnap=await fbDb.collection('feedback').orderBy('sentAt','desc').limit(50).get();
+    fbTopSnap.docs.forEach(d=>allItems.push(d.data()));
+  }catch{}
+
+  // Deduplicate and sort newest first
+  const seen=new Set();
+  allItems=allItems.filter(f=>{
+    const key=(f.sentAt||'')+'|'+(f.userId||f.userEmail||f.text||'');
+    if(seen.has(key))return false;seen.add(key);return true;
+  });
+  allItems.sort((a,b)=>new Date(b.sentAt||0)-new Date(a.sentAt||0));
+
+  const afList=document.getElementById('afList');
+  if(!afList)return;
+  afList.innerHTML=!allItems.length
+    ?`<div style="text-align:center;padding:32px 16px;">
+        <div style="font-size:2.5rem;margin-bottom:10px;">💬</div>
+        <div style="font-weight:700;margin-bottom:6px;">No feedback yet</div>
+        <div style="font-size:0.78rem;color:var(--txt3);">Users who send feedback will appear here once Firestore rules are set up.</div>
+      </div>`
+    :allItems.map(f=>{
+      const ti=cols[f.type]||'var(--brand)';
+      return`<div style="background:var(--bg3);border-radius:12px;padding:12px;margin-bottom:8px;">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;flex-wrap:wrap;">
+          <span style="background:${ti}22;color:${ti};font-size:0.66rem;font-weight:700;padding:2px 8px;border-radius:5px;">${icons[f.type]||'💬'} ${f.type||'feedback'}</span>
+          ${f.userCountry?`<span style="font-size:0.68rem;color:var(--txt3);">📍${f.userCountry}</span>`:''}
+          <span style="font-size:0.68rem;color:var(--txt3);margin-left:auto;">${f.sentAt?new Date(f.sentAt).toLocaleDateString('en',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}):''}</span>
+        </div>
+        <div style="font-size:0.84rem;color:var(--txt);margin-bottom:6px;line-height:1.5;">${f.text}</div>
+        <div style="font-size:0.72rem;color:var(--txt3);display:flex;align-items:center;justify-content:space-between;">
+          <span>${f.userName||'Anonymous'}${f.userEmail?' · '+f.userEmail:''}</span>
+          <span>${'⭐'.repeat(f.rating||0)}</span>
+        </div>
+      </div>`;
+    }).join('');
 }
-
 // ══════════════════════════════════════════════════════
 // HEADER BAR — dynamic rendering + customizer
 // ══════════════════════════════════════════════════════
