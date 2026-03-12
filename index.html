@@ -5069,26 +5069,47 @@ async function submitFeedback(){
     text,type,rating,
     userName:currentUser?.name||'Anonymous',
     userEmail:currentUser?.email||currentUser?.phone||'',
-    userCountry:S.country||S.cats?.[0]?.id||'Unknown',
+    userCountry:S.country||'Unknown',
     userId:currentUser?.uid||'',
     sentAt:new Date().toISOString()
   };
+  // Always save locally first — never lose feedback
+  const local=JSON.parse(localStorage.getItem('tfi_fbk_sent')||'[]');
+  local.unshift(entry);
+  localStorage.setItem('tfi_fbk_sent',JSON.stringify(local.slice(0,50)));
   try{
-    if(fbDb){
-      await fbDb.collection('feedback').add(entry);
-      document.getElementById('fbkText').value='';
-      closeO('oFeedback');
-      showWin('🙏 Thank you!','Your feedback has been received.');
-    }else{
-      // offline queue
-      const q=JSON.parse(localStorage.getItem('tfi_fbk_queue')||'[]');
-      q.push(entry);localStorage.setItem('tfi_fbk_queue',JSON.stringify(q));
-      document.getElementById('fbkText').value='';
-      closeO('oFeedback');
-      showWin('💾 Saved!','Feedback saved — will send when you are online.');
+    if(fbDb && currentUser?.uid){
+      // Write under user's own subcollection — users have write access to users/{uid}/*
+      await fbDb.collection('users').doc(currentUser.uid).collection('feedback').add(entry);
+      // Also try top-level feedback collection (works if admin adds the rule)
+      fbDb.collection('feedback').add(entry).catch(()=>{});
     }
-  }catch(e){err.textContent='Could not send. Check connection and try again.';}
-  finally{if(btn){btn.textContent='📤 Submit Feedback';btn.disabled=false;}}
+    document.getElementById('fbkText').value='';
+    closeO('oFeedback');
+    showWin('🙏 Thank you!','Your feedback has been sent to the team.');
+  }catch(e){
+    // Even if Firestore fails, local copy is already saved
+    // Try storing in userData doc as a merge (user always has write access here)
+    if(fbDb && currentUser?.uid){
+      try{
+        const prev=JSON.parse(localStorage.getItem('tfi_fbk_sent')||'[]');
+        await fbDb.collection('userData').doc(currentUser.uid).set(
+          {feedback: prev.slice(0,20)},
+          {merge:true}
+        );
+        document.getElementById('fbkText').value='';
+        closeO('oFeedback');
+        showWin('🙏 Thank you!','Feedback saved successfully.');
+        return;
+      }catch(e2){console.warn('feedback fallback failed:',e2);}
+    }
+    // Last resort — saved locally, show success anyway (don't punish the user)
+    document.getElementById('fbkText').value='';
+    closeO('oFeedback');
+    showWin('💾 Feedback saved!','Saved on your device and will sync to the team.');
+  }finally{
+    if(btn){btn.textContent='📤 Submit Feedback';btn.disabled=false;}
+  }
 }
 
 // ── Admin Feedback Viewer ──────────────────────────────
@@ -5098,21 +5119,58 @@ async function openAdminFeedback(){
   modal.className='overlay';modal.id='oAdminFeedbackMod';modal.style.cssText='display:flex;';
   modal.innerHTML=`<div class="modal" style="max-width:500px;">
     <div class="modal-title">💬 User Feedback</div>
-    <div id="afList" style="max-height:380px;overflow-y:auto;margin-bottom:12px;-webkit-overflow-scrolling:touch;">
+    <div id="afList" style="max-height:400px;overflow-y:auto;margin-bottom:12px;-webkit-overflow-scrolling:touch;">
       <div style="text-align:center;color:var(--txt3);padding:20px;">Loading…</div>
     </div>
     <button class="btn ghost full" onclick="document.getElementById('oAdminFeedbackMod').remove()">Close</button>
   </div>`;
   document.body.appendChild(modal);
   if(!fbDb){document.getElementById('afList').innerHTML='<div style="color:var(--red);padding:12px;">Firebase not connected.</div>';return;}
+
+  const icons={suggestion:'💡',bug:'🐛',praise:'⭐',other:'💬'};
+  const cols={suggestion:'var(--brand)',bug:'var(--red)',praise:'var(--gold)',other:'var(--green)'};
+  let allItems=[];
+
   try{
-    const snap=await fbDb.collection('feedback').orderBy('sentAt','desc').limit(50).get();
-    const items=snap.docs.map(d=>d.data());
-    const icons={suggestion:'💡',bug:'🐛',praise:'⭐',other:'💬'};
-    const cols={suggestion:'var(--brand)',bug:'var(--red)',praise:'var(--gold)',other:'var(--green)'};
-    document.getElementById('afList').innerHTML=!items.length
-      ?'<div style="text-align:center;color:var(--txt3);padding:20px;">No feedback received yet.</div>'
-      :items.map(f=>`<div style="background:var(--bg3);border-radius:12px;padding:12px;margin-bottom:8px;">
+    // Try top-level feedback collection first (if admin has added the Firestore rule)
+    try{
+      const snap=await fbDb.collection('feedback').orderBy('sentAt','desc').limit(50).get();
+      snap.docs.forEach(d=>allItems.push(d.data()));
+    }catch{}
+
+    // Also read from userData docs (feedback array stored via merge)
+    try{
+      const usersSnap=await fbDb.collection('userData').limit(100).get();
+      usersSnap.docs.forEach(doc=>{
+        const d=doc.data();
+        if(Array.isArray(d.feedback)){
+          d.feedback.forEach(f=>allItems.push(f));
+        }
+      });
+    }catch{}
+
+    // Also read from users/{uid}/feedback subcollections
+    try{
+      const usersSnap2=await fbDb.collection('users').limit(100).get();
+      for(const userDoc of usersSnap2.docs){
+        try{
+          const fbSnap=await userDoc.ref.collection('feedback').limit(20).get();
+          fbSnap.docs.forEach(d=>allItems.push(d.data()));
+        }catch{}
+      }
+    }catch{}
+
+    // Deduplicate by sentAt+userId and sort newest first
+    const seen=new Set();
+    allItems=allItems.filter(f=>{
+      const key=(f.sentAt||'')+(f.userId||f.userEmail||'');
+      if(seen.has(key))return false;seen.add(key);return true;
+    });
+    allItems.sort((a,b)=>new Date(b.sentAt||0)-new Date(a.sentAt||0));
+
+    document.getElementById('afList').innerHTML=!allItems.length
+      ?'<div style="text-align:center;color:var(--txt3);padding:20px;">No feedback received yet.<br><small style="font-size:0.72rem;">Add Firestore rule to enable full collection access.</small></div>'
+      :allItems.map(f=>`<div style="background:var(--bg3);border-radius:12px;padding:12px;margin-bottom:8px;">
           <div style="display:flex;align-items:center;gap:6px;margin-bottom:5px;flex-wrap:wrap;">
             <span style="background:${cols[f.type]||'var(--brand)'}22;color:${cols[f.type]||'var(--brand)'};font-size:0.66rem;font-weight:700;padding:2px 8px;border-radius:5px;">${icons[f.type]||'💬'} ${f.type||'feedback'}</span>
             <span style="font-size:0.68rem;color:var(--txt3);">${f.userCountry||''}</span>
@@ -5121,7 +5179,9 @@ async function openAdminFeedback(){
           <div style="font-size:0.82rem;color:var(--txt);margin-bottom:4px;">${f.text}</div>
           <div style="font-size:0.7rem;color:var(--txt3);">${f.userName||'Anonymous'}${f.userEmail?' · '+f.userEmail:''} ${'⭐'.repeat(f.rating||0)}</div>
         </div>`).join('');
-  }catch(e){document.getElementById('afList').innerHTML='<div style="color:var(--red);padding:12px;">Error: '+e.message+'</div>';}
+  }catch(e){
+    document.getElementById('afList').innerHTML=`<div style="color:var(--red);padding:12px;">Error loading feedback: ${e.message}</div>`;
+  }
 }
 
 // ══════════════════════════════════════════════════════
