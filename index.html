@@ -2538,7 +2538,8 @@ async function doSignUp(){
   try{
     const cred=await fbAuth.createUserWithEmailAndPassword(email,pw);
     await cred.user.updateProfile({displayName:name});
-    await onFirebaseSignIn(cred.user,name,pw);
+    const localKey='tfi_'+sha(cred.user.uid).slice(0,20);
+    await onFirebaseSignIn(cred.user,name,localKey);
     if(btn){btn.textContent='Create Account →';btn.disabled=false;}
     document.getElementById('authScreen').style.display='none';
     showOnboarding();
@@ -2558,7 +2559,8 @@ async function doSignIn(){
   if(btn){btn.textContent='⏳ Signing in…';btn.disabled=true;}
   try{
     const cred=await fbAuth.signInWithEmailAndPassword(email,pw);
-    await onFirebaseSignIn(cred.user,cred.user.displayName||email.split('@')[0],pw);
+    const localKey='tfi_'+sha(cred.user.uid).slice(0,20);
+    await onFirebaseSignIn(cred.user,cred.user.displayName||email.split('@')[0],localKey);
     if(btn){btn.textContent='Sign In →';btn.disabled=false;}
     localStorage.getItem(PIN_KEY)?showPinScreen():(hideAuth(),renderAll(),updateUserUI(),updateCloudUI());
   }catch(e){
@@ -2732,7 +2734,7 @@ async function onFirebaseSignIn(fbUser, displayName, localKey){
     userType:S?.userType||'other'
   };
   fbDb.collection('users').doc(uid).set(profileData,{merge:true}).catch(()=>{});
-  fbDb.collection('publicProfiles').doc(uid).set(profileData,{merge:true}).catch(()=>{});
+  fbDb?.collection('publicProfiles').doc(uid).set(profileData,{merge:true}).catch(()=>{});
 }
 
 // ══════════════════════════════════════════════════════
@@ -2747,24 +2749,16 @@ async function pullFirestore(uid,key){
       if(encData){
         const decData=dec(encData,key);
         if(decData){
-          S={...freshState(),...mergeState(S,decData)};
-          fixState();
-          // Save locally WITHOUT triggering another push
+          S={...freshState(),...mergeState(S,decData)};fixState();
           const encKey='tfi_d_'+btoa(uid).replace(/[^a-z0-9]/gi,'');
           try{localStorage.setItem(encKey,enc(S,key));}catch{}
           console.log('✅ Firestore pull OK');
-        } else {
-          console.warn('pullFirestore: decryption failed — key mismatch?');
-        }
-      } else {
-        console.log('pullFirestore: no data in cloud yet');
+        }else{console.warn('pullFirestore: decryption failed');}
       }
-    } else {
-      console.log('pullFirestore: no document yet for this user');
     }
   }catch(e){
     console.warn('Firestore pull failed:',e.message);
-    if(e.code==='permission-denied')console.error('Check Firestore rules include userData collection');
+    if(e.code==='permission-denied')console.error('Check Firestore rules include userData');
   }
 }
 
@@ -2778,13 +2772,18 @@ async function pushFirestore(){
       pushedAt:Date.now()
     });
     S.lastSync=new Date().toISOString();S.pushedAt=Date.now();
-    saveLocal();updateCloudUI();
-  }catch(e){console.warn('Firestore push failed:',e);}
+    const encKeyP='tfi_d_'+btoa(currentUser.uid).replace(/[^a-z0-9]/gi,'');
+    try{localStorage.setItem(encKeyP,enc(S,currentPassword));}catch{}
+    updateCloudUI();
+    console.log('✅ Firestore push OK');
+  }catch(e){
+    console.warn('Firestore push failed:',e.message);
+    if(e.code==='permission-denied')console.error('Check Firestore rules include userData');
+  }
 }
 
 async function manualSync(){
-  if(!fbDb){showWin('⚠️ Not connected','Firebase not loaded. Check internet and refresh the app.');return;}
-  if(!currentUser?.uid){showWin('⚠️ Not signed in','Sign in first to sync your data.');return;}
+  if(!fbDb){alert('Not connected to Firebase. Check your internet connection.');return;}
   const pill=document.getElementById('syncPill');
   if(pill){pill.textContent='⏳';pill.style.background='var(--gold-dim)';}
   try{
@@ -2818,9 +2817,7 @@ function saveLocal(){
   localStorage.setItem('tfi_la',Date.now());
   // Push to Firestore debounced
   clearTimeout(window._fsTimer);
-  window._fsTimer=setTimeout(()=>{
-    if(fbDb&&currentUser?.uid&&currentPassword)pushFirestore().catch(()=>{});
-  },2000);
+  window._fsTimer=setTimeout(()=>{if(fbDb&&currentUser?.uid&&currentPassword)pushFirestore().catch(()=>{});},2000);
 }
 
 function loadLocal(uid,key){
@@ -2981,10 +2978,7 @@ function nextOnboard(step){
     const d=document.getElementById('ob'+i);if(d)d.classList.toggle('active',i===step);
   });
 }
-
-  // Push to Firestore immediately after onboarding
-  setTimeout(()=>{if(fbDb&&currentUser?.uid&&currentPassword)pushFirestore().catch(()=>{});},1000);
-}function finishOnboard(){
+function finishOnboard(){setTimeout(()=>{if(fbDb&&currentUser?.uid&&currentPassword){console.log("Pushing after onboard...");pushFirestore().catch(()=>{});}},1500);
   S.userType=selectedUserType;
   S.currency=document.getElementById('obCurrency').value||'₦';
   S.country=document.getElementById('obCountry')?.value||'';
@@ -3027,7 +3021,7 @@ function nextOnboard(step){
       uid:currentUser.uid,
       lastActive:new Date().toISOString()
     };
-    fbDb.collection('publicProfiles').doc(currentUser.uid).set(profileUpdate,{merge:true}).catch(()=>{});
+    fbDb?.collection('publicProfiles').doc(currentUser.uid).set(profileUpdate,{merge:true}).catch(()=>{});
     fbDb.collection('users').doc(currentUser.uid).set(profileUpdate,{merge:true}).catch(()=>{});
   }
   setTimeout(()=>openO('oSetupPin'),600);
@@ -4354,7 +4348,7 @@ function saveCurrencyAndCountry(){
   // Push updated country+currency to publicProfiles so admin panel shows it
   if(fbDb&&currentUser?.uid){
     const upd={currency:cur,country:country||S.country||'',lastActive:new Date().toISOString(),name:currentUser.name||'',email:currentUser.email||'',uid:currentUser.uid,userType:S.userType||'other'};
-    fbDb.collection('publicProfiles').doc(currentUser.uid).set(upd,{merge:true}).catch(()=>{});
+    fbDb?.collection('publicProfiles').doc(currentUser.uid).set(upd,{merge:true}).catch(()=>{});
     fbDb.collection('users').doc(currentUser.uid).set(upd,{merge:true}).catch(()=>{});
   }
   showWin('✅ Saved!','Currency: '+cur+(country?' · Country: '+country:''));
@@ -5002,7 +4996,7 @@ async function renderAdminStats(){
   let users=[];
   // Try publicProfiles first (no auth needed — open read rule)
   try{
-    const snap=await fbDb.collection('publicProfiles').get();
+    const snap=await fbDb?.collection('publicProfiles').get();
     snap.forEach(doc=>users.push({...doc.data(),uid:doc.id}));
   }catch(e1){
     // Fall back to users collection
@@ -5556,7 +5550,7 @@ async function submitFeedback(){
   if(fbDb&&currentUser?.uid){
     // Primary: write under publicProfiles subcollection (public write rule allows this)
     try{
-      await fbDb.collection('publicProfiles').doc(currentUser.uid).collection('feedback').add(entry);
+      await fbDb?.collection('publicProfiles').doc(currentUser.uid).collection('feedback').add(entry);
       saved=true;
     }catch(e1){console.warn('publicProfiles feedback write failed:',e1.message);}
     // Backup: merge into userData doc (user always owns this)
@@ -5594,7 +5588,7 @@ async function openAdminFeedback(){
 
   // 1. Read from publicProfiles/{uid}/feedback subcollections (primary storage)
   try{
-    const profilesSnap=await fbDb.collection('publicProfiles').get();
+    const profilesSnap=await fbDb?.collection('publicProfiles').get();
     for(const userDoc of profilesSnap.docs){
       try{
         const fbSnap=await userDoc.ref.collection('feedback').orderBy('sentAt','desc').limit(20).get();
