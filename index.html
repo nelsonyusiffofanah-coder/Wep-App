@@ -22,56 +22,11 @@
 // ── SERVICE WORKER REGISTRATION ───────────────────────
 if('serviceWorker' in navigator){
   window.addEventListener('load',()=>{
-    // Inline the SW as a blob so we don't need a separate sw.js file
-    const swCode=`
-const CACHE='trackinfin-v10';
-const SHELL=['/'];
-const NEVER_CACHE=['googleapis.com','firebaseio.com','firebaseapp.com','identitytoolkit','securetoken','groq','generativelanguage'];
-
-self.addEventListener('install',e=>{
-  self.skipWaiting();
-  e.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(SHELL).catch(()=>{})));
-});
-
-self.addEventListener('activate',e=>{
-  e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))));
-  self.clients.claim();
-});
-
-self.addEventListener('fetch',e=>{
-  const url=e.request.url;
-  // Never cache Firebase/API calls
-  if(NEVER_CACHE.some(x=>url.includes(x)))return;
-  // For navigation (HTML page) — network first, fall back to cache
-  if(e.request.mode==='navigate'){
-    e.respondWith(
-      fetch(e.request).then(r=>{
-        const clone=r.clone();
-        caches.open(CACHE).then(c=>c.put(e.request,clone));
-        return r;
-      }).catch(()=>caches.match('/').then(r=>r||new Response('Offline',{status:503})))
-    );
-    return;
-  }
-  // For everything else — cache first, then network
-  e.respondWith(
-    caches.match(e.request).then(cached=>{
-      if(cached)return cached;
-      return fetch(e.request).then(r=>{
-        if(r&&r.status===200){
-          const clone=r.clone();
-          caches.open(CACHE).then(c=>c.put(e.request,clone));
-        }
-        return r;
-      }).catch(()=>new Response('',{status=503}));
-    })
-  );
-});
-`;
-    const blob=new Blob([swCode],{type:'application/javascript'});
-    const swUrl=URL.createObjectURL(blob);
-    navigator.serviceWorker.register(swUrl,{scope:'/'})
-      .then(reg=>{console.log('✅ SW registered');reg.update();})
+    navigator.serviceWorker.register('/sw.js',{scope:'/'})
+      .then(reg=>{
+        console.log('✅ SW registered, scope:',reg.scope);
+        reg.update();
+      })
       .catch(e=>console.warn('SW registration failed:',e));
   });
 }
@@ -81,30 +36,51 @@ let deferredPrompt;
 window.addEventListener('beforeinstallprompt',(e)=>{
   e.preventDefault();
   deferredPrompt=e;
+  // Show install banner after 2 seconds
   setTimeout(()=>{
     const banner=document.getElementById('installBanner');
     if(banner&&!localStorage.getItem('tfi_install_dismissed'))banner.style.display='flex';
-  },4000);
+  },2000);
+  // Show Install App row in Settings
+  const row=document.getElementById('installAppRow');
+  if(row)row.style.display='flex';
 });
 window.addEventListener('appinstalled',()=>{
   const b=document.getElementById('installBanner');
   if(b)b.style.display='none';
+  const row=document.getElementById('installAppRow');
+  if(row)row.style.display='none';
   localStorage.setItem('tfi_install_dismissed','1');
-  showWin('🎉 App Installed!','Trackinfin is now on your home screen. Open it anytime like a normal app!');
+  if(typeof showWin==='function')showWin('🎉 Installed!','Trackinfin is now on your home screen!');
 });
 function doInstall(){
   if(deferredPrompt){
     deferredPrompt.prompt();
     deferredPrompt.userChoice.then(r=>{
       deferredPrompt=null;
-      document.getElementById('installBanner').style.display='none';
-      if(r.outcome==='accepted')localStorage.setItem('tfi_install_dismissed','1');
+      const b=document.getElementById('installBanner');
+      if(b)b.style.display='none';
+      if(r.outcome==='accepted'){
+        localStorage.setItem('tfi_install_dismissed','1');
+        const row=document.getElementById('installAppRow');
+        if(row)row.style.display='none';
+      }
     });
+  } else {
+    // No prompt available — show iOS tip or manual instructions
+    const ios=/iphone|ipad|ipod/i.test(navigator.userAgent);
+    if(ios){
+      const tip=document.getElementById('iosInstallTip');
+      if(tip)tip.style.display='block';
+    } else {
+      alert('To install:\n\nChrome/Edge: Tap the menu (⋮) → "Install app" or "Add to Home screen"\n\nSafari (iPhone): Tap Share → "Add to Home Screen"');
+    }
   }
 }
+function triggerInstall(){doInstall();}
 function dismissInstall(){
-  document.getElementById('installBanner').style.display='none';
-  // Don't permanently dismiss — show again in 3 days
+  const b=document.getElementById('installBanner');
+  if(b)b.style.display='none';
   localStorage.setItem('tfi_install_dismissed',Date.now()+259200000);
 }
 // Re-show install banner after 3 days if dismissed
@@ -1482,6 +1458,7 @@ tbody td{padding:11px 12px;border-bottom:1px solid var(--border2);}
         </div>
         <div class="settings-section-body" id="sAbout">
           <div class="settings-item" style="cursor:default;"><div class="sett-ico" style="background:var(--brand-dim);">💰</div><div class="sett-info"><div class="sett-name">Trackinfin</div><div class="sett-sub">Version 10.0 · Built for African entrepreneurs</div></div></div>
+          <div class="settings-item" id="installAppRow" onclick="triggerInstall()" style="cursor:pointer;display:none;"><div class="sett-ico" style="background:var(--green-dim);">📲</div><div class="sett-info"><div class="sett-name">Install App</div><div class="sett-sub">Add to home screen — works offline</div></div><div class="sett-right">›</div></div>
           <div class="settings-item" id="supportContactRow" style="cursor:default;"><div class="sett-ico" style="background:var(--green-dim);">📞</div><div class="sett-info"><div class="sett-name">Support</div><div class="sett-sub" id="supportNumDisplay">Contact your administrator</div></div><button id="supportWaBtn" onclick="openSupportWhatsApp()" style="display:none;background:var(--green-dim);border:1px solid rgba(6,214,160,.2);border-radius:8px;color:var(--green);font-size:0.72rem;font-weight:700;padding:6px 12px;cursor:pointer;white-space:nowrap;">📲 WhatsApp</button></div>
           <div class="settings-item" onclick="openO('oFeedback')" style="cursor:pointer;"><div class="sett-ico" style="background:var(--brand-dim);">💬</div><div class="sett-info"><div class="sett-name">Send Feedback</div><div class="sett-sub">Ideas, bugs or praise — we read everything</div></div><div class="sett-right">›</div></div>
           <div class="settings-item" onclick="doSignOut()" style="cursor:pointer;"><div class="sett-ico" style="background:var(--red-dim);">🚪</div><div class="sett-info"><div class="sett-name" style="color:var(--red);">Sign Out</div><div class="sett-sub">Sign out of your account</div></div><div class="sett-right">›</div></div>
