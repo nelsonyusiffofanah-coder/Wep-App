@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
 <meta name="apple-mobile-web-app-title" content="Trackinfin"/>
-<meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' https: data: blob:; connect-src 'self' https://api.jsonbin.io https://generativelanguage.googleapis.com https://fonts.googleapis.com https://fonts.gstatic.com https://cdnjs.cloudflare.com https://api.groq.com;"/>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' https: data: blob:; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.firebaseapp.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://fonts.googleapis.com https://fonts.gstatic.com https://cdnjs.cloudflare.com https://api.groq.com https://generativelanguage.googleapis.com;"/>
 <link rel="manifest" href="data:application/json;charset=utf-8,%7B%22name%22%3A%22Trackinfin%22%2C%22short_name%22%3A%22Trackinfin%22%2C%22start_url%22%3A%22%2F%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23050D18%22%2C%22theme_color%22%3A%22%230EA5E9%22%7D"/>
 <script>
 // PWA Install prompt
@@ -29,6 +29,7 @@ function dismissInstall(){document.getElementById('installBanner').style.display
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+
 <style>
 /* ═══════════════════════════════════════════════════════
    TRACKINFIN V10 — DESIGN SYSTEM
@@ -680,32 +681,111 @@ tbody td{padding:11px 12px;border-bottom:1px solid var(--border2);}
       <div class="auth-brand-sub">Financial understanding · Discipline · Allocation</div>
     </div>
     <div class="auth-card">
+
+      <!-- Main tabs: Sign In / Create Account -->
       <div class="auth-tabs">
         <div class="auth-tab active" id="atIn" onclick="showAuthTab('in')">Sign In</div>
         <div class="auth-tab" id="atUp" onclick="showAuthTab('up')">Create Account</div>
       </div>
-      <div id="panelIn">
-        <label class="field-label">Email</label>
-        <input class="field" id="siEmail" type="email" placeholder="you@email.com" autocomplete="email"/>
-        <label class="field-label">Password</label>
-        <div class="eye-wrap"><input class="field" id="siPass" type="password" placeholder="Your password" autocomplete="current-password" onkeydown="if(event.key==='Enter')doSignIn()"/><span class="eye" onclick="toggleVis('siPass',this)">👁</span></div>
-        <div class="err" id="siErr"></div>
-        <button class="btn full" onclick="doSignIn()">Sign In →</button>
-        <div style="text-align:center;margin-top:10px;font-size:0.74rem;"><span style="color:var(--brand);cursor:pointer;" onclick="doForgotPassword()">Forgot password?</span></div>
+
+      <!-- Method tabs: Email / Phone -->
+      <div style="display:flex;gap:6px;margin-bottom:16px;background:var(--bg3);border-radius:10px;padding:3px;">
+        <div id="methEmail" onclick="showAuthMethod('email')" style="flex:1;text-align:center;padding:7px;border-radius:8px;font-size:0.78rem;font-weight:700;cursor:pointer;background:var(--bg2);color:var(--txt);transition:all .2s;">📧 Email</div>
+        <div id="methPhone" onclick="showAuthMethod('phone')" style="flex:1;text-align:center;padding:7px;border-radius:8px;font-size:0.78rem;font-weight:700;cursor:pointer;color:var(--txt3);transition:all .2s;">📱 Phone</div>
       </div>
-      <div id="panelUp" style="display:none;">
-        <label class="field-label">Full Name</label>
-        <input class="field" id="suName" type="text" placeholder="Your full name" autocomplete="name"/>
-        <label class="field-label">Email</label>
-        <input class="field" id="suEmail" type="email" placeholder="you@email.com" autocomplete="email"/>
-        <label class="field-label">Password</label>
-        <div class="eye-wrap"><input class="field" id="suPass" type="password" placeholder="Min 6 characters" autocomplete="new-password"/><span class="eye" onclick="toggleVis('suPass',this)">👁</span></div>
-        <label class="field-label">Confirm Password</label>
-        <input class="field" id="suPass2" type="password" placeholder="Confirm password" onkeydown="if(event.key==='Enter')doSignUp()"/>
-        <div class="err" id="suErr"></div>
-        <button class="btn full" onclick="doSignUp()">Create Account →</button>
-        <div style="text-align:center;margin-top:8px;font-size:0.72rem;color:var(--txt3);">🔒 End-to-end encrypted</div>
+
+      <!-- ── EMAIL METHOD ── -->
+      <div id="authEmail">
+        <!-- Sign In with Email -->
+        <div id="panelIn">
+          <label class="field-label">Email Address</label>
+          <input class="field" id="siEmail" type="email" placeholder="you@email.com" autocomplete="email"/>
+          <label class="field-label">Password</label>
+          <div class="eye-wrap">
+            <input class="field" id="siPass" type="password" placeholder="Your password" autocomplete="current-password" onkeydown="if(event.key==='Enter')doSignIn()"/>
+            <span class="eye" onclick="toggleVis('siPass',this)">👁</span>
+          </div>
+          <div class="err" id="siErr"></div>
+          <button class="btn full" onclick="doSignIn()">Sign In →</button>
+          <div style="text-align:center;margin-top:10px;font-size:0.74rem;">
+            <span style="color:var(--brand);cursor:pointer;" onclick="doForgotPassword()">Forgot password? Reset by email</span>
+          </div>
+        </div>
+        <!-- Sign Up with Email -->
+        <div id="panelUp" style="display:none;">
+          <label class="field-label">Full Name</label>
+          <input class="field" id="suName" type="text" placeholder="Your full name" autocomplete="name"/>
+          <label class="field-label">Email Address</label>
+          <input class="field" id="suEmail" type="email" placeholder="you@email.com" autocomplete="email"/>
+          <label class="field-label">Password</label>
+          <div class="eye-wrap">
+            <input class="field" id="suPass" type="password" placeholder="Min 6 characters" autocomplete="new-password"/>
+            <span class="eye" onclick="toggleVis('suPass',this)">👁</span>
+          </div>
+          <label class="field-label">Confirm Password</label>
+          <input class="field" id="suPass2" type="password" placeholder="Same password again" onkeydown="if(event.key==='Enter')doSignUp()"/>
+          <div class="err" id="suErr"></div>
+          <button class="btn full" onclick="doSignUp()">Create Account →</button>
+          <div style="text-align:center;margin-top:8px;font-size:0.72rem;color:var(--txt3);">🔒 Your data is encrypted on your device</div>
+        </div>
       </div>
+
+      <!-- ── PHONE METHOD ── -->
+      <div id="authPhone" style="display:none;">
+        <!-- Step 1: Enter phone number -->
+        <div id="phoneStep1">
+          <label class="field-label">Full Name</label>
+          <input class="field" id="phName" type="text" placeholder="Your full name" autocomplete="name"/>
+          <label class="field-label">Phone Number</label>
+          <div style="display:flex;gap:6px;margin-bottom:13px;">
+            <select id="phCountryCode" class="field" style="width:110px;flex-shrink:0;margin-bottom:0;">
+              <option value="+232">🇸🇱 +232</option>
+              <option value="+234">🇳🇬 +234</option>
+              <option value="+233">🇬🇭 +233</option>
+              <option value="+254">🇰🇪 +254</option>
+              <option value="+27">🇿🇦 +27</option>
+              <option value="+251">🇪🇹 +251</option>
+              <option value="+256">🇺🇬 +256</option>
+              <option value="+255">🇹🇿 +255</option>
+              <option value="+237">🇨🇲 +237</option>
+              <option value="+221">🇸🇳 +221</option>
+              <option value="+225">🇨🇮 +225</option>
+              <option value="+44">🇬🇧 +44</option>
+              <option value="+1">🇺🇸 +1</option>
+            </select>
+            <input class="field" id="phNumber" type="tel" placeholder="76 123 456" style="flex:1;margin-bottom:0;" inputmode="numeric"/>
+          </div>
+          <div class="err" id="phErr"></div>
+          <!-- reCAPTCHA container -->
+          <div id="recaptcha-container" style="margin-bottom:12px;"></div>
+          <button class="btn full" onclick="sendSmsCode()">Send SMS Code →</button>
+          <div style="text-align:center;margin-top:8px;font-size:0.72rem;color:var(--txt3);">A verification code will be sent to your phone</div>
+        </div>
+        <!-- Step 2: Enter OTP code -->
+        <div id="phoneStep2" style="display:none;">
+          <div style="text-align:center;margin-bottom:16px;">
+            <div style="font-size:1.5rem;margin-bottom:6px;">📱</div>
+            <div style="font-size:0.86rem;font-weight:700;margin-bottom:4px;">Enter the code we sent</div>
+            <div style="font-size:0.76rem;color:var(--txt3);" id="phSentTo">Sent to your number</div>
+          </div>
+          <div style="display:flex;gap:8px;justify-content:center;margin-bottom:14px;">
+            <input class="field" id="otp1" type="text" inputmode="numeric" maxlength="1" style="width:44px;text-align:center;font-size:1.3rem;font-weight:700;padding:10px 0;" oninput="otpNext(this,'otp2')"/>
+            <input class="field" id="otp2" type="text" inputmode="numeric" maxlength="1" style="width:44px;text-align:center;font-size:1.3rem;font-weight:700;padding:10px 0;" oninput="otpNext(this,'otp3')"/>
+            <input class="field" id="otp3" type="text" inputmode="numeric" maxlength="1" style="width:44px;text-align:center;font-size:1.3rem;font-weight:700;padding:10px 0;" oninput="otpNext(this,'otp4')"/>
+            <input class="field" id="otp4" type="text" inputmode="numeric" maxlength="1" style="width:44px;text-align:center;font-size:1.3rem;font-weight:700;padding:10px 0;" oninput="otpNext(this,'otp5')"/>
+            <input class="field" id="otp5" type="text" inputmode="numeric" maxlength="1" style="width:44px;text-align:center;font-size:1.3rem;font-weight:700;padding:10px 0;" oninput="otpNext(this,'otp6')"/>
+            <input class="field" id="otp6" type="text" inputmode="numeric" maxlength="1" style="width:44px;text-align:center;font-size:1.3rem;font-weight:700;padding:10px 0;" oninput="otpSubmitCheck()"/>
+          </div>
+          <div class="err" id="otpErr"></div>
+          <button class="btn full" onclick="verifySmsCode()">Verify Code →</button>
+          <div style="text-align:center;margin-top:10px;font-size:0.74rem;">
+            <span style="color:var(--brand);cursor:pointer;" onclick="goBackToPhone()">← Change number</span>
+            <span style="color:var(--txt3);margin:0 8px;">·</span>
+            <span style="color:var(--brand);cursor:pointer;" onclick="resendSmsCode()">Resend code</span>
+          </div>
+        </div>
+      </div>
+
     </div>
   </div>
 </div>
@@ -1169,16 +1249,16 @@ tbody td{padding:11px 12px;border-bottom:1px solid var(--border2);}
       <!-- Cloud -->
       <div class="settings-section">
         <div class="settings-section-title">Cloud Sync</div>
-        <div class="settings-item" onclick="openO('oSync')">
+        <div class="settings-item" onclick="manualSync()">
           <div class="sett-ico" style="background:var(--green-dim);">☁️</div>
           <div class="sett-info">
-            <div class="sett-name">Cloud Sync</div>
+            <div class="sett-name">Firebase Sync</div>
             <div class="sett-sub" style="display:flex;align-items:center;gap:5px;">
               <span class="status-dot dot-off" id="cloudDot"></span>
-              <span id="cloudTxt">Not connected — tap to set up</span>
+              <span id="cloudTxt">Tap to sync now</span>
             </div>
           </div>
-          <div class="sett-right">›</div>
+          <div class="sett-right">🔄</div>
         </div>
         <div id="syncStatusRow" style="display:none;background:var(--green-dim);border:1px solid rgba(6,214,160,.15);border-radius:0 0 12px 12px;padding:8px 14px;display:none;align-items:center;justify-content:space-between;">
           <span style="font-size:0.72rem;color:var(--green);" id="lastSyncTxt">Last sync: never</span>
@@ -1493,7 +1573,7 @@ tbody td{padding:11px 12px;border-bottom:1px solid var(--border2);}
 <!-- Cloud Sync -->
 <div class="overlay" id="oSync"><div class="modal">
   <div class="modal-title">☁️ Sync Across Devices</div>
-  <div class="modal-sub">Your data stays encrypted on your devices. JSONBin is just a secure storage bridge.</div>
+  <div class="modal-sub">Your data is already syncing via Firebase. JSONBin is an optional extra backup.</div>
 
   <!-- Step tabs -->
   <div style="display:flex;gap:4px;margin-bottom:16px;">
@@ -1666,13 +1746,12 @@ tbody td{padding:11px 12px;border-bottom:1px solid var(--border2);}
     </div>
   </div>
 
-  <!-- Cloud Setup Banner (shows when keys not set) -->
-  <div id="adminSetupBanner" style="display:none;background:var(--orange-dim);border:1px solid rgba(255,159,28,.3);border-radius:12px;padding:14px 16px;margin-bottom:16px;">
-    <div style="font-weight:700;font-size:0.86rem;color:var(--orange);margin-bottom:6px;">⚠️ Cloud Not Connected — Admin cannot see users yet</div>
-    <div style="font-size:0.78rem;color:var(--txt2);margin-bottom:12px;">To see users, you need to connect a JSONBin account. This is where all user registrations are stored.</div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;">
-      <button class="btn sm gold" onclick="openO('oAdminCloudSetup')">🔑 Connect JSONBin Now</button>
-      <a href="https://jsonbin.io" target="_blank" class="btn ghost sm">Get Free API Key →</a>
+  <!-- Firebase Status Banner -->
+  <div id="adminSetupBanner" style="background:var(--green-dim);border:1px solid rgba(6,214,160,.2);border-radius:12px;padding:12px 16px;margin-bottom:16px;display:flex;align-items:center;gap:10px;">
+    <span style="font-size:1.2rem;">🔥</span>
+    <div>
+      <div style="font-weight:700;font-size:0.84rem;color:var(--green);">Firebase Connected</div>
+      <div style="font-size:0.74rem;color:var(--txt2);">Users sync automatically. Manage users below or at <a href="https://console.firebase.google.com/project/trackinfin/authentication/users" target="_blank" style="color:var(--brand);">Firebase Console →</a></div>
     </div>
   </div>
 
@@ -1724,7 +1803,7 @@ tbody td{padding:11px 12px;border-bottom:1px solid var(--border2);}
     <div style="font-weight:700;font-size:0.9rem;margin-bottom:12px;">🔧 Admin Settings</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
       <button class="btn ghost sm" onclick="toggleAdminChangePw()">🔑 Change Password</button>
-      <button class="btn ghost sm" onclick="openO('oAdminCloudSetup')">☁️ Cloud Setup</button>
+      <a href="https://console.firebase.google.com/project/trackinfin/authentication/users" target="_blank" class="btn ghost sm">👥 Firebase Console →</a>
     </div>
     <div id="adminChangePwSection" style="display:none;margin-top:12px;">
       <input class="field" id="adminOldPw" type="password" placeholder="Current password" style="margin-bottom:8px;"/>
@@ -1736,30 +1815,26 @@ tbody td{padding:11px 12px;border-bottom:1px solid var(--border2);}
   </div>
 </div>
 
-<!-- Admin Cloud Setup -->
+<!-- Admin Firebase Info (replaces old JSONBin setup) -->
+<!-- Admin Firebase Info modal -->
 <div class="overlay" id="oAdminCloudSetup"><div class="modal">
-  <div class="modal-title">☁️ Admin Cloud Setup</div>
-  <div class="modal-sub">Connect JSONBin to store and view all user registrations. <a href="https://jsonbin.io" target="_blank" style="color:var(--brand);">Get a free account at jsonbin.io →</a></div>
-  <div style="background:var(--brand-dim);border:1px solid var(--border);border-radius:10px;padding:12px;font-size:0.76rem;color:var(--txt2);margin-bottom:14px;line-height:1.7;">
-    <strong>How to get your keys:</strong><br>
-    1. Go to <strong>jsonbin.io</strong> and sign up free<br>
-    2. Click your avatar → <strong>API Keys</strong> → copy your <strong>Secret Key</strong><br>
-    3. Create a new bin → copy the <strong>Bin ID</strong> from the URL<br>
-    4. Paste both below and click Save
+  <div class="modal-title">🔥 Firebase User Management</div>
+  <div style="background:var(--green-dim);border:1px solid rgba(6,214,160,.2);border-radius:12px;padding:14px;margin-bottom:16px;">
+    <div style="font-size:0.84rem;font-weight:700;color:var(--green);margin-bottom:6px;">✅ All users stored in Firebase</div>
+    <div style="font-size:0.78rem;color:var(--txt2);line-height:1.8;">
+      Every user who signs up is automatically saved to Firebase Authentication. You do not need to set up anything extra.
+    </div>
   </div>
-  <label class="field-label">JSONBin Master / Secret Key</label>
-  <input class="field" id="setupMasterKey" type="password" placeholder="$2a$10$…"/>
-  <label class="field-label">Registry Bin ID</label>
-  <input class="field" id="setupRegistryId" placeholder="64abc123…"/>
-  <div id="setupKeysStatus" style="font-size:0.76rem;min-height:18px;margin-bottom:8px;"></div>
-  <div class="btn-row">
-    <button class="btn" onclick="saveAdminCloudSetup()">💾 Save & Connect</button>
-    <button class="btn ghost" onclick="closeO('oAdminCloudSetup')">Cancel</button>
+  <div style="font-size:0.8rem;font-weight:700;color:var(--txt);margin-bottom:10px;">What you can do in Firebase Console:</div>
+  <div style="font-size:0.78rem;color:var(--txt2);line-height:2;margin-bottom:14px;">
+    👥 See every user who signed up<br/>
+    🚫 Disable or delete any account<br/>
+    🔑 Reset any user's password<br/>
+    📱 See email vs phone login users<br/>
+    📊 View sign-in history
   </div>
-  <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border2);">
-    <div style="font-size:0.72rem;color:var(--txt3);margin-bottom:6px;">Currently saved keys:</div>
-    <div style="font-size:0.72rem;color:var(--txt2);" id="currentKeysDisplay">Loading…</div>
-  </div>
+  <a href="https://console.firebase.google.com/project/trackinfin/authentication/users" target="_blank" class="btn full" style="margin-bottom:10px;">Open Firebase Console →</a>
+  <button class="btn ghost full" onclick="closeO('oAdminCloudSetup')">Close</button>
 </div></div>
 
 <!-- Admin Broadcast -->
@@ -1773,10 +1848,20 @@ tbody td{padding:11px 12px;border-bottom:1px solid var(--border2);}
 <!-- Admin Settings -->
 <div class="overlay" id="oAdminSettings"><div class="modal">
   <div class="modal-title">⚙️ App Settings</div>
-  <label class="field-label">Support Phone Number</label><input class="field" id="adminSupportPhone" placeholder="+234 800 000 0000"/>
-  <label class="field-label">Welcome Message for New Users</label><textarea class="field" id="adminWelcomeMsg" style="resize:none;min-height:80px;" placeholder="Welcome to Trackinfin!"></textarea>
-  <label class="field-label">App Name</label><input class="field" id="adminAppName" placeholder="Trackinfin"/>
-  <div class="btn-row"><button class="btn" onclick="saveAdminSettings()">Save Settings</button><button class="btn ghost" onclick="closeO('oAdminSettings')">Cancel</button></div>
+  <div style="background:var(--brand-dim);border:1px solid var(--border);border-radius:10px;padding:11px 13px;margin-bottom:14px;font-size:0.76rem;color:var(--txt2);line-height:1.7;">
+    🔥 <strong style="color:var(--brand);">Firebase Connected</strong> — users managed at<br/>
+    <a href="https://console.firebase.google.com/project/trackinfin/authentication/users" target="_blank" style="color:var(--brand);font-weight:700;">console.firebase.google.com →</a>
+  </div>
+  <label class="field-label">Support Phone Number</label>
+  <input class="field" id="adminSupportPhone" placeholder="+232 76 000 000"/>
+  <label class="field-label">Welcome Message for New Users</label>
+  <textarea class="field" id="adminWelcomeMsg" style="resize:none;min-height:70px;" placeholder="Welcome to Trackinfin!"></textarea>
+  <label class="field-label">App Name</label>
+  <input class="field" id="adminAppName" placeholder="Trackinfin"/>
+  <div class="btn-row">
+    <button class="btn" onclick="saveAdminSettings()">Save Settings</button>
+    <button class="btn ghost" onclick="closeO('oAdminSettings')">Cancel</button>
+  </div>
 </div></div>
 
 <!-- Add Sheet (Add Money) -->
@@ -1822,6 +1907,25 @@ tbody td{padding:11px 12px;border-bottom:1px solid var(--border2);}
 // ── Config (admin pastes keys here) ──────────────────
 const JSONBIN_MASTER_KEY = '';
 const REGISTRY_BIN_ID   = '';
+
+// ══════════════════════════════════════════════════════
+// FIREBASE CONFIGURATION
+// ══════════════════════════════════════════════════════
+const firebaseConfig = {
+  apiKey: "AIzaSyCmD0XH2A5CZeB4bBUcjAO4WQKhgRDd5FY",
+  authDomain: "trackinfin.firebaseapp.com",
+  databaseURL: "https://trackinfin-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "trackinfin",
+  storageBucket: "trackinfin.firebasestorage.app",
+  messagingSenderId: "5463114922",
+  appId: "1:5463114922:web:254dab26d16ff873b43cd3"
+};
+
+// Firebase instances — initialized after DOM loads
+let fbApp, fbAuth, fbDb;
+let confirmationResult = null; // for phone OTP verification
+let recaptchaVerifier = null;
+let currentAuthMethod = 'email'; // 'email' or 'phone'
 const SUPPORT_PHONE_DEFAULT = '';
 
 // ── Constants ─────────────────────────────────────────
@@ -1908,10 +2012,7 @@ const hp=p=>{let h=0;for(const c of String(p)){h=(h<<5)-h+c.charCodeAt(0);h|=0;}
 // ══════════════════════════════════════════════════════
 // SESSION & LOCAL STORAGE
 // ══════════════════════════════════════════════════════
-const sessionGet=()=>{try{return JSON.parse(localStorage.getItem(SESSION_KEY)||'null');}catch{return null;}};
-const sessionSet=(email,name,binId)=>{localStorage.setItem(SESSION_KEY,JSON.stringify({email,name,binId}));localStorage.setItem('tfi_la',Date.now());};
-const sessionClear=()=>{localStorage.removeItem(SESSION_KEY);localStorage.removeItem('tfi_la');currentPassword=null;};
-const dataKey=email=>'tfi_d_'+btoa(email).replace(/[^a-z0-9]/gi,'');
+// session helpers — see Firebase version below
 
 function fixState(){
   if(!S.cats?.length) S.cats=JSON.parse(JSON.stringify(DEFAULT_CATS));
@@ -1926,21 +2027,10 @@ function fixState(){
   localStorage.setItem('tfi_currency',S.currency);
 }
 
-function loadLocal(email,pw){
-  try{
-    const raw=localStorage.getItem(dataKey(email));
-    if(raw){const d=dec(raw,pw);if(!d)return false;S={...freshState(),...d};}
-    else S=freshState();
-    fixState();return true;
-  }catch{S=freshState();return false;}
-}
+// loadLocal — see Firebase version below
 
-function saveLocal(){
-  if(!currentUser||!currentPassword)return;
-  const e=enc(S,currentPassword);
-  if(e)localStorage.setItem(dataKey(currentUser.email),e);
-  localStorage.setItem('tfi_la',Date.now());
-}
+// saveLocal — Firebase version below
+
 
 // ══════════════════════════════════════════════════════
 // CLOUD (JSONBin)
@@ -1984,33 +2074,11 @@ async function autoSave(){
   }
 }
 
-async function manualSync(){
-  const key=S?.jsonbinKey||JSONBIN_MASTER_KEY;
-  if(!key){alert('Cloud sync not configured. Go to Settings → Cloud Sync to set it up.');return;}
-  if(!currentUser?.binId||currentUser.binId==='local'){alert('Set up cloud sync in Settings first.');return;}
-  const pill=document.getElementById('syncPill');
-  if(pill){pill.textContent='⏳';pill.style.background='var(--gold-dim)';}
-  try{
-    const ce=await pullBin(currentUser.binId);
-    if(ce){const cd=dec(ce,currentPassword);if(cd){S={...S,...mergeState(S,cd)};fixState();saveLocal();}}
-    await pushBin(currentUser.binId,enc(S,currentPassword));
-    S.lastSync=new Date().toISOString();S.pushedAt=Date.now();saveLocal();updateCloudUI();renderAll();
-    if(pill){pill.textContent='✅';pill.style.background='var(--green-dim)';setTimeout(()=>{pill.textContent='☁️ Sync';pill.style.background='var(--brand-dim)';},2500);}
-  }catch(e){if(pill){pill.textContent='☁️ Sync';pill.style.background='var(--brand-dim)';}alert('Sync error: '+e.message);}
-}
+// manualSync — see Firebase version below
 
-async function silentSync(){
-  const key=S?.jsonbinKey||JSONBIN_MASTER_KEY;
-  if(!key||!currentUser?.binId||currentUser.binId==='local')return;
-  try{
-    const ce=await pullBin(currentUser.binId);
-    if(ce){const cd=dec(ce,currentPassword);if(cd){S={...S,...mergeState(S,cd)};fixState();saveLocal();renderAll();}}
-    await pushBin(currentUser.binId,enc(S,currentPassword));
-    S.lastSync=new Date().toISOString();S.pushedAt=Date.now();saveLocal();updateCloudUI();
-    // Update lastActive in registry so admin can see activity
-    updateLastActive();
-  }catch{}
-}
+
+// silentSync — see Firebase version below
+
 async function updateLastActive(){
   try{
     const regKey=getAdminKey();const regId=getRegistryId();
@@ -2021,34 +2089,8 @@ async function updateLastActive(){
   }catch{}
 }
 
-function updateCloudUI(){
-  const key=S?.jsonbinKey||JSONBIN_MASTER_KEY;
-  const hasBin=!!(currentUser?.binId&&currentUser.binId!=='local');
-  const on=!!(key&&hasBin);
-  const dot=document.getElementById('cloudDot');
-  const txt=document.getElementById('cloudTxt');
-  const pill=document.getElementById('syncPill');
-  const ht=document.getElementById('homeSyncTag');
-  const row=document.getElementById('syncStatusRow');
-  const lst=document.getElementById('lastSyncTxt');
-  if(on){
-    if(dot)dot.className='status-dot dot-on';
-    const syncTime=S.lastSync
-      ?new Date(S.lastSync).toLocaleString('en',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})
-      :'syncing…';
-    if(txt)txt.textContent='Active — '+syncTime;
-    if(lst)lst.textContent='Last sync: '+syncTime;
-    if(pill)pill.style.display='flex';
-    if(ht)ht.style.display='flex';
-    if(row)row.style.display='flex';
-  }else{
-    if(dot)dot.className='status-dot dot-off';
-    if(txt)txt.textContent='Not connected — tap to set up';
-    if(pill)pill.style.display='none';
-    if(ht)ht.style.display='none';
-    if(row)row.style.display='none';
-  }
-}
+// updateCloudUI — see Firebase version below
+
 
 async function connectJSONBin(){
   const key=document.getElementById('jbKey').value.trim();
@@ -2132,6 +2174,33 @@ function showAuthTab(t){
 }
 function toggleVis(id,el){const i=document.getElementById(id);i.type=i.type==='password'?'text':'password';el.textContent=i.type==='password'?'👁':'🙈';}
 
+// ══════════════════════════════════════════════════════
+// AUTH METHOD SWITCHER
+// ══════════════════════════════════════════════════════
+function showAuthMethod(method){
+  currentAuthMethod=method;
+  const emailEl=document.getElementById('authEmail');
+  const phoneEl=document.getElementById('authPhone');
+  const mE=document.getElementById('methEmail');
+  const mP=document.getElementById('methPhone');
+  if(method==='email'){
+    if(emailEl)emailEl.style.display='block';
+    if(phoneEl)phoneEl.style.display='none';
+    if(mE){mE.style.background='var(--bg2)';mE.style.color='var(--txt)';}
+    if(mP){mP.style.background='transparent';mP.style.color='var(--txt3)';}
+  }else{
+    if(emailEl)emailEl.style.display='none';
+    if(phoneEl)phoneEl.style.display='block';
+    if(mP){mP.style.background='var(--bg2)';mP.style.color='var(--txt)';}
+    if(mE){mE.style.background='transparent';mE.style.color='var(--txt3)';}
+    // Init reCAPTCHA only if Firebase is ready
+    if(fbAuth) setTimeout(initRecaptcha, 300);
+  }
+}
+
+// ══════════════════════════════════════════════════════
+// FIREBASE — EMAIL AUTH
+// ══════════════════════════════════════════════════════
 async function doSignUp(){
   const name=document.getElementById('suName').value.trim();
   const email=document.getElementById('suEmail').value.trim().toLowerCase();
@@ -2139,24 +2208,23 @@ async function doSignUp(){
   const pw2=document.getElementById('suPass2').value;
   const err=document.getElementById('suErr');
   const btn=document.querySelector('#panelUp .btn.full');
-  if(!name){err.textContent='Enter your name.';return;}
-  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){err.textContent='Enter a valid email.';return;}
+  if(!name){err.textContent='Enter your full name.';return;}
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){err.textContent='Enter a valid email address.';return;}
   if(pw.length<6){err.textContent='Password must be at least 6 characters.';return;}
   if(pw!==pw2){err.textContent='Passwords do not match.';return;}
-  if(btn){btn.textContent='⏳ Creating…';btn.disabled=true;}
   err.textContent='';
-  if(JSONBIN_MASTER_KEY&&REGISTRY_BIN_ID){
-    const ex=await findUser(email);
-    if(ex){err.textContent='Account exists. Sign in instead.';if(btn){btn.textContent='Create Account →';btn.disabled=false;}return;}
+  if(btn){btn.textContent='⏳ Creating account…';btn.disabled=true;}
+  try{
+    const cred=await fbAuth.createUserWithEmailAndPassword(email,pw);
+    await cred.user.updateProfile({displayName:name});
+    await onFirebaseSignIn(cred.user,name,pw);
+    if(btn){btn.textContent='Create Account →';btn.disabled=false;}
+    document.getElementById('authScreen').style.display='none';
+    showOnboarding();
+  }catch(e){
+    if(btn){btn.textContent='Create Account →';btn.disabled=false;}
+    err.textContent=firebaseErrMsg(e);
   }
-  S=freshState();currentUser={name,email,binId:'local'};currentPassword=pw;
-  if(JSONBIN_MASTER_KEY&&REGISTRY_BIN_ID){
-    try{const binId=await createBin(email,enc(S,pw));await registerUser(email,name,binId);currentUser.binId=binId;}catch{}
-  }
-  sessionSet(email,name,currentUser.binId);saveLocal();
-  if(btn){btn.textContent='Create Account →';btn.disabled=false;}
-  document.getElementById('authScreen').style.display='none';
-  showOnboarding();
 }
 
 async function doSignIn(){
@@ -2164,40 +2232,324 @@ async function doSignIn(){
   const pw=document.getElementById('siPass').value;
   const err=document.getElementById('siErr');
   const btn=document.querySelector('#panelIn .btn.full');
-  if(!email||!pw){err.textContent='Enter email and password.';return;}
-  const session=sessionGet();
-  if(session&&session.email===email){
-    if(loadLocal(email,pw)){
-      currentUser={name:session.name,email,binId:session.binId};currentPassword=pw;
-      sessionSet(email,session.name,session.binId);
-      localStorage.getItem(PIN_KEY)?showPinScreen():(hideAuth(),renderAll(),updateUserUI(),updateCloudUI());
-      setTimeout(silentSync,1500);setTimeout(updateLastActive,3000);return;
-    }else{err.textContent='Incorrect password.';return;}
-  }
-  if(!JSONBIN_MASTER_KEY||!REGISTRY_BIN_ID){err.textContent='No account on this device. Sign up first.';return;}
-  if(btn){btn.textContent='⏳';btn.disabled=true;}
-  err.textContent='⏳ Looking up your account…';
+  if(!email||!pw){err.textContent='Enter your email and password.';return;}
+  err.textContent='';
+  if(btn){btn.textContent='⏳ Signing in…';btn.disabled=true;}
   try{
-    const ur=await findUser(email);
-    if(!ur){err.textContent='No account with this email.';if(btn){btn.textContent='Sign In →';btn.disabled=false;}return;}
-    const ce=await pullBin(ur.binId);
-    if(ce){const cd=dec(ce,pw);if(!cd){err.textContent='Incorrect password.';if(btn){btn.textContent='Sign In →';btn.disabled=false;}return;}S={...freshState(),...cd};fixState();}
-    else S=freshState();
-    currentUser={name:ur.name,email,binId:ur.binId};currentPassword=pw;
-    sessionSet(email,ur.name,ur.binId);saveLocal();
+    const cred=await fbAuth.signInWithEmailAndPassword(email,pw);
+    await onFirebaseSignIn(cred.user,cred.user.displayName||email.split('@')[0],pw);
     if(btn){btn.textContent='Sign In →';btn.disabled=false;}
     localStorage.getItem(PIN_KEY)?showPinScreen():(hideAuth(),renderAll(),updateUserUI(),updateCloudUI());
-  }catch(e){err.textContent='Failed: '+e.message;if(btn){btn.textContent='Sign In →';btn.disabled=false;}}
+  }catch(e){
+    if(btn){btn.textContent='Sign In →';btn.disabled=false;}
+    err.textContent=firebaseErrMsg(e);
+  }
 }
 
-function doForgotPassword(){alert('To reset your password, please contact the app administrator.');}
+async function doForgotPassword(){
+  const email=document.getElementById('siEmail').value.trim().toLowerCase();
+  if(!email){
+    const input=prompt('Enter your email address to reset your password:');
+    if(!input)return;
+    try{await fbAuth.sendPasswordResetEmail(input.trim().toLowerCase());alert('✅ Password reset email sent! Check your inbox.');}
+    catch(e){alert('Error: '+firebaseErrMsg(e));}
+    return;
+  }
+  try{
+    await fbAuth.sendPasswordResetEmail(email);
+    alert('✅ Password reset email sent to '+email+'. Check your inbox and spam folder.');
+  }catch(e){alert('Error: '+firebaseErrMsg(e));}
+}
 
+// ══════════════════════════════════════════════════════
+// FIREBASE — PHONE AUTH
+// ══════════════════════════════════════════════════════
+function initRecaptcha(){
+  if(recaptchaVerifier)return;
+  if(!fbAuth){console.warn('Firebase auth not ready for reCAPTCHA');return;}
+  try{
+    // Clear any existing reCAPTCHA
+    const rc=document.getElementById('recaptcha-container');
+    if(rc)rc.innerHTML='';
+    recaptchaVerifier=new firebase.auth.RecaptchaVerifier('recaptcha-container',{
+      size:'normal',
+      callback:()=>{
+        const err=document.getElementById('phErr');
+        if(err)err.textContent='';
+      },
+      'expired-callback':()=>{
+        recaptchaVerifier=null;
+        setTimeout(initRecaptcha, 500);
+      }
+    });
+    recaptchaVerifier.render().then(widgetId=>{
+      window.recaptchaWidgetId=widgetId;
+    }).catch(e=>console.warn('reCAPTCHA render failed:',e));
+  }catch(e){
+    console.warn('reCAPTCHA init failed:',e);
+    recaptchaVerifier=null;
+  }
+}
+
+async function sendSmsCode(){
+  const name=document.getElementById('phName').value.trim();
+  const code=document.getElementById('phCountryCode').value;
+  const number=document.getElementById('phNumber').value.trim().replace(/[^0-9]/g,'');
+  const err=document.getElementById('phErr');
+  const btn=document.querySelector('#phoneStep1 .btn.full');
+  if(!name){err.textContent='Enter your full name.';return;}
+  if(!number||number.length<6){err.textContent='Enter a valid phone number.';return;}
+  const fullPhone=code+number;
+  err.textContent='';
+  if(btn){btn.textContent='⏳ Sending code…';btn.disabled=true;}
+  try{
+    if(!recaptchaVerifier)initRecaptcha();
+    confirmationResult=await fbAuth.signInWithPhoneNumber(fullPhone,recaptchaVerifier);
+    // Show OTP step
+    document.getElementById('phoneStep1').style.display='none';
+    document.getElementById('phoneStep2').style.display='block';
+    set('phSentTo','Code sent to '+fullPhone);
+    document.getElementById('otp1').focus();
+    // Store name for after verification
+    window._pendingPhoneName=name;
+    window._pendingPhone=fullPhone;
+  }catch(e){
+    err.textContent=firebaseErrMsg(e);
+    // Reset recaptcha on error
+    if(recaptchaVerifier){try{recaptchaVerifier.clear();}catch{}recaptchaVerifier=null;}
+    const rc=document.getElementById('recaptcha-container');if(rc)rc.innerHTML='';
+    initRecaptcha();
+  }
+  if(btn){btn.textContent='Send SMS Code →';btn.disabled=false;}
+}
+
+async function verifySmsCode(){
+  const code=['otp1','otp2','otp3','otp4','otp5','otp6'].map(id=>document.getElementById(id).value).join('');
+  const err=document.getElementById('otpErr');
+  const btn=document.querySelector('#phoneStep2 .btn.full');
+  if(code.length!==6){err.textContent='Enter all 6 digits.';return;}
+  if(!confirmationResult){err.textContent='Session expired. Go back and try again.';return;}
+  err.textContent='';
+  if(btn){btn.textContent='⏳ Verifying…';btn.disabled=true;}
+  try{
+    const cred=await confirmationResult.confirm(code);
+    const name=window._pendingPhoneName||cred.user.phoneNumber;
+    // Set display name if new user
+    if(!cred.user.displayName)await cred.user.updateProfile({displayName:name});
+    const isNew=cred.additionalUserInfo?.isNewUser;
+    // Use phone as identifier, generate a local password key
+    const localKey='ph_'+sha(cred.user.uid).slice(0,16);
+    await onFirebaseSignIn(cred.user,name,localKey);
+    if(btn){btn.textContent='Verify Code →';btn.disabled=false;}
+    if(isNew){
+      document.getElementById('authScreen').style.display='none';
+      showOnboarding();
+    }else{
+      localStorage.getItem(PIN_KEY)?showPinScreen():(hideAuth(),renderAll(),updateUserUI(),updateCloudUI());
+    }
+  }catch(e){
+    err.textContent=e.code==='auth/invalid-verification-code'?'Wrong code — check your SMS and try again.':firebaseErrMsg(e);
+    if(btn){btn.textContent='Verify Code →';btn.disabled=false;}
+  }
+}
+
+async function resendSmsCode(){
+  confirmationResult=null;
+  document.getElementById('phoneStep2').style.display='none';
+  document.getElementById('phoneStep1').style.display='block';
+  ['otp1','otp2','otp3','otp4','otp5','otp6'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  if(recaptchaVerifier){try{recaptchaVerifier.clear();}catch{}recaptchaVerifier=null;}
+  const rc=document.getElementById('recaptcha-container');if(rc)rc.innerHTML='';
+  initRecaptcha();
+}
+
+function goBackToPhone(){
+  confirmationResult=null;
+  document.getElementById('phoneStep2').style.display='none';
+  document.getElementById('phoneStep1').style.display='block';
+  ['otp1','otp2','otp3','otp4','otp5','otp6'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+}
+
+function otpNext(el,nextId){
+  if(el.value.length===1){
+    const next=document.getElementById(nextId);
+    if(next)next.focus();
+  }
+}
+function otpSubmitCheck(){
+  const code=['otp1','otp2','otp3','otp4','otp5','otp6'].map(id=>document.getElementById(id).value).join('');
+  if(code.length===6)verifySmsCode();
+}
+
+// ══════════════════════════════════════════════════════
+// FIREBASE — SHARED SIGN IN HANDLER
+// Called after both email and phone auth succeed
+// ══════════════════════════════════════════════════════
+async function onFirebaseSignIn(fbUser, displayName, localKey){
+  const uid=fbUser.uid;
+  const email=fbUser.email||fbUser.phoneNumber||uid;
+  const name=displayName||fbUser.displayName||email;
+  // Set current user
+  currentUser={uid,name,email,phone:fbUser.phoneNumber||'',provider:fbUser.providerData?.[0]?.providerId||'email'};
+  currentPassword=localKey; // used for local AES encryption
+  // Load local data first (offline support)
+  loadLocal(uid,localKey);
+  // Then pull from Firestore
+  await pullFirestore(uid,localKey);
+  // Save session
+  localStorage.setItem(SESSION_KEY,JSON.stringify({uid,name,email,phone:fbUser.phoneNumber||''}));
+  localStorage.setItem('tfi_la',Date.now());
+  // Sync user profile to Firestore
+  fbDb.collection('users').doc(uid).set({
+    name,email,phone:fbUser.phoneNumber||'',
+    uid,joinedAt:fbUser.metadata.creationTime,
+    lastActive:new Date().toISOString(),
+    provider:fbUser.providerData?.[0]?.providerId||'unknown'
+  },{merge:true}).catch(()=>{});
+}
+
+// ══════════════════════════════════════════════════════
+// FIRESTORE SYNC — replace JSONBin
+// ══════════════════════════════════════════════════════
+async function pullFirestore(uid,key){
+  if(!fbDb||!uid)return;
+  try{
+    const doc=await fbDb.collection('userData').doc(uid).get();
+    if(doc.exists){
+      const encData=doc.data().data;
+      if(encData){
+        const decData=dec(encData,key);
+        if(decData){S={...freshState(),...mergeState(S,decData)};fixState();saveLocal(uid,key);}
+      }
+    }
+  }catch(e){console.warn('Firestore pull failed:',e);}
+}
+
+async function pushFirestore(){
+  if(!fbDb||!currentUser?.uid)return;
+  try{
+    const encData=enc(S,currentPassword);
+    await fbDb.collection('userData').doc(currentUser.uid).set({
+      data:encData,
+      updatedAt:new Date().toISOString(),
+      pushedAt:Date.now()
+    });
+    S.lastSync=new Date().toISOString();S.pushedAt=Date.now();
+    saveLocal();updateCloudUI();
+  }catch(e){console.warn('Firestore push failed:',e);}
+}
+
+async function manualSync(){
+  if(!fbDb){alert('Not connected to Firebase. Check your internet connection.');return;}
+  const pill=document.getElementById('syncPill');
+  if(pill){pill.textContent='⏳';pill.style.background='var(--gold-dim)';}
+  try{
+    await pullFirestore(currentUser.uid,currentPassword);
+    await pushFirestore();
+    renderAll();
+    if(pill){pill.textContent='✅';pill.style.background='var(--green-dim)';setTimeout(()=>{pill.textContent='☁️ Sync';pill.style.background='var(--brand-dim)';},2500);}
+    showWin('☁️ Synced!','Your data is up to date on all devices.');
+  }catch(e){
+    if(pill){pill.textContent='☁️ Sync';pill.style.background='var(--brand-dim)';}
+    showWin('⚠️ Sync failed',e.message);
+  }
+}
+
+async function silentSync(){
+  if(!fbDb||!currentUser?.uid)return;
+  try{
+    await pullFirestore(currentUser.uid,currentPassword);
+    await pushFirestore();
+    renderAll();
+  }catch{}
+}
+
+// Override saveLocal to also push to Firestore
+function saveLocal(){
+  if(!currentUser||!currentPassword)return;
+  const key=currentUser.uid||currentUser.email;
+  const encKey='tfi_d_'+btoa(key).replace(/[^a-z0-9]/gi,'');
+  const e=enc(S,currentPassword);
+  if(e)localStorage.setItem(encKey,e);
+  localStorage.setItem('tfi_la',Date.now());
+  // Push to Firestore debounced
+  clearTimeout(window._fsTimer);
+  window._fsTimer=setTimeout(pushFirestore,2000);
+}
+
+function loadLocal(uid,key){
+  try{
+    const encKey='tfi_d_'+btoa(uid).replace(/[^a-z0-9]/gi,'');
+    const raw=localStorage.getItem(encKey);
+    if(raw){const d=dec(raw,key);if(d){S={...freshState(),...d};fixState();return true;}}
+    S=freshState();fixState();return true;
+  }catch{S=freshState();fixState();return false;}
+}
+
+function updateCloudUI(){
+  const connected=!!(fbDb&&currentUser?.uid);
+  const dot=document.getElementById('cloudDot');
+  const txt=document.getElementById('cloudTxt');
+  const pill=document.getElementById('syncPill');
+  const ht=document.getElementById('homeSyncTag');
+  const row=document.getElementById('syncStatusRow');
+  const lst=document.getElementById('lastSyncTxt');
+  if(connected){
+    if(dot)dot.className='status-dot dot-on';
+    const syncTime=S.lastSync?new Date(S.lastSync).toLocaleString('en',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}):'syncing…';
+    if(txt)txt.textContent='Firebase — '+syncTime;
+    if(lst)lst.textContent='Last sync: '+syncTime;
+    if(pill)pill.style.display='flex';
+    if(ht)ht.style.display='flex';
+    if(row)row.style.display='flex';
+  }else{
+    if(dot)dot.className='status-dot dot-off';
+    if(txt)txt.textContent='Offline — data saved locally';
+    if(pill)pill.style.display='none';
+    if(ht)ht.style.display='none';
+    if(row)row.style.display='none';
+  }
+}
+
+// ══════════════════════════════════════════════════════
+// FIREBASE ERROR MESSAGES — human readable
+// ══════════════════════════════════════════════════════
+function firebaseErrMsg(e){
+  const map={
+    'auth/email-already-in-use':'This email already has an account. Sign in instead.',
+    'auth/user-not-found':'No account with this email. Create an account first.',
+    'auth/wrong-password':'Wrong password. Try again or reset your password.',
+    'auth/invalid-email':'Enter a valid email address.',
+    'auth/weak-password':'Password too weak. Use at least 6 characters.',
+    'auth/too-many-requests':'Too many attempts. Wait a few minutes and try again.',
+    'auth/network-request-failed':'No internet connection. Check your network.',
+    'auth/invalid-verification-code':'Wrong SMS code. Check your messages and try again.',
+    'auth/invalid-phone-number':'Invalid phone number. Include country code.',
+    'auth/quota-exceeded':'SMS limit reached. Try email login instead.',
+    'auth/captcha-check-failed':'Security check failed. Refresh and try again.',
+    'auth/user-disabled':'This account has been disabled. Contact support.',
+    'auth/invalid-credential':'Email or password is incorrect.',
+  };
+  return map[e.code]||e.message||'Something went wrong. Please try again.';
+}
+
+// ══════════════════════════════════════════════════════
+// SIGN OUT
+// ══════════════════════════════════════════════════════
 function doSignOut(){
   if(!confirm('Sign out of Trackinfin?'))return;
-  sessionClear();localStorage.removeItem(PIN_KEY);
+  if(fbAuth)fbAuth.signOut().catch(()=>{});
+  localStorage.removeItem(SESSION_KEY);
+  localStorage.removeItem(PIN_KEY);
+  localStorage.removeItem('tfi_la');
   currentUser=null;currentPassword=null;S=freshState();
   closeProfile();showAuth();
 }
+
+// Session management
+const sessionGet=()=>{try{return JSON.parse(localStorage.getItem(SESSION_KEY)||'null');}catch{return null;}};
+const sessionSet=(email,name,binId)=>{localStorage.setItem(SESSION_KEY,JSON.stringify({email,name,binId}));localStorage.setItem('tfi_la',Date.now());};
+const sessionClear=()=>{localStorage.removeItem(SESSION_KEY);localStorage.removeItem('tfi_la');currentPassword=null;};
 
 // ── PIN ──────────────────────────────────────────────
 function pk(d){if(pinBuf.length>=4)return;pinBuf+=d;updatePinDots();if(pinBuf.length===4)setTimeout(checkPin,150);}
@@ -2211,11 +2563,14 @@ function checkPin(){
 function unlockApp(){if(!currentPassword){showPwFallback();return;}hideAuth();renderAll();updateUserUI();updateCloudUI();}
 function showPwFallback(){set('pinErr','');document.getElementById('pinGridWrap').style.display='none';document.getElementById('pinPassWrap').style.display='block';}
 async function unlockWithPassword(){
-  const pw=document.getElementById('pinPassInp').value;const s=sessionGet();if(!s){showAuth();return;}
-  if(!loadLocal(s.email,pw)){set('pinPassErr','Wrong password');return;}
-  currentUser={name:s.name,email:s.email,binId:s.binId};currentPassword=pw;
-  sessionSet(s.email,s.name,s.binId);
-  document.getElementById('pinGridWrap').style.display='block';document.getElementById('pinPassWrap').style.display='none';
+  const pw=document.getElementById('pinPassInp').value;
+  const s=sessionGet();if(!s){showAuth();return;}
+  const uid=s.uid||s.email;
+  const localKey='tfi_'+sha(uid).slice(0,20);
+  if(!loadLocal(uid,localKey)){set('pinPassErr','Incorrect — use your Trackinfin password');return;}
+  currentPassword=localKey;
+  document.getElementById('pinGridWrap').style.display='block';
+  document.getElementById('pinPassWrap').style.display='none';
   hideAuth();renderAll();updateUserUI();updateCloudUI();
 }
 function doSetupPin(){
@@ -4053,27 +4408,47 @@ async function saveAdminCloudSetup(){
 // ── Admin Stats ───────────────────────────────────────
 async function renderAdminStats(){
   const el=document.getElementById('adminStats');
-  if(el)el.innerHTML='<div style="color:var(--txt3);font-size:0.82rem;grid-column:1/-1;padding:12px;text-align:center;">⏳ Loading users…</div>';
-  const reg=await getRegistry();
-  if(!reg){
-    if(el)el.innerHTML='<div style="color:var(--red);font-size:0.82rem;grid-column:1/-1;padding:12px;text-align:center;">⚠️ Not connected to cloud. Click "Cloud Setup" to configure.</div>';
-    const tbody=document.getElementById('adminUsersBody');
-    if(tbody)tbody.innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--txt3);padding:24px;">Connect cloud storage first to see users.</td></tr>';
+  if(el)el.innerHTML='<div style="color:var(--txt3);font-size:0.82rem;grid-column:1/-1;padding:12px;text-align:center;">⏳ Loading users from Firebase…</div>';
+  // Always show Firebase banner as connected
+  const banner=document.getElementById('adminSetupBanner');
+  if(banner)banner.style.display='flex';
+  if(!fbDb){
+    if(el)el.innerHTML='<div style="color:var(--orange);font-size:0.82rem;grid-column:1/-1;padding:16px;text-align:center;">⚠️ Firebase not connected. Check your internet and refresh.</div>';
     return;
   }
-  const users=reg?.users||[];const now=Date.now();
-  const stats=[
-    {l:'Total Users',v:users.length,c:'var(--brand)',i:'👥'},
-    {l:'Online Now',v:users.filter(u=>u.lastActive&&now-u.lastActive<300000).length,c:'var(--green)',i:'🟢'},
-    {l:'Active Today',v:users.filter(u=>u.lastActive&&now-u.lastActive<86400000).length,c:'var(--gold)',i:'📅'},
-    {l:'This Week',v:users.filter(u=>u.lastActive&&now-u.lastActive<604800000).length,c:'#38BDF8',i:'📆'},
-    {l:'New This Month',v:users.filter(u=>{if(!u.joinedAt)return false;const d=new Date(u.joinedAt),n=new Date();return d.getMonth()===n.getMonth()&&d.getFullYear()===n.getFullYear();}).length,c:'var(--purple)',i:'🆕'},
-    {l:'Suspended',v:users.filter(u=>u.suspended).length,c:'var(--red)',i:'🚫'},
-  ];
-  if(el)el.innerHTML=stats.map(s=>`<div class="admin-stat"><div class="admin-stat-ico">${s.i}</div><div style="font-size:.66rem;color:var(--txt3);text-transform:uppercase;letter-spacing:1.2px;font-weight:700;margin-bottom:5px;">${s.l}</div><div style="font-family:'Sora',sans-serif;font-size:2rem;font-weight:700;color:${s.c};">${s.v}</div></div>`).join('');
-  window._adminUsers=users;
-  renderAdminUsers(users);
-  renderActivityLog(users);
+  try{
+    const snap=await fbDb.collection('users').get();
+    const users=[];
+    snap.forEach(doc=>users.push({...doc.data(),uid:doc.id}));
+    const now=Date.now();
+    const online=users.filter(u=>u.lastActive&&(now-new Date(u.lastActive).getTime())<300000).length;
+    const today=users.filter(u=>u.lastActive&&(now-new Date(u.lastActive).getTime())<86400000).length;
+    const thisWeek=users.filter(u=>u.joinedAt&&(now-new Date(u.joinedAt).getTime())<604800000).length;
+    if(el)el.innerHTML=`
+      <div class="admin-stat-card"><div class="admin-stat-num">${users.length}</div><div class="admin-stat-lbl">Total Users</div></div>
+      <div class="admin-stat-card"><div class="admin-stat-num" style="color:var(--green);">${online}</div><div class="admin-stat-lbl">Online Now</div></div>
+      <div class="admin-stat-card"><div class="admin-stat-num" style="color:var(--brand);">${today}</div><div class="admin-stat-lbl">Active Today</div></div>
+      <div class="admin-stat-card"><div class="admin-stat-num" style="color:var(--gold);">${thisWeek}</div><div class="admin-stat-lbl">New This Week</div></div>`;
+    window._adminUsers=users;
+    renderAdminUsers(users);
+    // Activity log
+    const logEl=document.getElementById('adminActivityLog');
+    if(logEl){
+      const recent=users.filter(u=>u.lastActive).sort((a,b)=>new Date(b.lastActive)-new Date(a.lastActive)).slice(0,8);
+      logEl.innerHTML=recent.length
+        ?recent.map(u=>`<div style="padding:4px 0;border-bottom:1px solid var(--border2);">
+            <span style="color:var(--brand);font-weight:600;">${u.name||'User'}</span>
+            <span style="color:var(--txt3);"> · ${u.email||u.phone||'—'} · </span>
+            <span style="color:var(--txt2);">${tAgo(new Date(u.lastActive).getTime())}</span>
+          </div>`).join('')
+        :'<div style="color:var(--txt3);">No activity yet.</div>';
+    }
+    // Update count
+    const countEl=document.getElementById('adminUserCount');
+    if(countEl)countEl.textContent=users.length+' user'+(users.length!==1?'s':'')+' total';
+  }catch(e){
+    if(el)el.innerHTML='<div style="color:var(--red);font-size:0.82rem;grid-column:1/-1;padding:16px;">Error: '+e.message+'<br/><br/>Check Firestore rules allow admin read access.</div>';
+  }
 }
 
 // ── Admin Users Table ─────────────────────────────────
@@ -4187,12 +4562,17 @@ async function adminUnsuspend(email){
 }
 async function sendBroadcast(){
   const msg=document.getElementById('broadcastMsg').value.trim();
-  if(!msg){alert('Enter a message.');return;}
-  const reg=await getRegistry()||{users:[]};
-  if(!(reg.users||[]).length){alert('No users to broadcast to.');return;}
-  reg.broadcastMessage={text:msg,sentAt:Date.now()};
-  await setRegistry(reg);closeO('oAdminBroadcast');
-  alert('✅ Broadcast sent to '+reg.users.length+' user'+(reg.users.length!==1?'s':'')+'.\nThey will see it when they next open the app.');
+  if(!msg){alert('Enter a message first.');return;}
+  if(!fbDb){alert('Firebase not connected.');return;}
+  try{
+    await fbDb.collection('broadcast').doc('latest').set({
+      text:msg,sentAt:new Date().toISOString(),sentBy:currentUser?.email||'admin'
+    });
+    const users=window._adminUsers||[];
+    closeO('oAdminBroadcast');
+    document.getElementById('broadcastMsg').value='';
+    showWin('📢 Broadcast sent!','Message will appear to all '+users.length+' users on next open.');
+  }catch(e){alert('Error: '+e.message);}
 }
 function saveAdminSettings(){
   const phone=document.getElementById('adminSupportPhone').value.trim();
@@ -4220,51 +4600,113 @@ function renderAll(){
 // ══════════════════════════════════════════════════════
 function initApp(){
   initTheme();
-  // Init category swatches in manage cats
+  // Init UI elements
   const sw=document.getElementById('newCatSwatches');
   if(sw)sw.innerHTML=PALETTE.map(p=>`<div class="swatch${p===newCatColor?' active':''}" style="background:${p}" onclick="newCatColor='${p}';renderCatManager()"></div>`).join('');
-  // Set today on date fields
   const today=new Date().toISOString().split('T')[0];
   ['addDate','txDate','creditDate','bizDate','spendEnvDate'].forEach(id=>{const el=document.getElementById(id);if(el&&!el.value)el.value=today;});
-  // Check session
-  const session=sessionGet();
-  const pin=localStorage.getItem(PIN_KEY);
+
+  // Show loading state
   document.getElementById('app').style.display='none';
   document.getElementById('pinScreen').style.display='none';
   document.getElementById('onboardScreen').style.display='none';
-  if(!session){
-    document.getElementById('authScreen').style.display='flex';
-    showAuthTab('up');setTimeout(()=>document.getElementById('suName')?.focus(),400);
-  }else if(pin){
-    currentUser={name:session.name,email:session.email,binId:session.binId};
-    document.getElementById('authScreen').style.display='none';
-    document.getElementById('pinScreen').style.display='flex';
-    set('pinUserLbl','Welcome back, '+(session.name.split(' ')[0]||'')+'!');
-    document.getElementById('pinGridWrap').style.display='block';
-    document.getElementById('pinPassWrap').style.display='none';
-    pinBuf='';updatePinDots();
-  }else{
-    document.getElementById('authScreen').style.display='flex';
-    showAuthTab('in');
-    document.getElementById('siEmail').value=session.email;
-    setTimeout(()=>document.getElementById('siPass')?.focus(),400);
+  document.getElementById('authScreen').style.display='flex';
+
+  // ── INITIALIZE FIREBASE ──
+  if(typeof firebase === 'undefined'){
+    console.error('Firebase SDK not loaded — check internet connection');
+    // Show helpful message on auth screen
+    const authCard=document.querySelector('.auth-card');
+    if(authCard){
+      const notice=document.createElement('div');
+      notice.style.cssText='background:var(--red-dim);border:1px solid var(--red);border-radius:10px;padding:12px;margin-bottom:12px;font-size:0.78rem;color:var(--red);text-align:center;';
+      notice.textContent='⚠️ Could not connect to Firebase. Check your internet connection and refresh.';
+      authCard.prepend(notice);
+    }
+    fbDb=null;fbAuth=null;
+  } else {
+    try{
+      // Prevent duplicate initialization
+      if(!firebase.apps.length){
+        fbApp=firebase.initializeApp(firebaseConfig);
+      } else {
+        fbApp=firebase.app();
+      }
+      fbAuth=firebase.auth();
+      fbDb=firebase.firestore();
+      // Enable offline persistence (silently)
+      fbDb.enablePersistence({synchronizeTabs:true}).catch(()=>{});
+      console.log('✅ Firebase initialized successfully');
+    }catch(e){
+      console.error('Firebase init failed:',e);
+      fbDb=null;fbAuth=null;
+    }
   }
-  // Check for broadcast message
-  if(session)setTimeout(checkBroadcast,2000);
-  // Apply recurring txs at start of month
-  if(session)setTimeout(applyRecurringTxs,3000);
-  // Streak win check
-  if(session)setTimeout(checkStreakWin,4000);
+
+  // ── FIREBASE AUTH STATE LISTENER ──
+  // This is the main entry point — Firebase tells us if user is logged in
+  if(fbAuth){
+    fbAuth.onAuthStateChanged(async (fbUser)=>{
+      if(fbUser){
+        // User is signed in
+        const session=sessionGet();
+        const name=fbUser.displayName||session?.name||fbUser.email||fbUser.phoneNumber||'User';
+        const localKey='tfi_'+sha(fbUser.uid).slice(0,20);
+        currentUser={uid:fbUser.uid,name,email:fbUser.email||'',phone:fbUser.phoneNumber||''};
+        currentPassword=localKey;
+        // Load local data
+        loadLocal(fbUser.uid,localKey);
+        // Update session
+        localStorage.setItem(SESSION_KEY,JSON.stringify({uid:fbUser.uid,name,email:fbUser.email||'',phone:fbUser.phoneNumber||''}));
+        localStorage.setItem('tfi_la',Date.now());
+        // Check PIN
+        const pin=localStorage.getItem(PIN_KEY);
+        if(pin){
+          showPinScreen();
+        }else{
+          hideAuth();renderAll();updateUserUI();updateCloudUI();
+        }
+        // Background tasks
+        setTimeout(()=>pullFirestore(fbUser.uid,localKey).then(()=>{renderAll();updateCloudUI();}),1000);
+        setTimeout(()=>{
+          fbDb?.collection('users').doc(fbUser.uid).set({lastActive:new Date().toISOString()},{merge:true}).catch(()=>{});
+        },2000);
+        setTimeout(checkBroadcast,3000);
+        setTimeout(applyRecurringTxs,4000);
+        setTimeout(checkStreakWin,5000);
+      }else{
+        // No user signed in
+        currentUser=null;currentPassword=null;
+        const session=sessionGet();
+        document.getElementById('authScreen').style.display='flex';
+        document.getElementById('app').style.display='none';
+        if(session?.email){
+          showAuthTab('in');
+          const em=document.getElementById('siEmail');if(em)em.value=session.email||'';
+        }else{
+          showAuthTab('up');
+          setTimeout(()=>document.getElementById('suName')?.focus(),400);
+        }
+      }
+    });
+  }else{
+    // Firebase unavailable — fall back to local mode
+    document.getElementById('authScreen').style.display='flex';
+    showAuthTab('up');
+    setTimeout(()=>document.getElementById('suName')?.focus(),400);
+  }
 }
 
 async function checkBroadcast(){
-  if(!JSONBIN_MASTER_KEY||!REGISTRY_BIN_ID)return;
+  if(!fbDb)return;
   try{
-    const reg=await getRegistry();if(!reg?.broadcastMessage)return;
-    const msg=reg.broadcastMessage;const seenKey='tfi_broadcast_'+msg.sentAt;
-    if(localStorage.getItem(seenKey))return;
-    localStorage.setItem(seenKey,'1');
-    setTimeout(()=>showWin('📢 Message from Admin',msg.text),1000);
+    const doc=await fbDb.collection('broadcast').doc('latest').get();
+    if(!doc.exists)return;
+    const bm=doc.data();
+    const seen=localStorage.getItem('tfi_bcast_seen');
+    if(seen&&seen>=bm.sentAt)return;
+    localStorage.setItem('tfi_bcast_seen',bm.sentAt);
+    setTimeout(()=>showWin('📢 Message from Admin',bm.text),1500);
   }catch{}
 }
 function checkStreakWin(){
@@ -4510,6 +4952,13 @@ function renderTxItem(t){
   <button onclick="dismissInstall()" style="background:rgba(255,255,255,.2);border:none;border-radius:8px;color:#fff;font-size:0.78rem;padding:7px 10px;cursor:pointer;">✕</button>
 </div>
 
-<script>initApp();</script>
+<!-- Firebase SDK — loaded last to ensure DOM is ready -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script>
+// Firebase is now loaded — initialize the app
+initApp();
+</script>
 </body>
 </html>
