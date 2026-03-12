@@ -1076,8 +1076,8 @@ tbody td{padding:11px 12px;border-bottom:1px solid var(--border2);}
         <div class="sec-row">
           <div class="sec-title" style="font-size:0.82rem;">Credit Records</div>
           <div style="display:flex;gap:6px;">
-            <button class="btn sm" onclick="openO('oAddCredit');document.getElementById('creditDir').value='owed'">+ Lent</button>
-            <button class="btn ghost sm" onclick="openO('oAddCredit');document.getElementById('creditDir').value='owing'">+ Borrowed</button>
+            <button class="btn sm" onclick="openAddCredit('owed')">+ Lent</button>
+            <button class="btn ghost sm" onclick="openAddCredit('owing')">+ Borrowed</button>
           </div>
         </div>
         <div class="filter-row" style="margin-bottom:12px;">
@@ -1381,7 +1381,7 @@ tbody td{padding:11px 12px;border-bottom:1px solid var(--border2);}
         </div>
         <div class="settings-section-body" id="sAbout">
           <div class="settings-item" style="cursor:default;"><div class="sett-ico" style="background:var(--brand-dim);">💰</div><div class="sett-info"><div class="sett-name">Trackinfin</div><div class="sett-sub">Version 10.0 · Built for African entrepreneurs</div></div></div>
-          <div class="settings-item" id="supportContactRow" style="cursor:default;"><div class="sett-ico" style="background:var(--green-dim);">📞</div><div class="sett-info"><div class="sett-name">Support</div><div class="sett-sub" id="supportNumDisplay">Contact your administrator</div></div><a id="supportWaBtn" style="display:none;background:var(--green-dim);border:1px solid rgba(6,214,160,.2);border-radius:8px;color:var(--green);font-size:0.72rem;font-weight:700;padding:6px 12px;text-decoration:none;white-space:nowrap;" target="_blank">WhatsApp</a></div>
+          <div class="settings-item" id="supportContactRow" style="cursor:default;"><div class="sett-ico" style="background:var(--green-dim);">📞</div><div class="sett-info"><div class="sett-name">Support</div><div class="sett-sub" id="supportNumDisplay">Contact your administrator</div></div><button id="supportWaBtn" onclick="openSupportWhatsApp()" style="display:none;background:var(--green-dim);border:1px solid rgba(6,214,160,.2);border-radius:8px;color:var(--green);font-size:0.72rem;font-weight:700;padding:6px 12px;cursor:pointer;white-space:nowrap;">📲 WhatsApp</button></div>
           <div class="settings-item" onclick="openO('oFeedback')" style="cursor:pointer;"><div class="sett-ico" style="background:var(--brand-dim);">💬</div><div class="sett-info"><div class="sett-name">Send Feedback</div><div class="sett-sub">Ideas, bugs or praise — we read everything</div></div><div class="sett-right">›</div></div>
           <div class="settings-item" onclick="doSignOut()" style="cursor:pointer;"><div class="sett-ico" style="background:var(--red-dim);">🚪</div><div class="sett-info"><div class="sett-name" style="color:var(--red);">Sign Out</div><div class="sett-sub">Sign out of your account</div></div><div class="sett-right">›</div></div>
         </div>
@@ -1849,7 +1849,7 @@ tbody td{padding:11px 12px;border-bottom:1px solid var(--border2);}
         <div style="font-size:0.82rem;font-weight:700;">Need personal help?</div>
         <div style="font-size:0.74rem;color:var(--txt3);" id="supportNumDisplay">Contact your administrator</div>
       </div>
-      <button class="wa-btn" id="supportWaBtn" onclick="openSupportWhatsApp()" style="display:none;">📲 WhatsApp</button>
+      <button class="wa-btn" id="helpSupportWaBtn" onclick="openSupportWhatsApp()" style="display:none;">📲 WhatsApp</button>
     </div>
     <div class="help-tabs" id="helpTabs"></div>
     <div id="helpBody"></div>
@@ -2631,28 +2631,29 @@ function otpSubmitCheck(){
 async function onFirebaseSignIn(fbUser, displayName, localKey){
   const uid=fbUser.uid;
   const email=fbUser.email||fbUser.phoneNumber||uid;
-  const name=displayName||fbUser.displayName||email;
-  // Set current user
-  currentUser={uid,name,email,phone:fbUser.phoneNumber||'',provider:fbUser.providerData?.[0]?.providerId||'email'};
-  currentPassword=localKey; // used for local AES encryption
-  // Load local data first (offline support)
+  // Set current user early (needed by loadLocal/pullFirestore)
+  currentUser={uid,name:displayName||fbUser.displayName||email,email,phone:fbUser.phoneNumber||'',provider:fbUser.providerData?.[0]?.providerId||'email'};
+  currentPassword=localKey;
+  // Load local data first (offline support) — this populates S including S.name, S.country, S.userType
   loadLocal(uid,localKey);
-  // Then pull from Firestore
+  // Then pull from Firestore — may update S further
   await pullFirestore(uid,localKey);
+  // Now pick best name: Firebase displayName > S.name (from encrypted data) > email
+  const name=displayName||fbUser.displayName||S?.name||email;
+  currentUser.name=name;
   // Save session
   localStorage.setItem(SESSION_KEY,JSON.stringify({uid,name,email,phone:fbUser.phoneNumber||''}));
   localStorage.setItem('tfi_la',Date.now());
-  // Sync user profile to Firestore (own doc)
+  // Push full profile to Firestore — S.country and S.userType now populated from local/cloud data
   const profileData={
     name,email,phone:fbUser.phoneNumber||'',
     uid,joinedAt:fbUser.metadata.creationTime,
     lastActive:new Date().toISOString(),
     provider:fbUser.providerData?.[0]?.providerId||'unknown',
-    country:S?.country||'',userType:S?.userType||'other'
+    country:S?.country||'',
+    userType:S?.userType||'other'
   };
   fbDb.collection('users').doc(uid).set(profileData,{merge:true}).catch(()=>{});
-  // ALSO write to publicProfiles — no auth required to read this collection
-  // This allows the admin panel to see all users without needing admin Firebase Auth
   fbDb.collection('publicProfiles').doc(uid).set(profileData,{merge:true}).catch(()=>{});
 }
 
@@ -2886,6 +2887,7 @@ function finishOnboard(){
   S.userType=selectedUserType;
   S.currency=document.getElementById('obCurrency').value||'₦';
   S.country=document.getElementById('obCountry')?.value||'';
+  S.name=currentUser?.name||S.name||'';// persist name in encrypted state
   const income=parseFloat(document.getElementById('obIncome').value)||0;
   if(income>0)S.monthlyBudget=Math.round(income*0.9);
 
@@ -4014,7 +4016,7 @@ function renderSettings(){
   const appSettings=JSON.parse(localStorage.getItem(APP_SETTINGS_K)||'{}');
   const phone=appSettings.supportPhone||SUPPORT_PHONE_DEFAULT;
   const snd=document.getElementById('supportNumDisplay');if(snd)snd.textContent=phone?'Call/WhatsApp: '+phone:'Contact your administrator';
-  const swb=document.getElementById('supportWaBtn');if(swb)swb.style.display=phone?'flex':'none';
+  const swb=document.getElementById('supportWaBtn');if(swb)swb.style.display=phone?'inline-block':'none';
 }
 function toggleModule(mod,on){
   if(!S.modules)S.modules={};S.modules[mod]=on;
@@ -4752,7 +4754,8 @@ function openHelp(){
   const appSettings=JSON.parse(localStorage.getItem(APP_SETTINGS_K)||'{}');
   const phone=appSettings.supportPhone||SUPPORT_PHONE_DEFAULT;
   const sd=document.getElementById('supportNumDisplay');if(sd)sd.textContent=phone?'Call/WhatsApp: '+phone:'Contact your administrator';
-  const swb=document.getElementById('supportWaBtn');if(swb)swb.style.display=phone?'flex':'none';
+  const swb=document.getElementById('supportWaBtn');if(swb)swb.style.display=phone?'inline-block':'none';
+  const swb2=document.getElementById('helpSupportWaBtn');if(swb2)swb2.style.display=phone?'inline-block':'none';
 }
 function closeHelp(){document.getElementById('helpPanel').classList.remove('open');}
 function openSupportWhatsApp(){
@@ -5191,7 +5194,9 @@ function initApp(){
         setTimeout(()=>pullFirestore(fbUser.uid,localKey).then(()=>{renderAll();updateCloudUI();}),1000);
         setTimeout(()=>{
           const _laNow=new Date().toISOString();
-          const _profileRefresh={lastActive:_laNow,name:currentUser?.name||'',email:currentUser?.email||fbUser.email||'',uid:fbUser.uid,country:S?.country||'',userType:S?.userType||'other'};
+          // Use S.name as best source of display name (set during onboarding)
+          const _bestName=S?.name||currentUser?.name||fbUser.displayName||fbUser.email||'';
+          const _profileRefresh={lastActive:_laNow,name:_bestName,email:currentUser?.email||fbUser.email||'',uid:fbUser.uid,country:S?.country||'',userType:S?.userType||'other'};
           fbDb?.collection('users').doc(fbUser.uid).set(_profileRefresh,{merge:true}).catch(()=>{});
           fbDb?.collection('publicProfiles').doc(fbUser.uid).set(_profileRefresh,{merge:true}).catch(()=>{});
         },2000);
@@ -5349,7 +5354,7 @@ async function loadAppSettingsFromCloud(){
     localStorage.setItem(APP_SETTINGS_K,JSON.stringify(cfg));
     const phone=cfg.supportPhone||'';
     const snd=document.getElementById('supportNumDisplay');if(snd)snd.textContent=phone?'📞 '+phone:'Contact your administrator';
-    const swb=document.getElementById('supportWaBtn');if(swb)swb.style.display=phone?'flex':'none';
+    const swb=document.getElementById('supportWaBtn');if(swb)swb.style.display=phone?'inline-block':'none';
   }catch(e){console.warn('loadAppSettingsFromCloud:',e.message);}
 }
 
