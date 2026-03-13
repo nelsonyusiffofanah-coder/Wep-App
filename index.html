@@ -2707,24 +2707,22 @@ async function pushFirestore(){
   // Security: only push to your own document
   const uid=currentUser.uid;
   try{
-    const encData=enc(S,currentPassword);
-    if(!encData){return;}
     const now=new Date().toISOString();
     const nowMs=Date.now();
+    // Stamp pushedAt INTO S before encrypting — so listener can compare timestamps
+    S.pushedAt=nowMs;
+    S.lastSync=now;
+    const encDataFinal=enc(S,currentPassword);
+    if(!encDataFinal)return;
     await fbDb.collection('userData').doc(uid).set({
-      data:encData,
+      data:encDataFinal,
       updatedAt:now,
       pushedAt:nowMs
     });
-    S.lastSync=now;
-    S.pushedAt=nowMs;
-    // Save timestamps locally
+    // Save to localStorage (reuse already-encrypted blob)
     const encKey='tfi_d_'+btoa(uid).replace(/[^a-z0-9]/gi,'');
-    const e2=enc(S,currentPassword);
-    if(e2){
-      localStorage.setItem(encKey,e2);
-      localStorage.setItem('tfi_la',nowMs);
-    }
+    localStorage.setItem(encKey, encDataFinal);
+    localStorage.setItem('tfi_la', nowMs);
     updateCloudUI();
   }catch(e){
     // Only show to user if it's a persistent auth/permission error (not just network blip)
@@ -2899,13 +2897,67 @@ async function checkAdminDirectMessage(){
     }
   }catch{}
 }
-// Also sync every 3 minutes while app is open
+// ── REALTIME SYNC — Firestore onSnapshot listener ──────
+// Replaces polling. Fires instantly when another device pushes.
+let _syncUnsub = null; // holds the unsubscribe function
+
+function startRealtimeSync(uid, key){
+  // Clean up any existing listener first
+  if(_syncUnsub){ _syncUnsub(); _syncUnsub=null; }
+
+  if(!fbDb||!uid||!key) return;
+
+  _syncUnsub = fbDb.collection('userData').doc(uid)
+    .onSnapshot({includeMetadataChanges:false}, async (doc)=>{
+      // Skip if this update came from OUR OWN push (fromCache=false means it's a real server update)
+      if(!doc.exists || doc.metadata.hasPendingWrites) return;
+
+      const encData = doc.data()?.data;
+      if(!encData) return;
+
+      const decData = dec(encData, key);
+      if(!decData) return;
+
+      // Only merge if cloud is actually newer than what we last pushed
+      const cloudPushedAt = doc.data().pushedAt || 0;
+      const ourPushedAt   = S.pushedAt || 0;
+      if(cloudPushedAt <= ourPushedAt) return; // we already have this or newer
+
+      // Merge cloud into local — don't push back (avoid echo loop)
+      const merged = mergeState(S, decData);
+      S = {...freshState(), ...merged};
+      S.lastSync  = new Date().toISOString();
+      S.pushedAt  = cloudPushedAt; // keep cloud's timestamp
+      fixState();
+
+      // Save merged locally
+      const encKey = 'tfi_d_'+btoa(uid).replace(/[^a-z0-9]/gi,'');
+      const e = enc(S, key);
+      if(e){ localStorage.setItem(encKey,e); localStorage.setItem('tfi_la',Date.now()); }
+
+      renderAll();
+      updateCloudUI();
+
+      // Show subtle sync indicator
+      const pill = document.getElementById('syncPill');
+      if(pill){ pill.textContent='✅ Synced'; pill.style.background='var(--green-dim)';
+        setTimeout(()=>{ pill.textContent='☁️ Sync'; pill.style.background='var(--brand-dim)'; },2000); }
+    }, (err)=>{
+      // Listener error — fall back to manual sync
+      console.warn('Realtime sync error:',err.code);
+    });
+}
+
+function stopRealtimeSync(){
+  if(_syncUnsub){ _syncUnsub(); _syncUnsub=null; }
+}
+
+// Keep a lighter interval just for app settings refresh (not data sync)
 setInterval(()=>{
   if(document.visibilityState==='visible'&&fbDb&&currentUser?.uid){
-    silentSync();
-    loadAppSettingsFromCloud(); // refresh support phone etc
+    loadAppSettingsFromCloud();
   }
-},60000); // 60s sync interval
+},120000); // refresh app settings every 2 min
 // Sync when device comes back online
 window.addEventListener('online',()=>{
   const pill=document.getElementById('syncPill');
@@ -2984,6 +3036,7 @@ function firebaseErrMsg(e){
 // ══════════════════════════════════════════════════════
 function doSignOut(){
   if(!confirm('Sign out of Trackinfin?'))return;
+  stopRealtimeSync();
   if(fbAuth)fbAuth.signOut().catch(()=>{});
   localStorage.removeItem(SESSION_KEY);
   localStorage.removeItem(PIN_KEY);
@@ -5681,7 +5734,10 @@ function initApp(){
         updateNotifBadge();
         loadAppSettingsFromCloud();
 
-        // ── 7. Background tasks (non-blocking) ───────────
+        // ── 7. Start realtime sync listener ─────────────
+        startRealtimeSync(uid, localKey);
+
+        // ── 8. Background tasks (non-blocking) ───────────
         setTimeout(()=>{
           const profileData={lastActive:new Date().toISOString(),name:bestName,
             email:currentUser.email,uid,country:S?.country||'',userType:S?.userType||'other'};
