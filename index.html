@@ -2916,7 +2916,7 @@ function startRealtimeSync(uid, key){
 
       if(!doc.exists){ _addSyncLog('→ skip: no doc'); return; }
 
-      // fromCache is always false now (persistence disabled) — no need to skip
+      // No fromCache guard — persistence disabled, all snapshots are from server
 
       const encData = doc.data()?.data;
       if(!encData){ _addSyncLog('→ skip: no data field'); return; }
@@ -3547,7 +3547,14 @@ function openAddSheet(type){
   document.getElementById('addSheet').classList.add('open');
   setAddType(type);
 }
-function closeAddSheet(){document.getElementById('addSheet').classList.remove('open');}
+function closeAddSheet(){
+  document.getElementById('addSheet').classList.remove('open');
+  if(_editingTxId!==null){
+    _editingTxId=null;
+    const saveBtn=document.querySelector('#addSheet .btn.full');
+    if(saveBtn)saveBtn.textContent='Save Transaction';
+  }
+}
 document.getElementById('addSheet').addEventListener('click',e=>{if(e.target===document.getElementById('addSheet'))closeAddSheet();});
 
 function setAddType(t){
@@ -3595,7 +3602,22 @@ function saveAddSheet(){
   const month=fmtM(new Date(date+'T12:00:00'));
   const goalId=document.getElementById('addGoalSel')?.value||'';
   const cat=selectedCat||'other';
-  S.txs.unshift({id:Date.now(),desc:desc||catById(cat).name,amt,type:addType,cat,date,month,goalId});
+
+  if(_editingTxId!==null){
+    // UPDATE existing transaction
+    const idx=S.txs.findIndex(x=>x.id===_editingTxId);
+    if(idx>=0){
+      S.txs[idx]={...S.txs[idx],desc:desc||catById(cat).name,amt,type:addType,cat,date,month,goalId,updatedAt:new Date().toISOString()};
+    }
+    _editingTxId=null;
+    const saveBtn=document.querySelector('#addSheet .btn.full');
+    if(saveBtn)saveBtn.textContent='Save Transaction';
+    addAmtStr='0';closeAddSheet();autoSave();renderHome();renderMoney();
+    return;
+  }
+
+  // NEW transaction
+  S.txs.unshift({id:Date.now(),desc:desc||catById(cat).name,amt,type:addType,cat,date,month,goalId,updatedAt:new Date().toISOString()});
   if(goalId&&addType==='save'){const g=S.goals.find(x=>x.id===goalId);if(g){g.saved=(g.saved||0)+amt;if(g.target>0&&g.saved>=g.target){setTimeout(()=>celebrate(),300);showWin('🎯 Goal Reached!','You saved '+fmt(g.target)+' for "'+g.name+'"!');}}}
   addAmtStr='0';closeAddSheet();autoSave();renderHome();renderMoney();
   // Spending alert after expense
@@ -3627,6 +3649,26 @@ function setTxFilter(f){
   renderMoney();
 }
 function deleteTx(id){if(!confirm('Delete this transaction?'))return;S.txs=S.txs.filter(t=>t.id!==id);autoSave();renderMoney();renderHome();}
+
+let _editingTxId=null; // null = adding new, number = editing existing
+
+function editTx(id){
+  const t=S.txs.find(x=>x.id===id);
+  if(!t)return;
+  _editingTxId=id;
+  // Pre-fill the add sheet with existing values
+  addType=t.type;
+  addAmtStr=String(t.amt);
+  selectedCat=t.cat||'other';
+  document.getElementById('addDesc').value=t.desc||'';
+  document.getElementById('addDate').value=t.date||new Date().toISOString().split('T')[0];
+  setAddType(t.type);
+  updateAddDisplay();
+  // Change button label to indicate editing
+  const saveBtn=document.querySelector('#addSheet .btn.full');
+  if(saveBtn)saveBtn.textContent='✅ Update Transaction';
+  document.getElementById('addSheet').classList.add('open');
+}
 function renderMoney(){
   buildMonthSel('moneyMonth');const m=curM('moneyMonth');
   const{income,savings,spending,balance,available,count}=calcMonth(m);
@@ -3640,11 +3682,11 @@ function renderMoney(){
   set('moneyCount',count+' transaction'+(count!==1?'s':''));
   const list=document.getElementById('moneyList');if(!list)return;
   if(!txs.length){list.innerHTML=`<div style="text-align:center;color:var(--txt3);padding:28px;font-size:0.82rem;">${search?'No matches.':'No transactions this month. Tap + to add.'}</div>`;return;}
-  list.innerHTML=txs.map(t=>`<div class="tx-card">
+  list.innerHTML=txs.map(t=>`<div class="tx-card" onclick="editTx(${t.id})" style="cursor:pointer;">
     <div class="tx-dot" style="background:${catById(t.cat).color}">${catById(t.cat).name.charAt(0)}</div>
     <div class="tx-info"><div class="tx-name">${t.desc||catById(t.cat).name}</div><div class="tx-meta">${catById(t.cat).name} · ${t.date}</div></div>
     <div class="tx-amt" style="color:${t.type==='in'?'var(--green)':t.type==='save'?'var(--brand)':'var(--red)'}">${t.type==='in'?'+':t.type==='save'?'💰':'-'}${fmt(t.amt)}</div>
-    <button class="tx-del" onclick="deleteTx(${t.id})">✕</button>
+    <button class="tx-del" onclick="event.stopPropagation();deleteTx(${t.id})">✕</button>
   </div>`).join('');
 }
 
@@ -5719,8 +5761,7 @@ function initApp(){
       fbAuth=firebase.auth();
       fbDb=firebase.firestore();
       // Enable offline persistence (silently)
-      // No Firestore persistence — we use our own encrypted localStorage cache
-      // Persistence interferes with onSnapshot by serving stale fromCache=true events
+      // Persistence disabled — we use our own encrypted localStorage cache
     }catch(e){
       console.error('Firebase init failed:',e);
       fbDb=null;fbAuth=null;
@@ -5957,11 +5998,8 @@ async function loadAppSettingsFromCloud(){
     localStorage.setItem(APP_SETTINGS_K,JSON.stringify(cfg));
     applyAppSettings(cfg);
   }catch(e){
-    
-    // Retry once after 3s (handles auth-not-ready race)
-    setTimeout(()=>{
-      if(fbDb&&currentUser?.uid) loadAppSettingsFromCloud();
-    },3000);
+    // Retry after 3s — don't require auth since appConfig should be readable
+    setTimeout(()=>{ if(fbDb) loadAppSettingsFromCloud(); },3000);
   }
 }
 
@@ -5983,11 +6021,24 @@ function applyAppSettings(cfg){
     if(el) el.style.display=show?'inline-block':'none';
   });
 
-  // Call button
+  // Call button — on PC show number to copy, on mobile use tel:
   const callBtn=document.getElementById('supportCallBtn');
   if(callBtn){
     callBtn.style.display=show?'inline-block':'none';
-    callBtn.href=show?'tel:+'+rawPhone:'#';
+    const isMobile=/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+    if(isMobile){
+      callBtn.href='tel:+'+rawPhone;
+      callBtn.onclick=null;
+    } else {
+      callBtn.href='#';
+      callBtn.onclick=(e)=>{
+        e.preventDefault();
+        navigator.clipboard?.writeText('+'+rawPhone).then(()=>{
+          callBtn.textContent='✅ Copied!';
+          setTimeout(()=>{callBtn.textContent='📞 Call';},2000);
+        }).catch(()=>{ alert('Support: +'+rawPhone); });
+      };
+    }
   }
 
   // App name (only if custom)
@@ -6572,7 +6623,7 @@ function renderTxItem(t){
       <div class="tx-meta">${catById(t.cat).name} · ${t.date}${t.note?' · 📝 '+t.note:''}</div>
     </div>
     <div class="tx-amt" style="color:${t.type==='in'?'var(--green)':t.type==='save'?'var(--brand)':'var(--red)'}">${t.type==='in'?'+':t.type==='save'?'💰':'-'}${fmt(t.amt)}</div>
-    <button class="tx-del" onclick="deleteTx(${t.id})">✕</button>
+    <button class="tx-del" onclick="event.stopPropagation();deleteTx(${t.id})">✕</button>
   </div>`;
 }
 
