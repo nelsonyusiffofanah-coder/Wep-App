@@ -1785,61 +1785,31 @@ tbody td{padding:11px 12px;border-bottom:1px solid var(--border2);}
 
 <!-- Cloud Sync -->
 <div class="overlay" id="oSync"><div class="modal">
-  <div class="modal-title">☁️ Sync Across Devices</div>
-  <div class="modal-sub">Your data is already syncing via Firebase. JSONBin is an optional extra backup.</div>
-
-  <!-- Step tabs -->
-  <div style="display:flex;gap:4px;margin-bottom:16px;">
-    <div id="syncT1" onclick="showSyncStep(1)" style="flex:1;text-align:center;padding:8px;border-radius:9px;background:var(--brand);color:#fff;font-size:0.74rem;font-weight:700;cursor:pointer;transition:all .2s;">📱 First Device</div>
-    <div id="syncT2" onclick="showSyncStep(2)" style="flex:1;text-align:center;padding:8px;border-radius:9px;background:var(--bg3);color:var(--txt3);font-size:0.74rem;font-weight:700;cursor:pointer;transition:all .2s;">💻 Other Device</div>
-  </div>
-
-  <!-- STEP 1: First device setup -->
-  <div id="syncS1">
-    <div style="background:var(--brand-dim);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:14px;font-size:0.78rem;color:var(--txt2);line-height:1.8;">
-      <strong style="color:var(--brand);">3 steps — takes 3 minutes:</strong><br/>
-      1. Go to <a href="https://jsonbin.io" target="_blank" style="color:var(--brand);font-weight:700;">jsonbin.io</a> → Sign Up free<br/>
-      2. Click your Profile → <strong>API Keys</strong> → Copy the <strong>Secret Key</strong><br/>
-      3. Paste it below and tap Connect
-    </div>
-    <label class="field-label">Your JSONBin Secret Key</label>
-    <div class="eye-wrap" style="margin-bottom:6px;">
-      <input class="field" id="jbKey" type="password" placeholder="$2a$10$… or $2b$10$…" style="margin-bottom:0;"/>
-      <span class="eye" onclick="toggleVis('jbKey',this)">👁</span>
-    </div>
-    <div style="font-size:0.7rem;color:var(--txt3);margin-bottom:12px;">Your key never leaves your device — it is encrypted with your data.</div>
-    <div class="err" id="syncErr"></div>
-    <button class="btn full" onclick="connectJSONBin()" id="syncConnectBtn">☁️ Connect & Start Syncing</button>
-
-    <!-- Success box — shown after connect -->
-    <div id="binIdResult" style="display:none;margin-top:14px;background:var(--green-dim);border:1px solid rgba(6,214,160,.3);border-radius:12px;padding:14px;">
-      <div style="font-size:0.82rem;font-weight:700;color:var(--green);margin-bottom:8px;">✅ Connected! Your data is now syncing.</div>
-      <div style="font-size:0.76rem;color:var(--txt2);margin-bottom:10px;">To sync on your other device (phone/PC), copy this Bin ID:</div>
-      <div style="display:flex;gap:8px;align-items:center;">
-        <code id="binIdDisplay" style="flex:1;background:var(--bg);padding:8px 10px;border-radius:6px;font-size:0.78rem;word-break:break-all;border:1px solid var(--border);"></code>
-        <button class="btn sm" onclick="copyBinId()">📋 Copy</button>
-      </div>
-      <div style="font-size:0.72rem;color:var(--txt3);margin-top:8px;">Then open the app on your other device → Settings → Cloud Sync → Other Device tab</div>
+  <div class="modal-title">☁️ Sync Status</div>
+  <div style="background:var(--green-dim);border:1px solid rgba(6,214,160,.25);border-radius:14px;padding:16px;margin-bottom:16px;display:flex;align-items:center;gap:12px;">
+    <span style="font-size:1.8rem;">🔥</span>
+    <div>
+      <div style="font-weight:700;font-size:.9rem;color:var(--green);">Firebase Active</div>
+      <div style="font-size:.76rem;color:var(--txt3);margin-top:2px;">Your data syncs automatically across all your devices in real time.</div>
     </div>
   </div>
-
-  <!-- STEP 2: Other device -->
-  <div id="syncS2" style="display:none;">
-    <div style="background:var(--gold-dim);border:1px solid rgba(240,180,41,.2);border-radius:10px;padding:12px 14px;margin-bottom:14px;font-size:0.78rem;color:var(--txt2);line-height:1.8;">
-      You already connected on your first device. Now enter the same Secret Key + the Bin ID you copied.
+  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:16px;">
+    <div style="font-size:.78rem;color:var(--txt3);margin-bottom:10px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;">Sync Details</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);">
+      <span style="font-size:.82rem;">Status</span>
+      <span style="font-size:.82rem;font-weight:700;color:var(--green);" id="syncStatusTxt">Connected</span>
     </div>
-    <label class="field-label">Your Secret Key (same as first device)</label>
-    <div class="eye-wrap" style="margin-bottom:12px;">
-      <input class="field" id="jbKey2" type="password" placeholder="$2a$10$…" style="margin-bottom:0;"/>
-      <span class="eye" onclick="toggleVis('jbKey2',this)">👁</span>
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);">
+      <span style="font-size:.82rem;">Last Sync</span>
+      <span style="font-size:.82rem;color:var(--txt2);" id="syncLastTxt">—</span>
     </div>
-    <label class="field-label">Bin ID (from your first device)</label>
-    <input class="field" id="jbId2" placeholder="e.g. 64f3a2b1e36e…"/>
-    <div class="err" id="syncErr2"></div>
-    <button class="btn full" onclick="connectJSONBinExisting()">☁️ Connect & Pull My Data</button>
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;">
+      <span style="font-size:.82rem;">Account</span>
+      <span style="font-size:.82rem;color:var(--txt2);" id="syncAccountTxt">—</span>
+    </div>
   </div>
-
-  <button class="btn ghost full" onclick="closeO('oSync')" style="margin-top:10px;">Cancel</button>
+  <button class="btn full" onclick="manualSync();closeO('oSync');">🔄 Sync Now</button>
+  <button class="btn ghost full" onclick="closeO('oSync')" style="margin-top:8px;">Close</button>
 </div></div>
 
 <!-- AI Key -->
@@ -1907,7 +1877,7 @@ tbody td{padding:11px 12px;border-bottom:1px solid var(--border2);}
     <div class="prof-actions">
       <button class="btn ghost sm" onclick="openO('oSetupPin');closeProfile()">🔢 PIN</button>
       <button class="btn ghost sm" onclick="doBackup()">💾 Backup</button>
-      <button class="btn ghost sm" onclick="openO('oSync');closeProfile()">☁️ Sync</button>
+      <button class="btn ghost sm" onclick="openSyncStatus();closeProfile()">☁️ Sync</button>
       <button class="btn red sm" onclick="doSignOut()">Sign Out</button>
     </div>
     <button class="btn ghost full" onclick="closeProfile()" style="margin-top:10px;">Close</button>
@@ -2226,8 +2196,7 @@ tbody td{padding:11px 12px;border-bottom:1px solid var(--border2);}
 // ══════════════════════════════════════════════════════
 
 // ── Config (admin pastes keys here) ──────────────────
-const JSONBIN_MASTER_KEY = '';
-const REGISTRY_BIN_ID   = '';
+// JSONBin removed — Firebase Firestore handles all sync
 
 // ══════════════════════════════════════════════════════
 // FIREBASE CONFIGURATION
@@ -2315,7 +2284,7 @@ function freshState(){
     envelopes:{}, notes:{}, netWorthHistory:[],
     currency:'₦', monthlyBudget:0, theme:'dark',
     country:'',
-    geminiKey:'', jsonbinKey:'', jsonbinId:'',
+    geminiKey:'',
     lastSync:null, pushedAt:0,
     modules:{business:false,credit:true,plans:true,ai:false,receipt:false,bills:false},
     bills:[],
@@ -2356,408 +2325,21 @@ function fixState(){
 
 
 // ══════════════════════════════════════════════════════
-// CLOUD (JSONBin)
 // ══════════════════════════════════════════════════════
-const JBIN='https://api.jsonbin.io/v3';
-const jH=x=>{
-  const key=(S?.jsonbinKey)||JSONBIN_MASTER_KEY;
-  return {'Content-Type':'application/json','X-Master-Key':key,'X-Access-Key':key,...(x||{})};
-};
-
-function getAdminKey(){return JSONBIN_MASTER_KEY||localStorage.getItem('tfi_admin_mkey')||'';}
-function getRegistryId(){return REGISTRY_BIN_ID||localStorage.getItem('tfi_admin_regid')||'';}
-async function getRegistry(){const key=getAdminKey();const regId=getRegistryId();if(!key||!regId)return null;try{const r=await fetch(`${JBIN}/b/${regId}/latest`,{headers:{'X-Master-Key':key,'X-Access-Key':key,'X-Bin-Meta':'false'}});if(!r.ok)return null;const d=await r.json();return d.record||d;}catch{return null;}}
-async function setRegistry(data){const key=getAdminKey();const regId=getRegistryId();if(!key||!regId)return false;try{const r=await fetch(`${JBIN}/b/${regId}`,{method:'PUT',headers:{'Content-Type':'application/json','X-Master-Key':key,'X-Access-Key':key},body:JSON.stringify(data)});return r.ok;}catch{return false;}}
-async function findUser(email){const reg=await getRegistry();if(!reg?.users)return null;return reg.users.find(u=>u.email===email)||null;}
-async function registerUser(email,name,binId){const reg=await getRegistry()||{users:[]};if(!reg.users)reg.users=[];reg.users=reg.users.filter(u=>u.email!==email);reg.users.push({email,name,binId,country:S?.country||'',userType:S?.userType||'other',joinedAt:Date.now(),lastActive:Date.now()});return setRegistry(reg);}
-async function createBin(email,data,keyOverride){
-  const key=keyOverride||S?.jsonbinKey||JSONBIN_MASTER_KEY;
-  if(!key)throw new Error('No API key — please enter your JSONBin Secret Key');
-  const r=await fetch(`${JBIN}/b`,{method:'POST',
-    headers:{'Content-Type':'application/json','X-Master-Key':key,'X-Access-Key':key,'X-Bin-Name':'tfi-'+email.split('@')[0],'X-Bin-Private':'true'},
-    body:JSON.stringify({data,pushedAt:Date.now()})});
-  if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e.message||'Status '+r.status);}
-  const d=await r.json();return d.metadata?.id||d.id;
-}
-async function pushBin(binId,encData){const key=S?.jsonbinKey||JSONBIN_MASTER_KEY;if(!key||!binId)return false;try{const r=await fetch(`${JBIN}/b/${binId}`,{method:'PUT',headers:{'Content-Type':'application/json','X-Master-Key':key,'X-Access-Key':key},body:JSON.stringify({data:encData,pushedAt:Date.now()})});return r.ok;}catch{return false;}}
-async function pullBin(binId){const key=S?.jsonbinKey||JSONBIN_MASTER_KEY;if(!key||!binId)return null;try{const r=await fetch(`${JBIN}/b/${binId}/latest`,{headers:{'X-Master-Key':key,'X-Access-Key':key,'X-Bin-Meta':'false'}});if(!r.ok)return null;const d=await r.json();const raw=d.record||d;return raw.data||null;}catch{return null;}}
-
-function mergeState(L,C){
-  if(!C)return L;
-  const m=(arr1,arr2)=>{const mp={};[...(arr1||[]),...(arr2||[])].forEach(x=>mp[x.id]=x);return Object.values(mp);};
-  const W=(C.pushedAt||0)>(L.pushedAt||0)?C:L;
-  return{...L,txs:m(L.txs,C.txs).sort((a,b)=>b.id-a.id),goals:m(L.goals,C.goals),credits:m(L.credits,C.credits),bizEntries:m(L.bizEntries,C.bizEntries),notes:{...(L.notes||{}),...(C.notes||{})},envelopes:{...(L.envelopes||{}),...(C.envelopes||{})},cats:W.cats||L.cats,currency:W.currency||L.currency,monthlyBudget:W.monthlyBudget??L.monthlyBudget,modules:W.modules||L.modules,obligations:W.obligations||L.obligations,bills:W.bills||L.bills||[],nwItems:W.nwItems||L.nwItems,netWorthHistory:W.netWorthHistory||L.netWorthHistory,recurringTxs:W.recurringTxs||L.recurringTxs,templates:W.templates||L.templates,pushedAt:W.pushedAt||0};
-}
-
-async function autoSave(){
-  // saveLocal() handles Firestore push via debounce — no JSONBin needed
-  saveLocal();
-  updateCloudUI();
-}
-
-// manualSync — see Firebase version below
-
-
-// silentSync — see Firebase version below
-
-async function updateLastActive(){
-  try{
-    const regKey=getAdminKey();const regId=getRegistryId();
-    if(!regKey||!regId||!currentUser?.email)return;
-    const reg=await getRegistry();if(!reg?.users)return;
-    const idx=reg.users.findIndex(u=>u.email===currentUser.email);
-    if(idx>=0){reg.users[idx].lastActive=Date.now();await setRegistry(reg);}
-  }catch{}
-}
-
-// updateCloudUI — see Firebase version below
-
-
-async function connectJSONBin(){
-  const key=document.getElementById('jbKey').value.trim();
-  const err=document.getElementById('syncErr');
-  const btn=document.getElementById('syncConnectBtn');
-  if(!key){err.textContent='Paste your JSONBin Secret Key above.';return;}
-  if(!key.startsWith('$2a$')&&!key.startsWith('$2b$')){
-    err.textContent='That does not look like a JSONBin key. It should start with $2a$ or $2b$';return;
-  }
-  err.textContent='';
-  if(btn){btn.textContent='⏳ Connecting…';btn.disabled=true;}
-  try{
-    // Create bin directly — simplest approach, no test request needed
-    const r=await fetch('https://api.jsonbin.io/v3/b',{
-      method:'POST',
-      headers:{
-        'Content-Type':'application/json',
-        'X-Master-Key':key,
-        'X-Access-Key':key,
-        'X-Bin-Name':'tfi-'+(currentUser?.email?.split('@')[0]||'user'),
-        'X-Bin-Private':'true'
-      },
-      body:JSON.stringify({data:enc(S,currentPassword),pushedAt:Date.now()})
-    });
-    if(!r.ok){
-      const d=await r.json().catch(()=>({}));
-      const msg=d.message||('Error '+r.status);
-      if(r.status===401) err.textContent='Key invalid or expired. Go to jsonbin.io → Profile → API Keys and copy a fresh key.';
-      else if(r.status===429) err.textContent='Too many requests. Wait 1 minute and try again.';
-      else err.textContent='JSONBin error: '+msg;
-      if(btn){btn.textContent='☁️ Connect & Start Syncing';btn.disabled=false;}
-      return;
-    }
-    const d=await r.json();
-    const binId=d.metadata?.id||d.id;
-    if(!binId) throw new Error('No bin ID returned — try again');
-    // Save everything
-    S.jsonbinKey=key;S.jsonbinId=binId;
-    if(currentUser){currentUser.binId=binId;sessionSet(currentUser.email,currentUser.name,binId);}
-    saveLocal();updateCloudUI();
-    // Show success
-    document.getElementById('binIdDisplay').textContent=binId;
-    document.getElementById('binIdResult').style.display='block';
-    if(btn){btn.textContent='✅ Connected';btn.disabled=false;}
-    showWin('☁️ Syncing active!','Copy your Bin ID to connect other devices.');
-  }catch(e){
-    err.textContent='Failed: '+e.message;
-    if(btn){btn.textContent='☁️ Connect & Start Syncing';btn.disabled=false;}
-  }
-}
-async function connectJSONBinExisting(){
-  const key=document.getElementById('jbKey2').value.trim();
-  const binId=document.getElementById('jbId2').value.trim();
-  const err=document.getElementById('syncErr2');
-  if(!key||!binId){err.textContent='Enter both fields.';return;}
-  err.textContent='⏳ Connecting…';
-  try{
-    const ce=await pullBin(binId);
-    if(ce){const cd=dec(ce,currentPassword);if(cd){S={...S,...mergeState(S,cd)};fixState();}}
-    S.jsonbinKey=key;S.jsonbinId=binId;currentUser.binId=binId;
-    sessionSet(currentUser.email,currentUser.name,binId);saveLocal();updateCloudUI();closeO('oSync');renderAll();
-    alert('✅ Connected and synced!');
-  }catch(e){err.textContent='Failed: '+e.message;}
-}
-function copyBinId(){const id=document.getElementById('binIdDisplay').textContent;navigator.clipboard?.writeText(id).catch(()=>{});alert('✅ Copied!');}
-function showSyncStep(n){
-  ['syncS1','syncS2'].forEach((id,i)=>document.getElementById(id).style.display=i+1===n?'block':'none');
-  ['syncT1','syncT2'].forEach((id,i)=>{const el=document.getElementById(id);if(el)el.style.cssText=i+1===n?'flex:1;text-align:center;padding:8px;border-radius:9px;background:var(--brand);color:#fff;font-size:0.74rem;font-weight:700;cursor:pointer;':'flex:1;text-align:center;padding:8px;border-radius:9px;background:var(--bg3);color:var(--txt3);font-size:0.74rem;font-weight:700;cursor:pointer;';});
-}
-
-
+// SYNC — Firebase Firestore only (JSONBin removed)
+// All data sync happens via Firestore in the section below
 // ══════════════════════════════════════════════════════
-// AUTH
-// ══════════════════════════════════════════════════════
-function showAuthTab(t){
-  const su=t==='up';
-  document.getElementById('panelIn').style.display=su?'none':'block';
-  document.getElementById('panelUp').style.display=su?'block':'none';
-  document.getElementById('atIn').className='auth-tab'+(su?'':' active');
-  document.getElementById('atUp').className='auth-tab'+(su?' active':'');
-}
-function toggleVis(id,el){const i=document.getElementById(id);i.type=i.type==='password'?'text':'password';el.textContent=i.type==='password'?'👁':'🙈';}
 
-// ══════════════════════════════════════════════════════
-// AUTH METHOD SWITCHER
-// ══════════════════════════════════════════════════════
-function showAuthMethod(method){
-  currentAuthMethod=method;
-  const emailEl=document.getElementById('authEmail');
-  const phoneEl=document.getElementById('authPhone');
-  const mE=document.getElementById('methEmail');
-  const mP=document.getElementById('methPhone');
-  if(method==='email'){
-    if(emailEl)emailEl.style.display='block';
-    if(phoneEl)phoneEl.style.display='none';
-    if(mE){mE.style.background='var(--bg2)';mE.style.color='var(--txt)';}
-    if(mP){mP.style.background='transparent';mP.style.color='var(--txt3)';}
-  }else{
-    if(emailEl)emailEl.style.display='none';
-    if(phoneEl)phoneEl.style.display='block';
-    if(mP){mP.style.background='var(--bg2)';mP.style.color='var(--txt)';}
-    if(mE){mE.style.background='transparent';mE.style.color='var(--txt3)';}
-    // Init reCAPTCHA only if Firebase is ready
-    if(fbAuth) setTimeout(initRecaptcha, 300);
-  }
-}
+// FIRESTORE SYNC — Firebase only (JSONBin fully removed)
+// Stub functions to prevent crashes from any lingering references
+function getAdminKey(){return '';}
+function getRegistryId(){return '';}
+function getRegistry(){return Promise.resolve(null);}
+function setRegistry(){return Promise.resolve(false);}
+function registerUser(){return Promise.resolve(false);}
+function pushBin(){return Promise.resolve(false);}
+function pullBin(){return Promise.resolve(null);}
 
-// ══════════════════════════════════════════════════════
-// FIREBASE — EMAIL AUTH
-// ══════════════════════════════════════════════════════
-async function doSignUp(){
-  const name=document.getElementById('suName').value.trim();
-  const email=document.getElementById('suEmail').value.trim().toLowerCase();
-  const pw=document.getElementById('suPass').value;
-  const pw2=document.getElementById('suPass2').value;
-  const err=document.getElementById('suErr');
-  const btn=document.querySelector('#panelUp .btn.full');
-  if(!name){err.textContent='Enter your full name.';return;}
-  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){err.textContent='Enter a valid email address.';return;}
-  if(pw.length<6){err.textContent='Password must be at least 6 characters.';return;}
-  if(pw!==pw2){err.textContent='Passwords do not match.';return;}
-  err.textContent='';
-  if(btn){btn.textContent='⏳ Creating account…';btn.disabled=true;}
-  try{
-    const cred=await fbAuth.createUserWithEmailAndPassword(email,pw);
-    await cred.user.updateProfile({displayName:name});
-    const localKey='tfi_'+sha(cred.user.uid).slice(0,20);
-    await onFirebaseSignIn(cred.user,name,localKey);
-    if(btn){btn.textContent='Create Account →';btn.disabled=false;}
-    document.getElementById('authScreen').style.display='none';
-    showOnboarding();
-  }catch(e){
-    if(btn){btn.textContent='Create Account →';btn.disabled=false;}
-    err.textContent=firebaseErrMsg(e);
-  }
-}
-
-async function doSignIn(){
-  const email=document.getElementById('siEmail').value.trim().toLowerCase();
-  const pw=document.getElementById('siPass').value;
-  const err=document.getElementById('siErr');
-  const btn=document.querySelector('#panelIn .btn.full');
-  if(!email||!pw){err.textContent='Enter your email and password.';return;}
-  err.textContent='';
-  if(btn){btn.textContent='⏳ Signing in…';btn.disabled=true;}
-  try{
-    const cred=await fbAuth.signInWithEmailAndPassword(email,pw);
-    const localKey='tfi_'+sha(cred.user.uid).slice(0,20);
-    await onFirebaseSignIn(cred.user,cred.user.displayName||email.split('@')[0],localKey);
-    if(btn){btn.textContent='Sign In →';btn.disabled=false;}
-    localStorage.getItem(PIN_KEY)?showPinScreen():(hideAuth(),renderAll(),updateUserUI(),updateCloudUI());
-  }catch(e){
-    if(btn){btn.textContent='Sign In →';btn.disabled=false;}
-    err.textContent=firebaseErrMsg(e);
-  }
-}
-
-async function doForgotPassword(){
-  const email=document.getElementById('siEmail').value.trim().toLowerCase();
-  if(!email){
-    const input=prompt('Enter your email address to reset your password:');
-    if(!input)return;
-    try{await fbAuth.sendPasswordResetEmail(input.trim().toLowerCase());alert('✅ Password reset email sent! Check your inbox.');}
-    catch(e){alert('Error: '+firebaseErrMsg(e));}
-    return;
-  }
-  try{
-    await fbAuth.sendPasswordResetEmail(email);
-    alert('✅ Password reset email sent to '+email+'. Check your inbox and spam folder.');
-  }catch(e){alert('Error: '+firebaseErrMsg(e));}
-}
-
-// ══════════════════════════════════════════════════════
-// FIREBASE — PHONE AUTH
-// ══════════════════════════════════════════════════════
-function initRecaptcha(){
-  if(recaptchaVerifier)return;
-  if(!fbAuth){console.warn('Firebase auth not ready for reCAPTCHA');return;}
-  try{
-    // Clear any existing reCAPTCHA
-    const rc=document.getElementById('recaptcha-container');
-    if(rc)rc.innerHTML='';
-    recaptchaVerifier=new firebase.auth.RecaptchaVerifier('recaptcha-container',{
-      size:'normal',
-      callback:()=>{
-        const err=document.getElementById('phErr');
-        if(err)err.textContent='';
-      },
-      'expired-callback':()=>{
-        recaptchaVerifier=null;
-        setTimeout(initRecaptcha, 500);
-      }
-    });
-    recaptchaVerifier.render().then(widgetId=>{
-      window.recaptchaWidgetId=widgetId;
-    }).catch(e=>console.warn('reCAPTCHA render failed:',e));
-  }catch(e){
-    console.warn('reCAPTCHA init failed:',e);
-    recaptchaVerifier=null;
-  }
-}
-
-async function sendSmsCode(){
-  const name=document.getElementById('phName').value.trim();
-  const code=document.getElementById('phCountryCode').value;
-  const number=document.getElementById('phNumber').value.trim().replace(/[^0-9]/g,'');
-  const err=document.getElementById('phErr');
-  const btn=document.querySelector('#phoneStep1 .btn.full');
-  if(!name){err.textContent='Enter your full name.';return;}
-  if(!number||number.length<6){err.textContent='Enter a valid phone number.';return;}
-  const fullPhone=code+number;
-  err.textContent='';
-  if(btn){btn.textContent='⏳ Sending code…';btn.disabled=true;}
-  try{
-    if(!recaptchaVerifier)initRecaptcha();
-    confirmationResult=await fbAuth.signInWithPhoneNumber(fullPhone,recaptchaVerifier);
-    // Show OTP step
-    document.getElementById('phoneStep1').style.display='none';
-    document.getElementById('phoneStep2').style.display='block';
-    set('phSentTo','Code sent to '+fullPhone);
-    document.getElementById('otp1').focus();
-    // Store name for after verification
-    window._pendingPhoneName=name;
-    window._pendingPhone=fullPhone;
-  }catch(e){
-    err.textContent=firebaseErrMsg(e);
-    // Reset recaptcha on error
-    if(recaptchaVerifier){try{recaptchaVerifier.clear();}catch{}recaptchaVerifier=null;}
-    const rc=document.getElementById('recaptcha-container');if(rc)rc.innerHTML='';
-    initRecaptcha();
-  }
-  if(btn){btn.textContent='Send SMS Code →';btn.disabled=false;}
-}
-
-async function verifySmsCode(){
-  const code=['otp1','otp2','otp3','otp4','otp5','otp6'].map(id=>document.getElementById(id).value).join('');
-  const err=document.getElementById('otpErr');
-  const btn=document.querySelector('#phoneStep2 .btn.full');
-  if(code.length!==6){err.textContent='Enter all 6 digits.';return;}
-  if(!confirmationResult){err.textContent='Session expired. Go back and try again.';return;}
-  err.textContent='';
-  if(btn){btn.textContent='⏳ Verifying…';btn.disabled=true;}
-  try{
-    const cred=await confirmationResult.confirm(code);
-    const name=window._pendingPhoneName||cred.user.phoneNumber;
-    // Set display name if new user
-    if(!cred.user.displayName)await cred.user.updateProfile({displayName:name});
-    const isNew=cred.additionalUserInfo?.isNewUser;
-    // Use phone as identifier, generate a local password key
-    const localKey='tfi_'+sha(cred.user.uid).slice(0,20);
-    await onFirebaseSignIn(cred.user,name,localKey);
-    if(btn){btn.textContent='Verify Code →';btn.disabled=false;}
-    if(isNew){
-      document.getElementById('authScreen').style.display='none';
-      showOnboarding();
-    }else{
-      localStorage.getItem(PIN_KEY)?showPinScreen():(hideAuth(),renderAll(),updateUserUI(),updateCloudUI());
-    }
-  }catch(e){
-    err.textContent=e.code==='auth/invalid-verification-code'?'Wrong code — check your SMS and try again.':firebaseErrMsg(e);
-    if(btn){btn.textContent='Verify Code →';btn.disabled=false;}
-  }
-}
-
-async function resendSmsCode(){
-  confirmationResult=null;
-  document.getElementById('phoneStep2').style.display='none';
-  document.getElementById('phoneStep1').style.display='block';
-  ['otp1','otp2','otp3','otp4','otp5','otp6'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
-  if(recaptchaVerifier){try{recaptchaVerifier.clear();}catch{}recaptchaVerifier=null;}
-  const rc=document.getElementById('recaptcha-container');if(rc)rc.innerHTML='';
-  initRecaptcha();
-}
-
-function goBackToPhone(){
-  confirmationResult=null;
-  document.getElementById('phoneStep2').style.display='none';
-  document.getElementById('phoneStep1').style.display='block';
-  ['otp1','otp2','otp3','otp4','otp5','otp6'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
-}
-
-function otpNext(el,nextId){
-  if(el.value.length===1){
-    const next=document.getElementById(nextId);
-    if(next)next.focus();
-  }
-}
-function otpSubmitCheck(){
-  const code=['otp1','otp2','otp3','otp4','otp5','otp6'].map(id=>document.getElementById(id).value).join('');
-  if(code.length===6)verifySmsCode();
-}
-
-// ══════════════════════════════════════════════════════
-// FIREBASE — SHARED SIGN IN HANDLER
-// Called after both email and phone auth succeed
-// ══════════════════════════════════════════════════════
-async function onFirebaseSignIn(fbUser, displayName, localKey){
-  const uid=fbUser.uid;
-  const email=fbUser.email||fbUser.phoneNumber||uid;
-  // Check suspension status BEFORE loading anything
-  if(fbDb){
-    try{
-      const profileDoc=await fbDb.collection('publicProfiles').doc(uid).get();
-      if(profileDoc.exists){
-        const pd=profileDoc.data();
-        if(pd.suspended===true){
-          fbAuth.signOut().catch(()=>{});
-          showWin('🚫 Account Suspended','Your account has been suspended. Please contact support for assistance.');
-          return;
-        }
-        if(pd.removed===true){
-          fbAuth.signOut().catch(()=>{});
-          showWin('❌ Account Removed','This account is no longer active. Please contact support.');
-          return;
-        }
-      }
-    }catch(e){console.warn('Suspension check failed:',e.message);}
-  }
-  // Set current user early (needed by loadLocal/pullFirestore)
-  currentUser={uid,name:displayName||fbUser.displayName||email,email,phone:fbUser.phoneNumber||'',provider:fbUser.providerData?.[0]?.providerId||'email'};
-  currentPassword=localKey;
-  // Load local data first (offline support) — this populates S including S.name, S.country, S.userType
-  loadLocal(uid,localKey);
-  // Then pull from Firestore — may update S further
-  await pullFirestore(uid,localKey);
-  // Now pick best name: Firebase displayName > S.name (from encrypted data) > email
-  const name=displayName||fbUser.displayName||S?.name||email;
-  currentUser.name=name;
-  // Save session
-  localStorage.setItem(SESSION_KEY,JSON.stringify({uid,name,email,phone:fbUser.phoneNumber||''}));
-  localStorage.setItem('tfi_la',Date.now());
-  // Push full profile to Firestore — S.country and S.userType now populated from local/cloud data
-  const profileData={
-    name,email,phone:fbUser.phoneNumber||'',
-    uid,joinedAt:fbUser.metadata.creationTime,
-    lastActive:new Date().toISOString(),
-    provider:fbUser.providerData?.[0]?.providerId||'unknown',
-    country:S?.country||'',
-    userType:S?.userType||'other'
-  };
-  fbDb.collection('users').doc(uid).set(profileData,{merge:true}).catch(()=>{});
-  fbDb.collection('publicProfiles').doc(uid).set(profileData,{merge:true}).catch(()=>{});
-}
-
-// ══════════════════════════════════════════════════════
-// FIRESTORE SYNC — replace JSONBin
 // ══════════════════════════════════════════════════════
 async function pullFirestore(uid,key,rerender=false){
   if(!fbDb||!uid)return;
@@ -2806,6 +2388,22 @@ async function pushFirestore(){
     if(e2)localStorage.setItem(encKey,e2);
     updateCloudUI();
   }catch(e){console.warn('Firestore push failed:',e);}
+}
+
+function openSyncStatus(){
+  // Populate modal with live sync info before opening
+  const connected=!!(fbDb&&currentUser?.uid);
+  const stEl=document.getElementById('syncStatusTxt');
+  const lstEl=document.getElementById('syncLastTxt');
+  const accEl=document.getElementById('syncAccountTxt');
+  if(stEl)stEl.textContent=connected?'🟢 Connected':'🔴 Offline';
+  if(stEl)stEl.style.color=connected?'var(--green)':'var(--red)';
+  if(lstEl){
+    const t=S.lastSync?new Date(S.lastSync).toLocaleString('en',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}):'Never';
+    lstEl.textContent=t;
+  }
+  if(accEl)accEl.textContent=currentUser?.email||currentUser?.phone||'Not logged in';
+  openO('oSync');
 }
 
 async function manualSync(){
@@ -2973,7 +2571,7 @@ function doSignOut(){
 
 // Session management
 const sessionGet=()=>{try{return JSON.parse(localStorage.getItem(SESSION_KEY)||'null');}catch{return null;}};
-const sessionSet=(email,name,binId)=>{localStorage.setItem(SESSION_KEY,JSON.stringify({email,name,binId}));localStorage.setItem('tfi_la',Date.now());};
+const sessionSet=(email,name)=>{localStorage.setItem(SESSION_KEY,JSON.stringify({email,name}));localStorage.setItem('tfi_la',Date.now());};
 const sessionClear=()=>{localStorage.removeItem(SESSION_KEY);localStorage.removeItem('tfi_la');currentPassword=null;};
 
 // ── PIN ──────────────────────────────────────────────
@@ -3032,6 +2630,7 @@ function hideAuth(){
   document.getElementById('fab').style.display='flex';
   document.getElementById('calcToggle').style.display='flex';
   handleUrlShortcuts();
+  setTimeout(applyAppSettingsCached,500); // apply cached settings after DOM ready
 }
 function showPinScreen(){
   document.getElementById('authScreen').style.display='none';
@@ -3164,13 +2763,7 @@ const curM=id=>document.getElementById(id)?.value||fmtM(new Date());
 const catById=id=>S.cats.find(c=>c.id===id)||{name:id,color:'#888',pct:0};
 function openO(id){
   document.getElementById(id)?.classList.add('open');
-  if(id==='oAdminCloudSetup'){
-    const mk=getAdminKey();const ri=getRegistryId();
-    const disp=document.getElementById('currentKeysDisplay');
-    if(disp){disp.innerHTML=mk&&ri?`Master Key: <strong>${mk.slice(0,8)}…</strong> &nbsp;|&nbsp; Registry ID: <strong>${ri}</strong>`:'No keys saved yet.';}
-    const status=document.getElementById('setupKeysStatus');
-    if(status)status.textContent='';
-  }
+
 }
 const closeO=id=>document.getElementById(id)?.classList.remove('open');
 const tAgo=ts=>{const d=Date.now()-ts;if(d<60000)return'Just now';if(d<3600000)return Math.floor(d/60000)+'m ago';if(d<86400000)return Math.floor(d/3600000)+'h ago';if(d<604800000)return Math.floor(d/86400000)+'d ago';return new Date(ts).toLocaleDateString('en',{month:'short',day:'numeric'});};
@@ -4162,6 +3755,7 @@ const THEMES=[
   {id:'sunset',  name:'Sunset',    gender:'female',preview:['#FFF7ED','#EA580C','#D97706'],  desc:'Warm peach & coral'},
 ];
 function renderSettings(){
+  applyAppSettingsCached(); // always apply cached support phone on settings open
   // Profile
   if(currentUser){
     const ini=currentUser.name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
@@ -5025,10 +4619,9 @@ function openAdminPanel(email){
   const ep=localStorage.getItem(ADMIN_EMAIL_P)||email;
   const es=document.getElementById('adminEmailShow');
   if(es){es.textContent=ep;es.style.filter='blur(4px)';}
-  // Show setup banner if keys not configured
-  const hasCreds=!!(getAdminKey()&&getRegistryId());
+  // Admin setup banner — no longer needed (Firebase handles everything)
   const banner=document.getElementById('adminSetupBanner');
-  if(banner)banner.style.display=hasCreds?'none':'block';
+  if(banner)banner.style.display='none';
   renderAdminStats();
 }
 function closeAdminPanel(){document.getElementById('adminPanel').style.display='none';document.body.style.overflow='';}
@@ -5042,16 +4635,7 @@ function doAdminChangePw(){
   localStorage.setItem(ADMIN_KEY,sha(n1));document.getElementById('adminChangePwSection').style.display='none';alert('✅ Password updated!');
 }
 
-// ── Admin Cloud Setup ─────────────────────────────────
-function openO_adminCloud(){
-  openO('oAdminCloudSetup');
-  const mk=getAdminKey();const ri=getRegistryId();
-  const disp=document.getElementById('currentKeysDisplay');
-  if(disp){
-    if(mk&&ri){disp.innerHTML=`Master Key: <strong>${mk.slice(0,8)}…</strong> &nbsp;|&nbsp; Registry ID: <strong>${ri}</strong>`;}
-    else{disp.textContent='No keys saved yet.';}
-  }
-}
+// Admin cloud setup removed — Firebase handles everything
 async function saveAdminCloudSetup(){
   const key=document.getElementById('setupMasterKey').value.trim();
   const regId=document.getElementById('setupRegistryId').value.trim();
@@ -5651,23 +5235,41 @@ async function loadAppSettingsFromCloud(){
 
 function applyAppSettings(cfg){
   if(!cfg)return;
-  const phone=cfg.supportPhone||'';
+  // Cache to localStorage so it's available instantly on next open
+  try{localStorage.setItem(APP_SETTINGS_K,JSON.stringify(cfg));}catch{}
+  const phone=(cfg.supportPhone||'').trim();
   const rawPhone=phone.replace(/[^0-9+]/g,'');
-  // Update all support number displays
-  document.querySelectorAll('#supportNumDisplay').forEach(el=>{
-    el.textContent=phone?'📞 '+phone:'Contact your administrator';
+  const show=phone.length>0;
+  // Update ALL support number display elements (multiple in DOM)
+  document.querySelectorAll('[id="supportNumDisplay"]').forEach(el=>{
+    el.textContent=show?'📞 '+phone:'Contact your administrator';
   });
-  // Update all WhatsApp buttons
-  document.querySelectorAll('#supportWaBtn,#helpSupportWaBtn').forEach(el=>{
-    el.style.display=phone?'inline-block':'none';
+  // WhatsApp buttons — find by id (all of them)
+  ['supportWaBtn','helpSupportWaBtn'].forEach(id=>{
+    document.querySelectorAll('[id="'+id+'"]').forEach(el=>{
+      el.style.display=show?'inline-block':'none';
+    });
   });
-  // Add/update call button dynamically
+  // Call button
   const callRow=document.getElementById('supportCallBtn');
-  if(callRow){callRow.style.display=phone?'inline-block':'none';callRow.href='tel:'+rawPhone;}
-  // Update app name if set
-  if(cfg.appName&&cfg.appName!=='Trackinfin'){
-    document.querySelectorAll('.h-name').forEach(el=>{if(el)el.innerHTML=cfg.appName.replace('Track','Track<span>').replace(/(in|fin)$/,'$1</span>');});
+  if(callRow){
+    callRow.style.display=show?'inline-block':'none';
+    if(rawPhone)callRow.href='tel:+'+rawPhone.replace(/^\+/,'');
   }
+  // App name
+  if(cfg.appName&&cfg.appName!=='Trackinfin'){
+    document.querySelectorAll('.h-name').forEach(el=>{
+      if(el)el.innerHTML=cfg.appName;
+    });
+  }
+}
+
+// Call applyAppSettings from localStorage cache immediately — works on PC without waiting for Firestore
+function applyAppSettingsCached(){
+  try{
+    const cached=JSON.parse(localStorage.getItem(APP_SETTINGS_K)||'{}');
+    if(cached.supportPhone)applyAppSettings(cached);
+  }catch{}
 }
 
 // ── Feedback list renderer ────────────────────────────
