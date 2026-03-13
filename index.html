@@ -2338,56 +2338,118 @@ function getRegistry(){return Promise.resolve(null);}
 function setRegistry(){return Promise.resolve(false);}
 function registerUser(){return Promise.resolve(false);}
 function pushBin(){return Promise.resolve(false);}
+
+// ── mergeState — merge remote data into local, keeping newest entries ──
+function mergeState(local, remote){
+  if(!remote) return local;
+  if(!local)  return remote;
+  const merged = {...remote};
+  // For arrays: union by id, prefer newer updatedAt/date
+  ['txs','goals','credits','bizEntries','obligations','recurringTxs','templates','nwItems','netWorthHistory','bills'].forEach(k=>{
+    const l = Array.isArray(local[k])  ? local[k]  : [];
+    const r = Array.isArray(remote[k]) ? remote[k] : [];
+    if(!l.length) { merged[k]=r; return; }
+    if(!r.length) { merged[k]=l; return; }
+    // Union: combine and deduplicate by id
+    const map = new Map();
+    [...r,...l].forEach(item=>{
+      if(!item?.id){ map.set(Math.random().toString(),item); return; }
+      const existing = map.get(item.id);
+      if(!existing){ map.set(item.id,item); return; }
+      // Keep the one with newer updatedAt, or local if equal
+      const eTime = existing.updatedAt ? new Date(existing.updatedAt).getTime() : 0;
+      const iTime = item.updatedAt     ? new Date(item.updatedAt).getTime()     : 0;
+      if(iTime > eTime) map.set(item.id, item);
+    });
+    merged[k] = [...map.values()];
+  });
+  // For objects: merge keys
+  ['envelopes','notes','modules'].forEach(k=>{
+    merged[k] = {...(remote[k]||{}), ...(local[k]||{})};
+  });
+  // For scalars: prefer local if more recently pushed, else remote
+  const localNewer = (local.pushedAt||0) >= (remote.pushedAt||0);
+  ['currency','monthlyBudget','theme','country','geminiKey','userType','onboardDone','name'].forEach(k=>{
+    if(local[k]!==undefined && local[k]!==null && local[k]!=='') merged[k]=local[k];
+    else if(remote[k]!==undefined) merged[k]=remote[k];
+  });
+  // Keep newest sync timestamps
+  merged.lastSync  = local.lastSync||remote.lastSync||null;
+  merged.pushedAt  = Math.max(local.pushedAt||0, remote.pushedAt||0);
+  return merged;
+}
+
+// ── autoSave — debounced save + Firestore push ──
+let _autoSaveTimer = null;
+function autoSave(){
+  saveLocal();
+  clearTimeout(_autoSaveTimer);
+  _autoSaveTimer = setTimeout(()=>{
+    if(fbDb && currentUser?.uid) pushFirestore().catch(e=>console.warn('autoSave push:',e));
+  }, 1500); // 1.5s debounce — batches rapid saves
+}
+
 function pullBin(){return Promise.resolve(null);}
 
 // ══════════════════════════════════════════════════════
 async function pullFirestore(uid,key,rerender=false){
-  if(!fbDb||!uid)return;
+  if(!fbDb){console.warn('pullFirestore: fbDb is null');return;}
+  if(!uid){console.warn('pullFirestore: no uid');return;}
+  if(!key){console.warn('pullFirestore: no key');return;}
   try{
     const doc=await fbDb.collection('userData').doc(uid).get();
-    if(doc.exists){
-      const encData=doc.data().data;
-      if(encData){
-        const decData=dec(encData,key);
-        if(decData){
-          const oldPushedAt=S.pushedAt||0;
-          S={...freshState(),...mergeState(S,decData)};
-          fixState();
-          // Save locally (without triggering another Firestore push)
-          if(currentUser&&currentPassword){
-            const k=currentUser.uid||currentUser.email;
-            const encKey='tfi_d_'+btoa(k).replace(/[^a-z0-9]/gi,'');
-            const e=enc(S,currentPassword);
-            if(e)localStorage.setItem(encKey,e);
-          }
-          if(rerender)renderAll();
-          updateCloudUI();
-        }
-      }
+    if(!doc.exists){
+      console.log('pullFirestore: no document yet for uid=',uid,'— will create on first push');
+      return;
     }
-  }catch(e){console.warn('Firestore pull failed:',e);}
+    const encData=doc.data().data;
+    if(!encData){console.warn('pullFirestore: document exists but data field is empty');return;}
+    const decData=dec(encData,key);
+    if(!decData){
+      console.warn('pullFirestore: decryption failed — wrong key? key prefix=',key?.slice(0,8));
+      return;
+    }
+    S={...freshState(),...mergeState(S,decData)};
+    fixState();
+    // Save locally without triggering another push
+    if(currentUser&&currentPassword){
+      const k=currentUser.uid||currentUser.email;
+      const encKey='tfi_d_'+btoa(k).replace(/[^a-z0-9]/gi,'');
+      const e=enc(S,currentPassword);
+      if(e)localStorage.setItem(encKey,e);
+    }
+    console.log('pullFirestore: ✅ pulled',S.txs?.length||0,'txs, lastSync=',S.lastSync);
+    if(rerender)renderAll();
+    updateCloudUI();
+  }catch(e){
+    console.error('Firestore pull failed:',e.code||e.message,e);
+  }
 }
 
 async function pushFirestore(){
-  if(!fbDb||!currentUser?.uid||!currentPassword)return;
+  if(!fbDb){console.warn('pushFirestore: fbDb null');return;}
+  if(!currentUser?.uid){console.warn('pushFirestore: no uid');return;}
+  if(!currentPassword){console.warn('pushFirestore: no currentPassword');return;}
   try{
     const encData=enc(S,currentPassword);
-    if(!encData)return;
+    if(!encData){console.warn('pushFirestore: enc() returned null');return;}
     await fbDb.collection('userData').doc(currentUser.uid).set({
       data:encData,
       updatedAt:new Date().toISOString(),
       pushedAt:Date.now()
     });
-    // Update timestamps WITHOUT calling saveLocal (would cause infinite loop)
     S.lastSync=new Date().toISOString();
     S.pushedAt=Date.now();
-    // Save timestamps locally without re-triggering push
+    // Save timestamps locally (direct — no autoSave to avoid loop)
     const k=currentUser.uid||currentUser.email;
     const encKey='tfi_d_'+btoa(k).replace(/[^a-z0-9]/gi,'');
     const e2=enc(S,currentPassword);
     if(e2)localStorage.setItem(encKey,e2);
+    console.log('pushFirestore: ✅ pushed',S.txs?.length||0,'txs at',S.lastSync);
     updateCloudUI();
-  }catch(e){console.warn('Firestore push failed:',e);}
+  }catch(e){
+    console.error('pushFirestore FAILED:',e.code||e.message,e);
+  }
 }
 
 function openSyncStatus(){
@@ -4966,6 +5028,7 @@ async function saveAdminSettings(){
     closeO('oAdminSettings');
     showWin('✅ Saved locally','Firebase unavailable — settings saved on this device only.');
   }
+  applyAppSettings(settings); // immediately apply on this device too
   renderSettings();
 }
 
@@ -5068,7 +5131,10 @@ function initApp(){
           hideAuth();renderAll();updateUserUI();updateCloudUI();
         }
         // Background tasks — pull latest from Firestore and re-render
-        setTimeout(()=>pullFirestore(fbUser.uid,localKey,true).catch(e=>console.warn('bg pull:',e)),1500);
+        setTimeout(async()=>{
+          await pullFirestore(fbUser.uid,localKey,true);
+          loadAppSettingsFromCloud(); // also refresh support settings after pull
+        },1500);
         setTimeout(()=>{
           const _laNow=new Date().toISOString();
           // Use S.name as best source of display name (set during onboarding)
@@ -5223,52 +5289,68 @@ function timeSinceNotif(iso){
 
 // ── Load cloud app settings for all users ──────────────
 async function loadAppSettingsFromCloud(){
-  if(!fbDb)return;
+  if(!fbDb){
+    // Retry after 2s when Firestore becomes available
+    setTimeout(()=>{if(fbDb)loadAppSettingsFromCloud();},2000);
+    return;
+  }
   try{
     const doc=await fbDb.collection('appConfig').doc('settings').get();
-    if(!doc.exists)return;
+    if(!doc.exists){
+      console.log('loadAppSettingsFromCloud: no appConfig doc yet');
+      return;
+    }
     const cfg=doc.data();
+    console.log('loadAppSettingsFromCloud: ✅ loaded, supportPhone=',cfg.supportPhone||'(not set)');
     localStorage.setItem(APP_SETTINGS_K,JSON.stringify(cfg));
     applyAppSettings(cfg);
-  }catch(e){console.warn('loadAppSettingsFromCloud:',e.message);}
+  }catch(e){
+    console.warn('loadAppSettingsFromCloud failed:',e.code||e.message);
+    // Retry once after 3s (handles auth-not-ready race)
+    setTimeout(()=>{
+      if(fbDb&&currentUser?.uid) loadAppSettingsFromCloud();
+    },3000);
+  }
 }
 
 function applyAppSettings(cfg){
   if(!cfg)return;
-  // Cache to localStorage so it's available instantly on next open
   try{localStorage.setItem(APP_SETTINGS_K,JSON.stringify(cfg));}catch{}
   const phone=(cfg.supportPhone||'').trim();
-  const rawPhone=phone.replace(/[^0-9+]/g,'');
+  const rawPhone=phone.replace(/\D/g,''); // digits only
   const show=phone.length>0;
-  // Update ALL support number display elements (multiple in DOM)
+
+  // Support number text
   document.querySelectorAll('[id="supportNumDisplay"]').forEach(el=>{
     el.textContent=show?'📞 '+phone:'Contact your administrator';
   });
-  // WhatsApp buttons — find by id (all of them)
-  ['supportWaBtn','helpSupportWaBtn'].forEach(id=>{
-    document.querySelectorAll('[id="'+id+'"]').forEach(el=>{
-      el.style.display=show?'inline-block':'none';
-    });
+
+  // WhatsApp buttons — show/hide
+  ['supportWaBtn','helpSupportWaBtn'].forEach(btnId=>{
+    const el=document.getElementById(btnId);
+    if(el) el.style.display=show?'inline-block':'none';
   });
+
   // Call button
-  const callRow=document.getElementById('supportCallBtn');
-  if(callRow){
-    callRow.style.display=show?'inline-block':'none';
-    if(rawPhone)callRow.href='tel:+'+rawPhone.replace(/^\+/,'');
+  const callBtn=document.getElementById('supportCallBtn');
+  if(callBtn){
+    callBtn.style.display=show?'inline-block':'none';
+    callBtn.href=show?'tel:+'+rawPhone:'#';
   }
-  // App name
+
+  // App name (only if custom)
   if(cfg.appName&&cfg.appName!=='Trackinfin'){
-    document.querySelectorAll('.h-name').forEach(el=>{
-      if(el)el.innerHTML=cfg.appName;
-    });
+    document.querySelectorAll('.h-name').forEach(el=>{if(el)el.textContent=cfg.appName;});
   }
+
+  console.log('applyAppSettings: phone=',phone||'(none)','show=',show);
 }
 
-// Call applyAppSettings from localStorage cache immediately — works on PC without waiting for Firestore
+// Apply from localStorage cache — instant, no network needed
 function applyAppSettingsCached(){
   try{
-    const cached=JSON.parse(localStorage.getItem(APP_SETTINGS_K)||'{}');
-    if(cached.supportPhone)applyAppSettings(cached);
+    const cached=JSON.parse(localStorage.getItem(APP_SETTINGS_K)||'null');
+    if(cached) applyAppSettings(cached);
   }catch{}
 }
 
