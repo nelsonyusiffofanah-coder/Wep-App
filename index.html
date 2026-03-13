@@ -2538,7 +2538,8 @@ async function doSignUp(){
   try{
     const cred=await fbAuth.createUserWithEmailAndPassword(email,pw);
     await cred.user.updateProfile({displayName:name});
-    await onFirebaseSignIn(cred.user,name,pw);
+    const localKey='tfi_'+sha(cred.user.uid).slice(0,20);
+    await onFirebaseSignIn(cred.user,name,localKey);
     if(btn){btn.textContent='Create Account →';btn.disabled=false;}
     document.getElementById('authScreen').style.display='none';
     showOnboarding();
@@ -2558,7 +2559,8 @@ async function doSignIn(){
   if(btn){btn.textContent='⏳ Signing in…';btn.disabled=true;}
   try{
     const cred=await fbAuth.signInWithEmailAndPassword(email,pw);
-    await onFirebaseSignIn(cred.user,cred.user.displayName||email.split('@')[0],pw);
+    const localKey='tfi_'+sha(cred.user.uid).slice(0,20);
+    await onFirebaseSignIn(cred.user,cred.user.displayName||email.split('@')[0],localKey);
     if(btn){btn.textContent='Sign In →';btn.disabled=false;}
     localStorage.getItem(PIN_KEY)?showPinScreen():(hideAuth(),renderAll(),updateUserUI(),updateCloudUI());
   }catch(e){
@@ -2659,7 +2661,7 @@ async function verifySmsCode(){
     if(!cred.user.displayName)await cred.user.updateProfile({displayName:name});
     const isNew=cred.additionalUserInfo?.isNewUser;
     // Use phone as identifier, generate a local password key
-    const localKey='ph_'+sha(cred.user.uid).slice(0,16);
+    const localKey='tfi_'+sha(cred.user.uid).slice(0,20);
     await onFirebaseSignIn(cred.user,name,localKey);
     if(btn){btn.textContent='Verify Code →';btn.disabled=false;}
     if(isNew){
@@ -2807,18 +2809,25 @@ async function pushFirestore(){
 }
 
 async function manualSync(){
-  if(!fbDb){alert('Not connected to Firebase. Check your internet connection.');return;}
+  if(!fbDb){showWin('⚠️ Not Connected','Firebase is not connected. Check your internet and try again.');return;}
+  if(!currentUser?.uid){showWin('⚠️ Not logged in','Please log in to sync.');return;}
   const pill=document.getElementById('syncPill');
+  const resetPill=()=>{if(pill){pill.textContent='☁️ Sync';pill.style.background='var(--brand-dim)';}};
   if(pill){pill.textContent='⏳';pill.style.background='var(--gold-dim)';}
   try{
-    await pullFirestore(currentUser.uid,currentPassword);
+    // Pull first — get latest from cloud
+    await pullFirestore(currentUser.uid,currentPassword,false);
+    // Push — send local changes up
     await pushFirestore();
+    // Re-render with merged data
     renderAll();
-    if(pill){pill.textContent='✅';pill.style.background='var(--green-dim)';setTimeout(()=>{pill.textContent='☁️ Sync';pill.style.background='var(--brand-dim)';},2500);}
-    showWin('☁️ Synced!','Your data is up to date on all devices.');
+    if(pill){pill.textContent='✅';pill.style.background='var(--green-dim)';setTimeout(resetPill,2500);}
+    const t=S.lastSync?new Date(S.lastSync).toLocaleTimeString('en',{hour:'2-digit',minute:'2-digit'}):'now';
+    showWin('☁️ Synced!','All your data is up to date across all devices. Last sync: '+t);
   }catch(e){
-    if(pill){pill.textContent='☁️ Sync';pill.style.background='var(--brand-dim)';}
-    showWin('⚠️ Sync failed',e.message);
+    resetPill();
+    console.error('manualSync error:',e);
+    showWin('⚠️ Sync failed','Error: '+e.message+'\n\nCheck your internet connection and try again.');
   }
 }
 
@@ -5474,8 +5483,8 @@ function initApp(){
         }else{
           hideAuth();renderAll();updateUserUI();updateCloudUI();
         }
-        // Background tasks
-        setTimeout(()=>pullFirestore(fbUser.uid,localKey).then(()=>{renderAll();updateCloudUI();}),1000);
+        // Background tasks — pull latest from Firestore and re-render
+        setTimeout(()=>pullFirestore(fbUser.uid,localKey,true).catch(e=>console.warn('bg pull:',e)),1500);
         setTimeout(()=>{
           const _laNow=new Date().toISOString();
           // Use S.name as best source of display name (set during onboarding)
@@ -5661,6 +5670,43 @@ function applyAppSettings(cfg){
   }
 }
 
+// ── Feedback list renderer ────────────────────────────
+function renderFeedbackList(items,container,icons,cols){
+  if(!container)return;
+  if(!items||!items.length){
+    container.innerHTML=`<div style="text-align:center;padding:32px 16px;">
+      <div style="font-size:2.5rem;margin-bottom:10px;">💬</div>
+      <div style="font-weight:700;margin-bottom:6px;">No feedback yet</div>
+      <div style="font-size:0.78rem;color:var(--txt3);">Feedback from users will appear here.</div>
+    </div>`;
+    return;
+  }
+  container.innerHTML=items.map(f=>{
+    const ico=icons[f.type]||'💬';
+    const col=cols[f.type]||'var(--brand)';
+    const stars='⭐'.repeat(Math.min(f.rating||5,5));
+    const ago=f.sentAt?tAgo(new Date(f.sentAt).getTime()):'';
+    const name=f.userName||f.userEmail||'Anonymous';
+    return`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:8px;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+        <span style="font-size:1.1rem;">${ico}</span>
+        <div style="flex:1;">
+          <div style="font-weight:700;font-size:.82rem;">${name}</div>
+          <div style="font-size:.68rem;color:var(--txt3);">${f.userEmail||''} ${f.userCountry?'· '+f.userCountry:''}</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:.68rem;color:var(--txt3);">${ago}</div>
+          <div style="font-size:.68rem;">${stars}</div>
+        </div>
+      </div>
+      <div style="font-size:.82rem;color:var(--txt2);line-height:1.5;border-left:3px solid ${col};padding-left:8px;">${f.text||''}</div>
+      <div style="margin-top:6px;">
+        <span style="font-size:.68rem;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:2px 7px;color:${col};font-weight:700;">${(f.type||'feedback').toUpperCase()}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
 // ── Broadcast type selector ────────────────────────────
 function setBcastType(t){
   document.getElementById('bcastType').value=t;
@@ -5793,31 +5839,26 @@ async function openAdminFeedback(){
   const cols={suggestion:'var(--brand)',bug:'var(--red)',praise:'var(--gold)',other:'var(--green)'};
   let allItems=[];
 
-  // 1. Top-level feedback collection (primary — fastest single query)
+  // Fast query first — top-level feedback collection
   try{
     const fbTopSnap=await fbDb.collection('feedback').orderBy('sentAt','desc').limit(100).get();
-    fbTopSnap.docs.forEach(d=>allItems.push({...d.data(),_docId:d.id,_col:'feedback'}));
+    fbTopSnap.docs.forEach(d=>allItems.push({...d.data(),_docId:d.id}));
   }catch(e){console.warn('feedback collection:',e.message);}
 
-  // 2. publicProfiles/{uid}/feedback subcollections (backup)
+  // If we got results, show them immediately then load more in background
+  if(allItems.length>0){
+    renderFeedbackList(allItems,afList,icons,cols);
+  }
+
+  // Slower queries in background — add any extras not already in top-level
   try{
     const profilesSnap=await fbDb.collection('publicProfiles').get();
     for(const userDoc of profilesSnap.docs){
       try{
-        const fbSnap=await userDoc.ref.collection('feedback').orderBy('sentAt','desc').limit(20).get();
+        const fbSnap=await userDoc.ref.collection('feedback').orderBy('sentAt','desc').limit(10).get();
         fbSnap.docs.forEach(d=>allItems.push(d.data()));
       }catch{}
     }
-  }catch(e){console.warn('publicProfiles feedback:',e.message);}
-
-  // 3. userData latestFeedback field (old fallback)
-  try{
-    const udSnap=await fbDb.collection('userData').get();
-    udSnap.docs.forEach(doc=>{
-      const d=doc.data();
-      if(d.latestFeedback)allItems.push(d.latestFeedback);
-      if(Array.isArray(d.feedback))d.feedback.forEach(f=>allItems.push(f));
-    });
   }catch{}
 
   // Deduplicate and sort newest first
@@ -5830,27 +5871,7 @@ async function openAdminFeedback(){
 
   const afList=document.getElementById('afList');
   if(!afList)return;
-  afList.innerHTML=!allItems.length
-    ?`<div style="text-align:center;padding:32px 16px;">
-        <div style="font-size:2.5rem;margin-bottom:10px;">💬</div>
-        <div style="font-weight:700;margin-bottom:6px;">No feedback yet</div>
-        <div style="font-size:0.78rem;color:var(--txt3);">Users who send feedback will appear here once Firestore rules are set up.</div>
-      </div>`
-    :allItems.map(f=>{
-      const ti=cols[f.type]||'var(--brand)';
-      return`<div style="background:var(--bg3);border-radius:12px;padding:12px;margin-bottom:8px;">
-        <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;flex-wrap:wrap;">
-          <span style="background:${ti}22;color:${ti};font-size:0.66rem;font-weight:700;padding:2px 8px;border-radius:5px;">${icons[f.type]||'💬'} ${f.type||'feedback'}</span>
-          ${f.userCountry?`<span style="font-size:0.68rem;color:var(--txt3);">📍${f.userCountry}</span>`:''}
-          <span style="font-size:0.68rem;color:var(--txt3);margin-left:auto;">${f.sentAt?new Date(f.sentAt).toLocaleDateString('en',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}):''}</span>
-        </div>
-        <div style="font-size:0.84rem;color:var(--txt);margin-bottom:6px;line-height:1.5;">${f.text}</div>
-        <div style="font-size:0.72rem;color:var(--txt3);display:flex;align-items:center;justify-content:space-between;">
-          <span>${f.userName||'Anonymous'}${f.userEmail?' · '+f.userEmail:''}</span>
-          <span>${'⭐'.repeat(f.rating||0)}</span>
-        </div>
-      </div>`;
-    }).join('');
+  renderFeedbackList(allItems,afList,icons,cols);
 }
 // ══════════════════════════════════════════════════════
 // HEADER BAR — dynamic rendering + customizer
