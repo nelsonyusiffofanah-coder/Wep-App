@@ -53,9 +53,15 @@ if('serviceWorker' in navigator){
 
 // ── PWA INSTALL PROMPT ────────────────────────────────
 let deferredPrompt;
+function showInstallUI(){
+  // Header install button — always show if not dismissed and not already installed
+  const btn=document.getElementById('headerInstallBtn');
+  if(btn&&!localStorage.getItem('tfi_install_dismissed'))btn.style.display='flex';
+}
 window.addEventListener('beforeinstallprompt',(e)=>{
   e.preventDefault();
   deferredPrompt=e;
+  showInstallUI();
   // Show install banner after 2 seconds
   setTimeout(()=>{
     const banner=document.getElementById('installBanner');
@@ -70,6 +76,8 @@ window.addEventListener('appinstalled',()=>{
   if(b)b.style.display='none';
   const row=document.getElementById('installAppRow');
   if(row)row.style.display='none';
+  const btn=document.getElementById('headerInstallBtn');
+  if(btn)btn.style.display='none';
   localStorage.setItem('tfi_install_dismissed','1');
   if(typeof showWin==='function')showWin('🎉 Installed!','Trackinfin is now on your home screen!');
 });
@@ -101,6 +109,8 @@ function triggerInstall(){doInstall();}
 function dismissInstall(){
   const b=document.getElementById('installBanner');
   if(b)b.style.display='none';
+  const btn=document.getElementById('headerInstallBtn');
+  if(btn)btn.style.display='none';
   localStorage.setItem('tfi_install_dismissed',Date.now()+259200000);
 }
 // Re-show install banner after 3 days if dismissed
@@ -114,6 +124,11 @@ function dismissInstall(){
   const isIos=()=>/iphone|ipad|ipod/.test(navigator.userAgent.toLowerCase());
   const isInStandalone=()=>'standalone' in window.navigator&&window.navigator.standalone;
   if(isIos()&&!isInStandalone()&&!localStorage.getItem('tfi_install_dismissed')){
+    // Show header install button on iOS immediately
+    window.addEventListener('DOMContentLoaded',()=>{
+      const btn=document.getElementById('headerInstallBtn');
+      if(btn)btn.style.display='flex';
+    });
     setTimeout(()=>{
       const tip=document.getElementById('iosInstallTip');
       if(tip)tip.style.display='block';
@@ -1038,6 +1053,7 @@ tbody td{padding:11px 12px;border-bottom:1px solid var(--border2);}
     </div>
     <div style="flex:1;"></div>
     <div class="sync-pill" id="syncPill" onclick="manualSync()">☁️ Sync</div>
+    <button id="headerInstallBtn" onclick="doInstall()" title="Install App" style="display:none;align-items:center;gap:5px;background:linear-gradient(135deg,var(--brand),var(--brand3));border:none;border-radius:20px;color:#fff;font-family:'Outfit',sans-serif;font-size:0.74rem;font-weight:700;padding:6px 12px;cursor:pointer;white-space:nowrap;box-shadow:0 2px 10px var(--brand-glow);transition:all .2s;">📲 Install</button>
     <div class="h-actions" id="hActionsBar">
       <!-- rendered by renderHeaderActions() -->
     </div>
