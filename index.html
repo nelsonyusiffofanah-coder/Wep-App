@@ -20,12 +20,31 @@
 <meta name="description" content="Trackinfin — Smart money tracking for African entrepreneurs. Track income, expenses, credits, goals and business all in one place."/>
 
 <script>
+// ══════════════════════════════════════════════════════
+// GLOBAL ERROR BOUNDARY
+// Catch unhandled JS errors and promise rejections gracefully
+// ══════════════════════════════════════════════════════
+window.addEventListener('unhandledrejection', e=>{
+  // Ignore Firebase internal noise and network errors
+  const msg=(e.reason?.message||e.reason||'').toString();
+  const ignore=['Failed to fetch','Load failed','network','NetworkError',
+    'The operation couldn't be completed','WebChannel','transport errored',
+    'IndexedDB','IDBDatabase','persistence','already been started'];
+  if(ignore.some(i=>msg.toLowerCase().includes(i.toLowerCase())))return;
+  console.warn('Unhandled rejection:', msg);
+});
+
+window.addEventListener('error', e=>{
+  // Ignore cross-origin script errors (Firebase/CDN)
+  if(!e.filename||e.filename.includes('firebase')||e.filename.includes('gstatic'))return;
+  console.warn('JS Error:', e.message, 'at', e.filename, e.lineno);
+});
+
 // ── SERVICE WORKER REGISTRATION ───────────────────────
 if('serviceWorker' in navigator){
   window.addEventListener('load',()=>{
     navigator.serviceWorker.register('/sw.js',{scope:'/'})
       .then(reg=>{
-        console.log('✅ SW registered, scope:',reg.scope);
         reg.update();
       })
       .catch(e=>console.warn('SW registration failed:',e));
@@ -2283,11 +2302,11 @@ function freshState(){
     recurringTxs:[], templates:[], nwItems:[],
     envelopes:{}, notes:{}, netWorthHistory:[],
     currency:'₦', monthlyBudget:0, theme:'dark',
-    country:'',
-    geminiKey:'',
+    country:'', name:'',
+    geminiKey:'', groqKey:'',
     lastSync:null, pushedAt:0,
     modules:{business:false,credit:true,plans:true,ai:false,receipt:false,bills:false},
-    bills:[],
+    bills:[], challenges:[], products:[],
     onboardDone:false, userType:'other',
   };
 }
@@ -2313,6 +2332,10 @@ function fixState(){
   if(!S.notes) S.notes={};
   if(!S.modules) S.modules={business:false,credit:true,plans:true,ai:false,receipt:false,bills:false};
   if(!Array.isArray(S.bills))S.bills=[];
+  if(!Array.isArray(S.challenges))S.challenges=[];
+  if(!Array.isArray(S.products))S.products=[];
+  if(!S.name)S.name='';
+  if(!S.groqKey)S.groqKey='';
   // Restore currency from localStorage fallback
   if(!S.currency) S.currency=localStorage.getItem('tfi_currency')||'₦';
   // Sync localStorage currency with S
@@ -2488,34 +2511,162 @@ function mergeState(local, remote){
   return merged;
 }
 
-// ── autoSave — debounced save + Firestore push ──
-let _autoSaveTimer = null;
-function autoSave(){
-  saveLocal();
-  clearTimeout(_autoSaveTimer);
-  _autoSaveTimer = setTimeout(()=>{
-    if(fbDb && currentUser?.uid) pushFirestore().catch(e=>console.warn('autoSave push:',e));
-  }, 1500); // 1.5s debounce — batches rapid saves
-}
+// ── autoSave — save locally (saveLocal debounces Firestore push) ──
+function autoSave(){ saveLocal(); }
 
 function pullBin(){return Promise.resolve(null);}
 
 // ══════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════
+// ONE-TIME DATA MIGRATION
+// Old code encrypted data with the user's raw password.
+// New code uses sha(uid) — same key on every device.
+// This runs once per account and re-encrypts everything.
+// ══════════════════════════════════════════════════════
+const MIGRATION_FLAG = 'tfi_migrated_v2';
+
+async function migrateOldEncryption(uid, newKey){
+  // Already migrated? Skip.
+  if(localStorage.getItem(MIGRATION_FLAG+'_'+uid)) return false;
+
+  // Try pulling from Firestore with the NEW key first
+  // If it works, data is already on the new format — just mark done
+  if(fbDb){
+    try{
+      const doc = await fbDb.collection('userData').doc(uid).get();
+      if(doc.exists && doc.data().data){
+        const testDec = dec(doc.data().data, newKey);
+        if(testDec){
+          // Already migrated — mark and continue normally
+          localStorage.setItem(MIGRATION_FLAG+'_'+uid,'1');
+          return false; // false = "no migration needed, proceed with normal pull"
+        }
+        // Can't decrypt with new key — data is in old format
+        // Show migration prompt
+        await _promptAndMigrate(uid, newKey, doc.data().data);
+        return true; // true = "migration handled pull, skip normal pull"
+      }
+    }catch(e){
+      console.warn('Migration check failed:',e.message);
+    }
+  }
+
+  // No Firestore data yet — nothing to migrate
+  localStorage.setItem(MIGRATION_FLAG+'_'+uid,'1');
+  return false;
+}
+
+async function _promptAndMigrate(uid, newKey, encryptedData){
+  return new Promise(resolve=>{
+    // Build a clean migration overlay
+    const overlay = document.createElement('div');
+    overlay.id = 'migrationOverlay';
+    overlay.style.cssText = `
+      position:fixed;inset:0;background:var(--bg);z-index:99999;
+      display:flex;align-items:center;justify-content:center;padding:24px;
+    `;
+    overlay.innerHTML = `
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:20px;
+                  padding:28px 24px;max-width:380px;width:100%;text-align:center;">
+        <div style="font-size:2.5rem;margin-bottom:12px;">🔐</div>
+        <div style="font-size:1.1rem;font-weight:800;margin-bottom:8px;">One-Time Security Upgrade</div>
+        <div style="font-size:0.82rem;color:var(--txt3);margin-bottom:20px;line-height:1.6;">
+          Trackinfin has upgraded its encryption to sync your data across all devices.
+          Enter your password once to migrate your existing data.
+        </div>
+        <input id="migPwInput" type="password" placeholder="Enter your Trackinfin password"
+          style="width:100%;box-sizing:border-box;background:var(--bg3);border:1px solid var(--border);
+                 border-radius:10px;padding:12px 14px;color:var(--txt);font-size:0.9rem;margin-bottom:10px;"/>
+        <div id="migErr" style="color:var(--red);font-size:0.78rem;min-height:18px;margin-bottom:12px;"></div>
+        <button id="migBtn" style="width:100%;background:var(--brand);color:#fff;border:none;
+                border-radius:12px;padding:13px;font-size:0.9rem;font-weight:700;cursor:pointer;">
+          🔄 Migrate My Data
+        </button>
+        <div style="margin-top:12px;font-size:0.74rem;color:var(--txt3);">
+          Your password is used locally only — never sent anywhere.
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+
+    const btn = overlay.querySelector('#migBtn');
+    const inp = overlay.querySelector('#migPwInput');
+    const err = overlay.querySelector('#migErr');
+
+    inp.focus();
+
+    btn.addEventListener('click', async()=>{
+      const oldPw = inp.value;
+      if(!oldPw){ err.textContent = 'Enter your password.'; return; }
+
+      btn.textContent = '⏳ Migrating…';
+      btn.disabled = true;
+      err.textContent = '';
+
+      // Try to decrypt with old password
+      const oldData = dec(encryptedData, oldPw);
+      if(!oldData){
+        err.textContent = 'Wrong password — try again.';
+        btn.textContent = '🔄 Migrate My Data';
+        btn.disabled = false;
+        return;
+      }
+
+      // Re-encrypt with new key and push to Firestore
+      try{
+        const reEncrypted = enc(oldData, newKey);
+        if(!reEncrypted) throw new Error('Re-encryption failed');
+
+        if(fbDb){
+          await fbDb.collection('userData').doc(uid).set({
+            data: reEncrypted,
+            updatedAt: new Date().toISOString(),
+            pushedAt: Date.now(),
+            migrated: true
+          });
+        }
+
+        // Apply migrated data to current session
+        S = {...freshState(), ...mergeState(S, oldData)};
+        fixState();
+
+        // Save locally with new key
+        const encKey = 'tfi_d_'+btoa(uid).replace(/[^a-z0-9]/gi,'');
+        localStorage.setItem(encKey, reEncrypted);
+        localStorage.setItem(MIGRATION_FLAG+'_'+uid, '1');
+
+        // Done — remove overlay and re-render
+        overlay.remove();
+        renderAll();
+        updateCloudUI();
+        showWin('✅ Migration Complete','Your data has been upgraded and will now sync across all your devices.');
+        resolve(true);
+      }catch(e){
+        err.textContent = 'Migration failed: '+e.message+'. Please try again.';
+        btn.textContent = '🔄 Migrate My Data';
+        btn.disabled = false;
+      }
+    });
+
+    // Allow Enter key
+    inp.addEventListener('keydown', e=>{ if(e.key==='Enter') btn.click(); });
+  });
+}
+
 async function pullFirestore(uid,key,rerender=false){
-  if(!fbDb){console.warn('pullFirestore: fbDb is null');return;}
-  if(!uid){console.warn('pullFirestore: no uid');return;}
-  if(!key){console.warn('pullFirestore: no key');return;}
+  if(!fbDb){return;}
+  if(!uid){return;}
+  if(!key){return;}
   try{
     const doc=await fbDb.collection('userData').doc(uid).get();
     if(!doc.exists){
-      console.log('pullFirestore: no document yet for uid=',uid,'— will create on first push');
       return;
     }
     const encData=doc.data().data;
-    if(!encData){console.warn('pullFirestore: document exists but data field is empty');return;}
+    if(!encData){return;}
     const decData=dec(encData,key);
     if(!decData){
-      console.warn('pullFirestore: decryption failed — wrong key? key prefix=',key?.slice(0,8));
+      
       return;
     }
     S={...freshState(),...mergeState(S,decData)};
@@ -2527,7 +2678,6 @@ async function pullFirestore(uid,key,rerender=false){
       const e=enc(S,currentPassword);
       if(e)localStorage.setItem(encKey,e);
     }
-    console.log('pullFirestore: ✅ pulled',S.txs?.length||0,'txs, lastSync=',S.lastSync);
     if(rerender)renderAll();
     updateCloudUI();
   }catch(e){
@@ -2536,13 +2686,13 @@ async function pullFirestore(uid,key,rerender=false){
 }
 
 async function pushFirestore(){
-  if(!fbDb){console.warn('pushFirestore: fbDb null');return;}
-  if(!currentUser?.uid){console.warn('pushFirestore: no uid');return;}
-  if(!currentPassword){console.warn('pushFirestore: no currentPassword');return;}
+  if(!fbDb||!currentUser?.uid||!currentPassword)return;
+  // Security: only push to your own document
+  const uid=currentUser.uid;
   try{
     const encData=enc(S,currentPassword);
-    if(!encData){console.warn('pushFirestore: enc() returned null');return;}
-    await fbDb.collection('userData').doc(currentUser.uid).set({
+    if(!encData){return;}
+    await fbDb.collection('userData').doc(uid).set({
       data:encData,
       updatedAt:new Date().toISOString(),
       pushedAt:Date.now()
@@ -2550,14 +2700,15 @@ async function pushFirestore(){
     S.lastSync=new Date().toISOString();
     S.pushedAt=Date.now();
     // Save timestamps locally (direct — no autoSave to avoid loop)
-    const k=currentUser.uid||currentUser.email;
-    const encKey='tfi_d_'+btoa(k).replace(/[^a-z0-9]/gi,'');
+    const encKey='tfi_d_'+btoa(uid).replace(/[^a-z0-9]/gi,'');
     const e2=enc(S,currentPassword);
     if(e2)localStorage.setItem(encKey,e2);
-    console.log('pushFirestore: ✅ pushed',S.txs?.length||0,'txs at',S.lastSync);
     updateCloudUI();
   }catch(e){
-    console.error('pushFirestore FAILED:',e.code||e.message,e);
+    // Only show to user if it's a persistent auth/permission error (not just network blip)
+    if(e.code==='permission-denied'||e.code==='unauthenticated'){
+      showWin('⚠️ Sync Error','Could not save to cloud: '+firebaseErrMsg(e));
+    }
   }
 }
 
@@ -2614,8 +2765,23 @@ function saveLocal(){
   const key=currentUser.uid||currentUser.email;
   const encKey='tfi_d_'+btoa(key).replace(/[^a-z0-9]/gi,'');
   const e=enc(S,currentPassword);
-  if(e)localStorage.setItem(encKey,e);
-  localStorage.setItem('tfi_la',Date.now());
+  if(e){
+    try{
+      localStorage.setItem(encKey,e);
+      localStorage.setItem('tfi_la',Date.now());
+    }catch(err){
+      if(err.name==='QuotaExceededError'||err.code===22){
+        // Storage full — clear old cache keys and retry once
+        try{
+          Object.keys(localStorage).filter(k=>k.startsWith('tfi_d_')&&k!==encKey).forEach(k=>localStorage.removeItem(k));
+          localStorage.setItem(encKey,e);
+        }catch{
+          showWin('⚠️ Storage Full','Your device storage is nearly full. Please free up space to continue saving data.');
+          return;
+        }
+      }
+    }
+  }
   // Push to Firestore debounced (2s after last change)
   clearTimeout(window._fsTimer);
   window._fsTimer=setTimeout(pushFirestore,2000);
@@ -2666,9 +2832,19 @@ setInterval(()=>{
 },180000);
 // Sync when device comes back online
 window.addEventListener('online',()=>{
+  const pill=document.getElementById('syncPill');
+  if(pill){pill.textContent='🔄 Back online…';pill.style.background='var(--gold-dim)';}
   if(fbDb&&currentUser?.uid){
-    setTimeout(()=>{silentSync();const pill=document.getElementById('syncPill');if(pill){pill.textContent='✅ Back online';setTimeout(()=>{pill.textContent='☁️ Sync';},2000);}},1000);
+    setTimeout(async()=>{
+      await silentSync();
+      if(pill){pill.textContent='✅ Synced';pill.style.background='var(--green-dim)';
+        setTimeout(()=>{pill.textContent='☁️ Sync';pill.style.background='var(--brand-dim)';},2500);}
+    },1500);
   }
+});
+window.addEventListener('offline',()=>{
+  const pill=document.getElementById('syncPill');
+  if(pill){pill.textContent='📴 Offline';pill.style.background='var(--red-dim)';}
 });
 
 function loadLocal(uid,key){
@@ -2786,6 +2962,90 @@ function doChangePin(){
 // Auto-lock
 setInterval(()=>{if(!currentUser||document.getElementById('pinScreen').style.display==='flex')return;const last=parseInt(localStorage.getItem('tfi_la')||'0');if(localStorage.getItem(PIN_KEY)&&Date.now()-last>LOCK_TIMEOUT)showPinScreen();},30000);
 document.addEventListener('click',()=>{if(currentUser)localStorage.setItem('tfi_la',Date.now());});
+
+// ══════════════════════════════════════════════════════
+// AUTH UI — tab switching, method switching, show/hide password, phone OTP
+// ══════════════════════════════════════════════════════
+
+function showAuthTab(tab){
+  // Sign In vs Create Account tabs
+  ['in','up'].forEach(t=>{
+    const panel=document.getElementById('panelIn'||'panel'+t);
+    const atab=document.getElementById('at'+t.charAt(0).toUpperCase()+t.slice(1)||'at'+t);
+  });
+  document.getElementById('panelIn').style.display  = tab==='in'  ? 'block':'none';
+  document.getElementById('panelUp').style.display  = tab==='up'  ? 'block':'none';
+  document.getElementById('atIn').classList.toggle('active', tab==='in');
+  document.getElementById('atUp').classList.toggle('active', tab==='up');
+}
+
+function showAuthMethod(method){
+  // Email vs Phone method
+  document.getElementById('authEmail').style.display = method==='email' ? 'block':'none';
+  document.getElementById('authPhone').style.display = method==='phone' ? 'block':'none';
+  const me=document.getElementById('methEmail');
+  const mp=document.getElementById('methPhone');
+  if(me){me.style.background=method==='email'?'var(--bg2)':'transparent';me.style.color=method==='email'?'var(--txt)':'var(--txt3)';}
+  if(mp){mp.style.background=method==='phone'?'var(--bg2)':'transparent';mp.style.color=method==='phone'?'var(--txt)':'var(--txt3)';}
+}
+
+function toggleVis(inputId, eyeEl){
+  const inp=document.getElementById(inputId);
+  if(!inp)return;
+  if(inp.type==='password'){inp.type='text';if(eyeEl)eyeEl.textContent='🙈';}
+  else{inp.type='password';if(eyeEl)eyeEl.textContent='👁';}
+}
+
+// ── Phone OTP ──────────────────────────────────────────
+async function sendSmsCode(){
+  const name=document.getElementById('phName').value.trim();
+  const cc=document.getElementById('phCountryCode').value;
+  const num=document.getElementById('phNumber').value.trim().replace(/\s/g,'');
+  const err=document.getElementById('phErr');
+  if(!name){err.textContent='Enter your full name.';return;}
+  if(!num||num.length<5){err.textContent='Enter a valid phone number.';return;}
+  const fullPhone=cc+num.replace(/^0/,'');
+  err.textContent='';
+  try{
+    if(!recaptchaVerifier){
+      recaptchaVerifier=new firebase.auth.RecaptchaVerifier('recaptcha-container',{size:'invisible',callback:()=>{}});
+    }
+    confirmationResult=await fbAuth.signInWithPhoneNumber(fullPhone,recaptchaVerifier);
+    document.getElementById('phoneStep1').style.display='none';
+    document.getElementById('phoneStep2').style.display='block';
+    document.getElementById('phDispNum').textContent=fullPhone;
+  }catch(e){
+    err.textContent=firebaseErrMsg(e);
+    if(recaptchaVerifier){try{recaptchaVerifier.clear();}catch{} recaptchaVerifier=null;}
+  }
+}
+
+async function doVerifyCode(){
+  const code=document.getElementById('smsCode').value.trim();
+  const err=document.getElementById('smsErr');
+  const name=document.getElementById('phName').value.trim()||'User';
+  if(!code||code.length!==6){err.textContent='Enter the 6-digit code from your SMS.';return;}
+  err.textContent='';
+  try{
+    const cred=await confirmationResult.confirm(code);
+    const localKey='tfi_'+sha(cred.user.uid).slice(0,20);
+    await onFirebaseSignIn(cred.user,name,localKey);
+    hideAuth();renderAll();updateUserUI();updateCloudUI();
+  }catch(e){
+    err.textContent=firebaseErrMsg(e);
+  }
+}
+
+// Aliases for HTML button calls
+function verifySmsCode(){ doVerifyCode(); }
+function goBackToPhone(){ resendSmsCode(); }
+
+async function resendSmsCode(){
+  if(recaptchaVerifier){try{recaptchaVerifier.clear();}catch{} recaptchaVerifier=null;}
+  document.getElementById('phoneStep1').style.display='block';
+  document.getElementById('phoneStep2').style.display='none';
+  document.getElementById('phErr').textContent='';
+}
 
 function showAuth(){
   document.getElementById('authScreen').style.display='flex';
@@ -4769,6 +5029,57 @@ function handleLogoTap(){
     openAdminLogin();
   }
 }
+// ── Admin broadcast token — Firestore-enforced security ──
+// Token stored in Firestore appConfig/adminToken and localStorage
+// Firestore rule checks this before allowing broadcast writes
+async function _ensureAdminToken(){
+  const existing=localStorage.getItem('tfi_admin_tok');
+  if(existing){
+    // Already have token — make sure it's also in Firestore
+    if(fbDb){
+      try{
+        const doc=await fbDb.collection('appConfig').doc('adminToken').get();
+        if(!doc.exists){
+          await fbDb.collection('appConfig').doc('adminToken').set({secret:existing,createdAt:new Date().toISOString()});
+        }
+      }catch{}
+    }
+    return existing;
+  }
+  // Generate new token
+  const arr=new Uint8Array(32);
+  window.crypto.getRandomValues(arr);
+  const token=Array.from(arr).map(b=>b.toString(16).padStart(2,'0')).join('');
+  localStorage.setItem('tfi_admin_tok',token);
+  // Save to Firestore
+  if(fbDb){
+    try{
+      await fbDb.collection('appConfig').doc('adminToken').set({secret:token,createdAt:new Date().toISOString()});
+    }catch(e){
+      console.warn('Could not save admin token to Firestore:',e.message);
+    }
+  }
+  return token;
+}
+
+async function _getAdminToken(){
+  // Try localStorage first (instant)
+  const local=localStorage.getItem('tfi_admin_tok');
+  if(local)return local;
+  // Fall back to Firestore (first login on new device)
+  if(fbDb){
+    try{
+      const doc=await fbDb.collection('appConfig').doc('adminToken').get();
+      if(doc.exists){
+        const t=doc.data().secret;
+        localStorage.setItem('tfi_admin_tok',t);
+        return t;
+      }
+    }catch{}
+  }
+  return null;
+}
+
 function openAdminLogin(){['adminEmail','adminPass'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});set('adminLoginErr','');document.getElementById('adminLoginScreen').style.display='flex';setTimeout(()=>document.getElementById('adminEmail').focus(),100);}
 function closeAdminLogin(){document.getElementById('adminLoginScreen').style.display='none';}
 function doAdminLogin(){
@@ -4777,12 +5088,20 @@ function doAdminLogin(){
   const err=document.getElementById('adminLoginErr');
   if(!email||!pw){err.textContent='Enter email and password.';return;}
   const sh=localStorage.getItem(ADMIN_KEY),se=localStorage.getItem(ADMIN_EMAIL_K);
-  if(!sh){if(pw===DEFAULT_ADMIN){localStorage.setItem(ADMIN_KEY,sha(pw));localStorage.setItem(ADMIN_EMAIL_K,sha(email));localStorage.setItem(ADMIN_EMAIL_P,email);closeAdminLogin();openAdminPanel(email);alert('⚠️ First login — change your password now!');}else{err.textContent='Wrong password. Use default for first login.';}return;}
+  if(!sh){if(pw===DEFAULT_ADMIN){localStorage.setItem(ADMIN_KEY,sha(pw));localStorage.setItem(ADMIN_EMAIL_K,sha(email));localStorage.setItem(ADMIN_EMAIL_P,email);
+    // Persist admin identity to Firestore
+    if(fbDb){fbDb.collection('appConfig').doc('admin').set({adminEmail:email,setupAt:new Date().toISOString()},{merge:true}).catch(()=>{});}
+    // Generate secure broadcast token (stored in Firestore + localStorage)
+    // This token is checked by Firestore Rules before allowing broadcast writes
+    _ensureAdminToken();
+    closeAdminLogin();openAdminPanel(email);alert('⚠️ First login — change your password now!');}else{err.textContent='Wrong password. Use default for first login.';}return;}
   if(sha(email)!==se){err.textContent='Email not recognised.';return;}
   if(sha(pw)!==sh){err.textContent='Incorrect password.';return;}
   closeAdminLogin();openAdminPanel(email);
 }
 function openAdminPanel(email){
+  // Ensure token exists and is synced to Firestore
+  _ensureAdminToken().catch(()=>{});
   const panel=document.getElementById('adminPanel');
   if(!panel){alert('Admin panel not found');return;}
   panel.style.display='block';
@@ -5071,21 +5390,37 @@ async function adminViewUserData(uid,name){
   }catch(e){alert('Error: '+e.message);}
 }
 async function sendBroadcast(){
+  if(!localStorage.getItem('tfi_admin_hash')){showWin('⛔ Not Authorised','Admin access required.');return;}
   const msg=document.getElementById('broadcastMsg').value.trim();
   const title=(document.getElementById('bcastTitle')?.value||'').trim()||'Message from Admin';
   const type=document.getElementById('bcastType')?.value||'info';
   if(!msg){alert('Enter a message first.');return;}
   if(!fbDb){alert('Firebase not connected.');return;}
+  // Get admin token — required by Firestore rule to allow broadcast write
+  const adminToken=await _getAdminToken();
+  if(!adminToken){
+    showWin('⚠️ Setup Required','Admin token not found. Please sign out and sign back into the admin panel to generate a security token.');
+    return;
+  }
   try{
     await fbDb.collection('broadcast').doc('latest').set({
-      text:msg,title,type,sentAt:new Date().toISOString(),sentBy:currentUser?.email||'admin'
+      text:msg,title,type,
+      sentAt:new Date().toISOString(),
+      sentBy:currentUser?.email||'admin',
+      adminToken  // Firestore rule validates this against appConfig/adminToken.secret
     });
     const users=window._adminUsers||[];
     closeO('oAdminBroadcast');
     document.getElementById('broadcastMsg').value='';
     const ti=document.getElementById('bcastTitle');if(ti)ti.value='';
     showWin('📢 Broadcast sent!','Will appear in '+users.length+' users\' notification inbox.');
-  }catch(e){alert('Error: '+e.message);}
+  }catch(e){
+    if(e.code==='permission-denied'){
+      showWin('⛔ Permission Denied','Your admin token may be out of sync. Open admin panel to refresh it.');
+    }else{
+      alert('Error: '+e.message);
+    }
+  }
 }
 function adminExportUsers(){
   const users=window._adminUsers||[];
@@ -5209,7 +5544,6 @@ function initApp(){
       fbDb=firebase.firestore();
       // Enable offline persistence (silently)
       fbDb.enablePersistence({synchronizeTabs:true}).catch(()=>{});
-      console.log('✅ Firebase initialized successfully');
     }catch(e){
       console.error('Firebase init failed:',e);
       fbDb=null;fbAuth=null;
@@ -5239,10 +5573,13 @@ function initApp(){
         }else{
           hideAuth();renderAll();updateUserUI();updateCloudUI();
         }
-        // Background tasks — pull latest from Firestore and re-render
+        // Background tasks — pull + migrate old data if needed
         setTimeout(async()=>{
-          await pullFirestore(fbUser.uid,localKey,true);
-          loadAppSettingsFromCloud(); // also refresh support settings after pull
+          const migrated = await migrateOldEncryption(fbUser.uid, localKey);
+          if(!migrated){
+            await pullFirestore(fbUser.uid,localKey,true);
+          }
+          loadAppSettingsFromCloud();
         },1500);
         setTimeout(()=>{
           const _laNow=new Date().toISOString();
@@ -5258,11 +5595,18 @@ function initApp(){
         setTimeout(loadAppSettingsFromCloud,2000);
         updateNotifBadge();
       }else{
-        // No user signed in
+        // No user — check if we were already logged in (token expiry or sign-out)
+        const wasLoggedIn=!!currentUser;
         currentUser=null;currentPassword=null;
         const session=sessionGet();
+        if(wasLoggedIn){
+          // Session ended while app was open — clear state cleanly
+          S=freshState();
+          showWin('🔒 Session Ended','Your session has expired. Please sign in again.');
+        }
         document.getElementById('authScreen').style.display='flex';
         document.getElementById('app').style.display='none';
+        document.getElementById('fab').style.display='none';
         if(session?.email){
           showAuthTab('in');
           const em=document.getElementById('siEmail');if(em)em.value=session.email||'';
@@ -5406,15 +5750,13 @@ async function loadAppSettingsFromCloud(){
   try{
     const doc=await fbDb.collection('appConfig').doc('settings').get();
     if(!doc.exists){
-      console.log('loadAppSettingsFromCloud: no appConfig doc yet');
       return;
     }
     const cfg=doc.data();
-    console.log('loadAppSettingsFromCloud: ✅ loaded, supportPhone=',cfg.supportPhone||'(not set)');
     localStorage.setItem(APP_SETTINGS_K,JSON.stringify(cfg));
     applyAppSettings(cfg);
   }catch(e){
-    console.warn('loadAppSettingsFromCloud failed:',e.code||e.message);
+    
     // Retry once after 3s (handles auth-not-ready race)
     setTimeout(()=>{
       if(fbDb&&currentUser?.uid) loadAppSettingsFromCloud();
@@ -5451,8 +5793,6 @@ function applyAppSettings(cfg){
   if(cfg.appName&&cfg.appName!=='Trackinfin'){
     document.querySelectorAll('.h-name').forEach(el=>{if(el)el.textContent=cfg.appName;});
   }
-
-  console.log('applyAppSettings: phone=',phone||'(none)','show=',show);
 }
 
 // Apply from localStorage cache — instant, no network needed
@@ -5558,7 +5898,15 @@ function setFbkStar(n){
     setTimeout(()=>{if(el)el.style.transform='scale(1)';},200);
   }
 }
+function setFeedbackRating(n){ setFbkStar(n); } // alias
 async function submitFeedback(){
+  // Rate limit: one submission per 10 minutes
+  const lastFbk=parseInt(localStorage.getItem('tfi_last_fbk')||'0');
+  if(Date.now()-lastFbk < 600000){
+    const wait=Math.ceil((600000-(Date.now()-lastFbk))/60000);
+    showWin('⏳ Please wait','You can submit feedback again in '+wait+' minute'+(wait===1?'':'s')+'.');
+    return;
+  }
   const text=document.getElementById('fbkText').value.trim();
   const type=document.getElementById('fbkType').value||'suggestion';
   const rating=parseInt(document.getElementById('fbkRating').value)||5;
@@ -5607,6 +5955,7 @@ async function submitFeedback(){
   }
   clearTimeout(timeout);
   resetBtn();
+  localStorage.setItem('tfi_last_fbk',Date.now()); // rate limit timestamp
   document.getElementById('fbkText').value='';
   try{document.getElementById('fbkRating').value='5';setFeedbackRating(5);}catch{}
   closeO('oFeedback');
@@ -5810,13 +6159,6 @@ function checkStreakWin(){
     localStorage.setItem('tfi_last_streak_win',String(streak));
     celebrate();showWin('🔥 '+streak+' Day Streak!','You have recorded every day for '+streak+' days. Incredible discipline!');
   }
-}
-function applyRecurringTxs(){
-  const m=fmtM(new Date());const today=new Date().toISOString().split('T')[0];
-  if(!(S.recurringTxs||[]).length)return;
-  const existing=S.txs.find(t=>t.month===m&&t.isRecurring);if(existing)return;
-  S.recurringTxs.forEach(r=>{S.txs.unshift({id:Date.now()+Math.random(),desc:r.desc,amt:r.amt,type:r.type,cat:r.type==='in'?'income':'other',date:today,month:m,isRecurring:true});});
-  saveLocal();
 }
 
 
