@@ -2500,15 +2500,19 @@ function mergeState(local, remote){
   ['envelopes','notes','modules'].forEach(k=>{
     merged[k] = {...(remote[k]||{}), ...(local[k]||{})};
   });
-  // For scalars: prefer local if more recently pushed, else remote
+  // For scalars: whichever device pushed more recently wins
   const localNewer = (local.pushedAt||0) >= (remote.pushedAt||0);
-  ['currency','monthlyBudget','theme','country','geminiKey','userType','onboardDone','name'].forEach(k=>{
-    if(local[k]!==undefined && local[k]!==null && local[k]!=='') merged[k]=local[k];
-    else if(remote[k]!==undefined) merged[k]=remote[k];
+  const newer  = localNewer ? local : remote;
+  const older  = localNewer ? remote : local;
+  ['currency','monthlyBudget','theme','country','geminiKey','groqKey','userType','onboardDone','name',
+   'pin','challenges','products'].forEach(k=>{
+    const nv=newer[k]; const ov=older[k];
+    if(nv!==undefined&&nv!==null&&nv!=='') merged[k]=nv;
+    else if(ov!==undefined&&ov!==null&&ov!=='') merged[k]=ov;
   });
   // Keep newest sync timestamps
-  merged.lastSync  = local.lastSync||remote.lastSync||null;
-  merged.pushedAt  = Math.max(local.pushedAt||0, remote.pushedAt||0);
+  merged.lastSync = newer.lastSync||older.lastSync||null;
+  merged.pushedAt = Math.max(local.pushedAt||0, remote.pushedAt||0);
   return merged;
 }
 
@@ -2670,16 +2674,28 @@ async function pullFirestore(uid,key,rerender=false){
       
       return;
     }
-    S={...freshState(),...mergeState(S,decData)};
+    // Check if cloud data is actually newer before merging
+    const cloudUpdatedAt=doc.data().updatedAt||doc.data().pushedAt||0;
+    const localUpdatedAt=S.pushedAt||S.lastSync||0;
+    const cloudIsNewer=!localUpdatedAt||new Date(cloudUpdatedAt)>new Date(localUpdatedAt);
+
+    const merged=mergeState(S,decData);
+    S={...freshState(),...merged};
+    S.lastSync=new Date().toISOString();
+    S.pushedAt=doc.data().pushedAt||Date.now();
     fixState();
-    // Save locally without triggering another push
+
+    // Save merged data locally
     if(currentUser&&currentPassword){
-      const k=currentUser.uid||currentUser.email;
-      const encKey='tfi_d_'+btoa(k).replace(/[^a-z0-9]/gi,'');
+      const encKey='tfi_d_'+btoa(uid).replace(/[^a-z0-9]/gi,'');
       const e=enc(S,currentPassword);
-      if(e)localStorage.setItem(encKey,e);
+      if(e){
+        localStorage.setItem(encKey,e);
+        localStorage.setItem('tfi_la',Date.now());
+      }
     }
-    if(rerender)renderAll();
+    // Always re-render after pull — data may have changed
+    renderAll();
     updateCloudUI();
   }catch(e){
     console.error('Firestore pull failed:',e.code||e.message,e);
@@ -2693,17 +2709,22 @@ async function pushFirestore(){
   try{
     const encData=enc(S,currentPassword);
     if(!encData){return;}
+    const now=new Date().toISOString();
+    const nowMs=Date.now();
     await fbDb.collection('userData').doc(uid).set({
       data:encData,
-      updatedAt:new Date().toISOString(),
-      pushedAt:Date.now()
+      updatedAt:now,
+      pushedAt:nowMs
     });
-    S.lastSync=new Date().toISOString();
-    S.pushedAt=Date.now();
-    // Save timestamps locally (direct — no autoSave to avoid loop)
+    S.lastSync=now;
+    S.pushedAt=nowMs;
+    // Save timestamps locally
     const encKey='tfi_d_'+btoa(uid).replace(/[^a-z0-9]/gi,'');
     const e2=enc(S,currentPassword);
-    if(e2)localStorage.setItem(encKey,e2);
+    if(e2){
+      localStorage.setItem(encKey,e2);
+      localStorage.setItem('tfi_la',nowMs);
+    }
     updateCloudUI();
   }catch(e){
     // Only show to user if it's a persistent auth/permission error (not just network blip)
@@ -2795,7 +2816,8 @@ async function manualSync(){
     renderAll();
     if(pill){pill.textContent='✅';pill.style.background='var(--green-dim)';setTimeout(resetPill,2500);}
     const t=S.lastSync?new Date(S.lastSync).toLocaleTimeString('en',{hour:'2-digit',minute:'2-digit'}):'now';
-    showWin('☁️ Synced!','All your data is up to date across all devices. Last sync: '+t);
+    const txCount=S.txs?.length||0;
+    showWin('☁️ Synced!','All your data is up to date across all devices.\n'+txCount+' transactions loaded. Last sync: '+t);
   }catch(e){
     resetPill();
     console.error('manualSync error:',e);
@@ -2804,9 +2826,11 @@ async function manualSync(){
 }
 
 async function silentSync(){
-  if(!fbDb||!currentUser?.uid)return;
+  if(!fbDb||!currentUser?.uid||!currentPassword)return;
   try{
-    await pullFirestore(currentUser.uid,currentPassword,true);
+    // Pull latest from cloud (merges + re-renders automatically)
+    await pullFirestore(currentUser.uid,currentPassword,false);
+    // Push merged result back up
     await pushFirestore();
   }catch{}
 }
@@ -2881,7 +2905,7 @@ setInterval(()=>{
     silentSync();
     loadAppSettingsFromCloud(); // refresh support phone etc
   }
-},180000);
+},60000); // 60s sync interval
 // Sync when device comes back online
 window.addEventListener('online',()=>{
   const pill=document.getElementById('syncPill');
