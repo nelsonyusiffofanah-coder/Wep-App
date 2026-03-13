@@ -2916,9 +2916,7 @@ function startRealtimeSync(uid, key){
 
       if(!doc.exists){ _addSyncLog('→ skip: no doc'); return; }
 
-      // Skip if data is only in local cache (fromCache=true = not yet confirmed by server)
-      // Note: do NOT skip based on hasPendingWrites alone — that can block legitimate remote updates
-      if(doc.metadata.fromCache){ _addSyncLog('→ skip: from cache'); return; }
+      // fromCache is always false now (persistence disabled) — no need to skip
 
       const encData = doc.data()?.data;
       if(!encData){ _addSyncLog('→ skip: no data field'); return; }
@@ -5721,7 +5719,8 @@ function initApp(){
       fbAuth=firebase.auth();
       fbDb=firebase.firestore();
       // Enable offline persistence (silently)
-      fbDb.enablePersistence({synchronizeTabs:true}).catch(()=>{});
+      // No Firestore persistence — we use our own encrypted localStorage cache
+      // Persistence interferes with onSnapshot by serving stale fromCache=true events
     }catch(e){
       console.error('Firebase init failed:',e);
       fbDb=null;fbAuth=null;
