@@ -2326,6 +2326,115 @@ function fixState(){
 
 // ══════════════════════════════════════════════════════
 // ══════════════════════════════════════════════════════
+// AUTH — Email and Phone Sign In / Sign Up
+// ══════════════════════════════════════════════════════
+
+async function doSignUp(){
+  const name=document.getElementById('suName').value.trim();
+  const email=document.getElementById('suEmail').value.trim();
+  const pw=document.getElementById('suPass').value;
+  const pw2=document.getElementById('suPass2').value;
+  const err=document.getElementById('suErr');
+  const btn=document.querySelector('#panelUp .btn.full');
+  if(!name){err.textContent='Enter your full name.';return;}
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){err.textContent='Enter a valid email address.';return;}
+  if(pw.length<6){err.textContent='Password must be at least 6 characters.';return;}
+  if(pw!==pw2){err.textContent='Passwords do not match.';return;}
+  err.textContent='';
+  if(btn){btn.textContent='⏳ Creating account…';btn.disabled=true;}
+  try{
+    const cred=await fbAuth.createUserWithEmailAndPassword(email,pw);
+    await cred.user.updateProfile({displayName:name});
+    const localKey='tfi_'+sha(cred.user.uid).slice(0,20);
+    await onFirebaseSignIn(cred.user,name,localKey);
+    if(btn){btn.textContent='Create Account →';btn.disabled=false;}
+    document.getElementById('authScreen').style.display='none';
+    showOnboarding();
+  }catch(e){
+    if(btn){btn.textContent='Create Account →';btn.disabled=false;}
+    err.textContent=firebaseErrMsg(e);
+  }
+}
+
+async function doSignIn(){
+  const email=document.getElementById('siEmail').value.trim();
+  const pw=document.getElementById('siPass').value;
+  const err=document.getElementById('siErr');
+  const btn=document.querySelector('#panelIn .btn.full');
+  if(!email||!pw){err.textContent='Enter your email and password.';return;}
+  err.textContent='';
+  if(btn){btn.textContent='⏳ Signing in…';btn.disabled=true;}
+  try{
+    const cred=await fbAuth.signInWithEmailAndPassword(email,pw);
+    const localKey='tfi_'+sha(cred.user.uid).slice(0,20);
+    await onFirebaseSignIn(cred.user,cred.user.displayName||email.split('@')[0],localKey);
+    if(btn){btn.textContent='Sign In →';btn.disabled=false;}
+    localStorage.getItem(PIN_KEY)?showPinScreen():(hideAuth(),renderAll(),updateUserUI(),updateCloudUI());
+  }catch(e){
+    if(btn){btn.textContent='Sign In →';btn.disabled=false;}
+    err.textContent=firebaseErrMsg(e);
+  }
+}
+
+async function doForgotPassword(){
+  const email=document.getElementById('siEmail').value.trim();
+  if(!email){alert('Enter your email address first.');return;}
+  if(!fbAuth){alert('Firebase not connected.');return;}
+  try{
+    await fbAuth.sendPasswordResetEmail(email);
+    alert('✅ Password reset email sent to '+email+'. Check your inbox.');
+  }catch(e){
+    alert('Error: '+firebaseErrMsg(e));
+  }
+}
+
+// Shared sign-in handler — called after email and phone auth both succeed
+async function onFirebaseSignIn(fbUser, displayName, localKey){
+  const uid=fbUser.uid;
+  const email=fbUser.email||fbUser.phoneNumber||uid;
+  // Check suspension BEFORE loading anything
+  if(fbDb){
+    try{
+      const profileDoc=await fbDb.collection('publicProfiles').doc(uid).get();
+      if(profileDoc.exists){
+        const pd=profileDoc.data();
+        if(pd.suspended===true){
+          fbAuth.signOut().catch(()=>{});
+          showWin('🚫 Account Suspended','Your account has been suspended. Contact support for help.');
+          return;
+        }
+        if(pd.removed===true){
+          fbAuth.signOut().catch(()=>{});
+          showWin('❌ Account Removed','This account is no longer active. Contact support.');
+          return;
+        }
+      }
+    }catch(e){console.warn('Suspension check:',e.message);}
+  }
+  // Set current user
+  currentUser={uid,name:displayName||fbUser.displayName||email,email,phone:fbUser.phoneNumber||'',provider:fbUser.providerData?.[0]?.providerId||'email'};
+  currentPassword=localKey;
+  // Load local data first (offline support)
+  loadLocal(uid,localKey);
+  // Then pull from Firestore
+  await pullFirestore(uid,localKey);
+  // Best name after pull (S.name may have been populated from encrypted data)
+  const name=displayName||fbUser.displayName||S?.name||email;
+  currentUser.name=name;
+  // Save session
+  localStorage.setItem(SESSION_KEY,JSON.stringify({uid,name,email,phone:fbUser.phoneNumber||''}));
+  localStorage.setItem('tfi_la',Date.now());
+  // Push profile to Firestore
+  const profileData={name,email,phone:fbUser.phoneNumber||'',uid,
+    joinedAt:fbUser.metadata?.creationTime||new Date().toISOString(),
+    lastActive:new Date().toISOString(),
+    provider:fbUser.providerData?.[0]?.providerId||'unknown',
+    country:S?.country||'',userType:S?.userType||'other'};
+  fbDb?.collection('users').doc(uid).set(profileData,{merge:true}).catch(()=>{});
+  fbDb?.collection('publicProfiles').doc(uid).set(profileData,{merge:true}).catch(()=>{});
+}
+
+// ══════════════════════════════════════════════════════
 // SYNC — Firebase Firestore only (JSONBin removed)
 // All data sync happens via Firestore in the section below
 // ══════════════════════════════════════════════════════
