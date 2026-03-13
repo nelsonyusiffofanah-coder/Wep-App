@@ -2489,9 +2489,10 @@ function mergeState(local, remote){
       if(!item?.id){ map.set(Math.random().toString(),item); return; }
       const existing = map.get(item.id);
       if(!existing){ map.set(item.id,item); return; }
-      // Keep the one with newer updatedAt, or local if equal
-      const eTime = existing.updatedAt ? new Date(existing.updatedAt).getTime() : 0;
-      const iTime = item.updatedAt     ? new Date(item.updatedAt).getTime()     : 0;
+      // Keep the one with newer updatedAt; if no updatedAt, keep existing (first seen wins)
+      const eTime = existing.updatedAt ? new Date(existing.updatedAt).getTime() : (existing.id||0);
+      const iTime = item.updatedAt     ? new Date(item.updatedAt).getTime()     : (item.id||0);
+      // id is Date.now() at creation — higher id = created later = keep it
       if(iTime > eTime) map.set(item.id, item);
     });
     merged[k] = [...map.values()];
@@ -2673,15 +2674,14 @@ async function pullFirestore(uid,key,rerender=false){
 
     const cloudPushedAt=doc.data().pushedAt||0;
     const localPushedAt=S.pushedAt||0;
-    const cloudTxs=decData.txs?.length||0;
-    const localTxs=S.txs?.length||0;
-    _addSyncLog('pull: cloud='+cloudPushedAt+' local='+localPushedAt+' cloudTxs='+cloudTxs);
+    const cloudTxCount=decData.txs?.length||0;
+    const localTxCount=S.txs?.length||0;
+    _addSyncLog('pull: cloud='+cloudPushedAt+' local='+localPushedAt+' cloudTxs='+cloudTxCount+' localTxs='+localTxCount);
 
-    // Always merge — mergeState handles deduplication and picks newer items
+    // Always merge — mergeState handles deduplication
     const merged=mergeState(S,decData);
     S={...freshState(),...merged};
     S.lastSync=new Date().toISOString();
-    _addSyncLog('push: ✅ pushedAt set to '+Date.now());
     S.pushedAt=Math.max(cloudPushedAt, localPushedAt);
     fixState();
 
@@ -2720,8 +2720,9 @@ async function pushFirestore(){
     localStorage.setItem(encKey, encDataFinal);
     localStorage.setItem('tfi_la', nowMs);
     updateCloudUI();
+    _addSyncLog('push: ✅ pushedAt='+nowMs+' txs='+(S.txs?.length||0));
   }catch(e){
-    // Only show to user if it's a persistent auth/permission error (not just network blip)
+    _addSyncLog('push: ❌ '+e.code+' '+e.message);
     if(e.code==='permission-denied'||e.code==='unauthenticated'){
       showWin('⚠️ Sync Error','Could not save to cloud: '+firebaseErrMsg(e));
     }
@@ -2866,9 +2867,6 @@ function saveLocal(){
 // ── AUTO-SYNC: pull latest from Firestore when user returns to app ──
 document.addEventListener('visibilitychange',()=>{
   if(document.visibilityState==='visible'&&fbDb&&currentUser?.uid){
-    // Pull immediately when user comes back to the app
-    _addSyncLog('App foregrounded — pulling fresh data');
-    pullFirestore(currentUser.uid,currentPassword,true).catch(()=>{});
     localStorage.setItem('tfi_last_pull', Date.now());
     pullFirestore(currentUser.uid,currentPassword,true).catch(()=>{});
     // Check for direct messages from admin
@@ -2929,19 +2927,19 @@ function startRealtimeSync(uid, key){
       const ourPushedAt   = S.pushedAt || 0;
       _addSyncLog('cloudPushedAt='+cloudPushedAt+' ourPushedAt='+ourPushedAt);
 
-      // Decrypt first so we can compare actual data, not just timestamps
+      // Decrypt first — we need actual data to decide whether to merge
       const decData = dec(encData, key);
       if(!decData){ _addSyncLog('→ DECRYPT FAILED — key mismatch?'); return; }
 
-      // Skip ONLY if cloud is strictly older AND has fewer/same transactions
-      // Timestamps alone are not reliable — always check actual tx count
       const cloudTxCount = decData.txs?.length || 0;
       const localTxCount = S.txs?.length || 0;
-      const cloudIsOlder = cloudPushedAt > 0 && cloudPushedAt < ourPushedAt;
-      const cloudHasMoreData = cloudTxCount > localTxCount;
 
-      if(cloudIsOlder && !cloudHasMoreData){
-        _addSyncLog('→ skip: cloud older ('+cloudPushedAt+'<'+ourPushedAt+') and no new txs');
+      // Only skip if cloud is strictly older AND has no more transactions
+      const cloudIsOlder = cloudPushedAt > 0 && cloudPushedAt < ourPushedAt;
+      const cloudHasNewData = cloudTxCount > localTxCount || cloudPushedAt > ourPushedAt;
+
+      if(cloudIsOlder && !cloudHasNewData){
+        _addSyncLog('→ skip: cloud older ('+cloudPushedAt+') our='+ourPushedAt+' txs same');
         return;
       }
 
@@ -3002,6 +3000,14 @@ setInterval(()=>{
   }
 },120000);
 // Sync when device comes back online
+// Pull immediately when user switches back to the app
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='visible'&&fbDb&&currentUser?.uid&&currentPassword){
+    _addSyncLog('App foregrounded — pulling');
+    pullFirestore(currentUser.uid,currentPassword,true).catch(()=>{});
+  }
+});
+
 window.addEventListener('online',()=>{
   const pill=document.getElementById('syncPill');
   if(pill){pill.textContent='🔄 Back online…';pill.style.background='var(--gold-dim)';}
