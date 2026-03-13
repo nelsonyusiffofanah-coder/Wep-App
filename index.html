@@ -2659,46 +2659,38 @@ async function _promptAndMigrate(uid, newKey, encryptedData){
 }
 
 async function pullFirestore(uid,key,rerender=false){
-  if(!fbDb){return;}
-  if(!uid){return;}
-  if(!key){return;}
+  if(!fbDb||!uid||!key){return;}
+  localStorage.setItem('tfi_last_pull', Date.now());
   try{
     const doc=await fbDb.collection('userData').doc(uid).get();
-    if(!doc.exists){
-      return;
-    }
+    if(!doc.exists){ _addSyncLog('pull: no doc in userData/'+uid.slice(0,8)); return; }
+
     const encData=doc.data().data;
-    if(!encData){return;}
+    if(!encData){ _addSyncLog('pull: doc exists but no data field'); return; }
+
     const decData=dec(encData,key);
-    if(!decData){
-      
-      return;
-    }
-    // Check if cloud data is actually newer before merging
-    const cloudUpdatedAt=doc.data().updatedAt||doc.data().pushedAt||0;
-    const localUpdatedAt=S.pushedAt||S.lastSync||0;
-    const cloudIsNewer=!localUpdatedAt||new Date(cloudUpdatedAt)>new Date(localUpdatedAt);
+    if(!decData){ _addSyncLog('pull: ❌ decrypt failed — key mismatch!'); return; }
+
+    const cloudPushedAt=doc.data().pushedAt||0;
+    const localPushedAt=S.pushedAt||0;
+    _addSyncLog('pull: cloud='+cloudPushedAt+' local='+localPushedAt+' cloudTxs='+(decData.txs?.length||0));
 
     const merged=mergeState(S,decData);
     S={...freshState(),...merged};
     S.lastSync=new Date().toISOString();
-    S.pushedAt=doc.data().pushedAt||Date.now();
+    S.pushedAt=Math.max(cloudPushedAt, localPushedAt);
     fixState();
 
-    // Save merged data locally
     if(currentUser&&currentPassword){
       const encKey='tfi_d_'+btoa(uid).replace(/[^a-z0-9]/gi,'');
       const e=enc(S,currentPassword);
-      if(e){
-        localStorage.setItem(encKey,e);
-        localStorage.setItem('tfi_la',Date.now());
-      }
+      if(e){ localStorage.setItem(encKey,e); localStorage.setItem('tfi_la',Date.now()); }
     }
-    // Always re-render after pull — data may have changed
+    _addSyncLog('pull: ✅ merged — now '+( S.txs?.length||0)+' txs');
     renderAll();
     updateCloudUI();
   }catch(e){
-    console.error('Firestore pull failed:',e.code||e.message,e);
+    _addSyncLog('pull: ❌ ERROR '+e.code+' '+e.message);
   }
 }
 
@@ -2870,7 +2862,7 @@ function saveLocal(){
 // ── AUTO-SYNC: pull latest from Firestore when user returns to app ──
 document.addEventListener('visibilitychange',()=>{
   if(document.visibilityState==='visible'&&fbDb&&currentUser?.uid){
-    // Pull fresh data when user switches back to the app
+    localStorage.setItem('tfi_last_pull', Date.now());
     pullFirestore(currentUser.uid,currentPassword,true).catch(()=>{});
     // Check for direct messages from admin
     checkAdminDirectMessage();
@@ -2915,12 +2907,13 @@ function startRealtimeSync(uid, key){
 
   _syncUnsub = fbDb.collection('userData').doc(uid)
     .onSnapshot(async (doc)=>{
-      _addSyncLog('onSnapshot fired — exists='+doc.exists+' pending='+doc.metadata.hasPendingWrites);
+      _addSyncLog('onSnapshot fired — exists='+doc.exists+' pending='+doc.metadata.hasPendingWrites+' fromCache='+doc.metadata.fromCache);
 
       if(!doc.exists){ _addSyncLog('→ skip: no doc'); return; }
 
-      // Skip writes that are still pending (our own local writes)
-      if(doc.metadata.hasPendingWrites){ _addSyncLog('→ skip: own write'); return; }
+      // Skip if data is only in local cache (fromCache=true = not yet confirmed by server)
+      // Note: do NOT skip based on hasPendingWrites alone — that can block legitimate remote updates
+      if(doc.metadata.fromCache){ _addSyncLog('→ skip: from cache'); return; }
 
       const encData = doc.data()?.data;
       if(!encData){ _addSyncLog('→ skip: no data field'); return; }
@@ -2976,12 +2969,23 @@ function stopRealtimeSync(){
   if(_syncUnsub){ _syncUnsub(); _syncUnsub=null; }
 }
 
-// Keep a lighter interval just for app settings refresh (not data sync)
+// 30s interval — fallback sync in case onSnapshot misses an update
+// (common on mobile browsers when app is backgrounded)
+setInterval(()=>{
+  if(document.visibilityState!=='visible'||!fbDb||!currentUser?.uid) return;
+  const now=Date.now();
+  const lastPull=parseInt(localStorage.getItem('tfi_last_pull')||'0');
+  if(now-lastPull < 25000) return; // skip if pulled within 25s
+  localStorage.setItem('tfi_last_pull', now);
+  pullFirestore(currentUser.uid,currentPassword,true).catch(()=>{});
+},30000);
+
+// Settings refresh every 2 min
 setInterval(()=>{
   if(document.visibilityState==='visible'&&fbDb&&currentUser?.uid){
     loadAppSettingsFromCloud();
   }
-},120000); // refresh app settings every 2 min
+},120000);
 // Sync when device comes back online
 window.addEventListener('online',()=>{
   const pill=document.getElementById('syncPill');
