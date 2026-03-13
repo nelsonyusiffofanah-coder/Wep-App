@@ -1921,7 +1921,10 @@ tbody td{padding:11px 12px;border-bottom:1px solid var(--border2);}
         <div style="font-size:0.82rem;font-weight:700;">Need personal help?</div>
         <div style="font-size:0.74rem;color:var(--txt3);" id="supportNumDisplay">Contact your administrator</div>
       </div>
-      <button class="wa-btn" id="helpSupportWaBtn" onclick="openSupportWhatsApp()" style="display:none;">📲 WhatsApp</button>
+      <div style="display:flex;gap:8px;flex-shrink:0;">
+        <button id="helpSupportCallBtn" onclick="callSupport()" style="display:none;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--txt2);font-size:0.72rem;font-weight:700;padding:6px 10px;cursor:pointer;white-space:nowrap;">📞 Call</button>
+        <button class="wa-btn" id="helpSupportWaBtn" onclick="openSupportWhatsApp()" style="display:none;">📲 WhatsApp</button>
+      </div>
     </div>
     <div class="help-tabs" id="helpTabs"></div>
     <div id="helpBody"></div>
@@ -3920,11 +3923,25 @@ function doMarkPaid(){
 }
 function sendWhatsApp(id){
   const c=S.credits.find(x=>x.id===id);if(!c)return;
-  const phone=(c.phone||'').replace(/[^0-9]/g,'');
-  if(!phone){alert('No phone number saved for '+c.name+'. Edit to add one.');return;}
+  const phone=(c.phone||'').replace(/[^0-9+]/g,'').replace(/^\+/,'');
+  if(!phone){showWin('📞 No Number','No phone number saved for '+c.name+'. Edit the record to add one.');return;}
   const remaining=c.amt-(c.paidAmt||0);
-  const msg=`Hello ${c.name}, I hope you are well. This is a friendly reminder about the ${fmt(remaining)} outstanding between us${c.purpose?' for '+c.purpose:''}.${c.due?' It was due on '+c.due+'.':''} Please let me know when you can make payment. Thank you.`;
+  const dir=c.direction==='owed'?'they owe you':'you owe them';
+  const msg='Hello '+c.name+', I hope you are well. This is a friendly reminder about the '+fmt(remaining)+' outstanding between us'+(c.purpose?' for '+c.purpose:'')+'.'+(c.due?' It was due on '+c.due+'.':'')+' Please let me know when we can settle this. Thank you.';
   window.open('https://wa.me/'+phone+'?text='+encodeURIComponent(msg),'_blank');
+}
+function callCredit(id){
+  const cr=S.credits.find(x=>x.id===id);if(!cr)return;
+  const phone=(cr.phone||'').replace(/[^0-9+]/g,'').replace(/^\+/,'');
+  if(!phone){showWin('📞 No Number','No phone number saved for '+cr.name+'. Edit the record to add one.');return;}
+  const isMobile=/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+  if(isMobile){
+    window.location.href='tel:+'+phone;
+  }else{
+    navigator.clipboard?.writeText('+'+phone).then(()=>{
+      showWin('📞 Number Copied',cr.name+'\'s number +'+phone+' copied to clipboard.');
+    }).catch(()=>{showWin('📞 '+cr.name,'+'+phone);});
+  }
 }
 function renderCredits(){
   const credits=S.credits||[];const now=new Date();
@@ -3972,6 +3989,7 @@ function renderCredits(){
       ${c.paidAmt>0&&c.status!=='paid'?`<div style="font-size:0.7rem;color:var(--txt3);margin-bottom:6px;">Partially paid: ${fmt(c.paidAmt)}</div>`:''}
       <div class="credit-actions">
         ${c.status!=='paid'&&c.direction==='owed'?`<button class="btn sm" onclick="openMarkPaid(${c.id})">✅ Mark Paid</button>`:''}
+        ${c.phone&&c.status!=='paid'?`<button class="btn ghost xs" onclick="callCredit(${c.id})" style="white-space:nowrap;">📞 Call</button>`:''}
         ${c.phone&&c.status!=='paid'?`<button class="wa-btn" onclick="sendWhatsApp(${c.id})">📲 WhatsApp</button>`:''}
         <button class="btn ghost xs" onclick="deleteCredit(${c.id})" style="color:var(--red);">✕ Delete</button>
       </div>
@@ -4404,7 +4422,8 @@ const THEMES=[
   {id:'sunset',  name:'Sunset',    gender:'female',preview:['#FFF7ED','#EA580C','#D97706'],  desc:'Warm peach & coral'},
 ];
 function renderSettings(){
-  applyAppSettingsCached(); // always apply cached support phone on settings open
+  applyAppSettingsCached(); // apply cached immediately
+  if(fbDb&&currentUser?.uid) loadAppSettingsFromCloud(); // refresh from cloud
   // Profile
   if(currentUser){
     const ini=currentUser.name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
@@ -5182,17 +5201,34 @@ const HELP_CONTENT=[
 function openHelp(){
   document.getElementById('helpPanel').classList.add('open');
   renderHelp('basics');
-  // Support number
-  const appSettings=JSON.parse(localStorage.getItem(APP_SETTINGS_K)||'{}');
-  applyAppSettings(appSettings);
+  // Apply cached settings immediately (instant)
+  applyAppSettingsCached();
+  // Then refresh from cloud in background
+  if(fbDb) loadAppSettingsFromCloud();
 }
 function closeHelp(){document.getElementById('helpPanel').classList.remove('open');}
+function _getSupportPhone(){
+  const cfg=JSON.parse(localStorage.getItem(APP_SETTINGS_K)||'{}');
+  return (cfg.supportPhone||SUPPORT_PHONE_DEFAULT||'').replace(/[^0-9+]/g,'').replace(/^\+/,'');
+}
 function openSupportWhatsApp(){
-  const appSettings=JSON.parse(localStorage.getItem(APP_SETTINGS_K)||'{}');
-  const phone=(appSettings.supportPhone||SUPPORT_PHONE_DEFAULT||'').replace(/[^0-9]/g,'');
-  if(!phone){alert('No support number configured.');return;}
-  const msg=`Hello, I need help with Trackinfin. My name is ${currentUser?.name||'a user'}.`;
+  const phone=_getSupportPhone();
+  if(!phone){showWin('📞 No Support Number','Ask your administrator to set up the support phone number in Admin Settings.');return;}
+  const msg='Hello, I need help with Trackinfin. My name is '+(currentUser?.name||'a user')+'.';
   window.open('https://wa.me/'+phone+'?text='+encodeURIComponent(msg),'_blank');
+}
+function callSupport(){
+  const phone=_getSupportPhone();
+  if(!phone){showWin('📞 No Support Number','Ask your administrator to set up the support phone number in Admin Settings.');return;}
+  const isMobile=/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+  if(isMobile){
+    window.location.href='tel:+'+phone;
+  }else{
+    // On PC — copy to clipboard
+    navigator.clipboard?.writeText('+'+phone).then(()=>{
+      showWin('📞 Number Copied','Support number +'+phone+' copied to clipboard. You can paste it into Skype, WhatsApp Desktop, or your phone app.');
+    }).catch(()=>{showWin('📞 Support Number','+'+phone);});
+  }
 }
 function renderHelp(section){
   const bar=document.getElementById('helpTabs');const body=document.getElementById('helpBody');
@@ -5984,22 +6020,22 @@ function timeSinceNotif(iso){
 
 // ── Load cloud app settings for all users ──────────────
 async function loadAppSettingsFromCloud(){
-  if(!fbDb){
-    // Retry after 2s when Firestore becomes available
-    setTimeout(()=>{if(fbDb)loadAppSettingsFromCloud();},2000);
+  if(!fbDb){setTimeout(()=>{if(fbDb)loadAppSettingsFromCloud();},2000);return;}
+  if(!currentUser?.uid){
+    // Auth not ready yet — retry after auth fires
+    setTimeout(()=>{if(fbDb&&currentUser?.uid)loadAppSettingsFromCloud();},2000);
     return;
   }
   try{
     const doc=await fbDb.collection('appConfig').doc('settings').get();
-    if(!doc.exists){
-      return;
+    if(doc.exists){
+      const cfg=doc.data();
+      localStorage.setItem(APP_SETTINGS_K,JSON.stringify(cfg));
+      applyAppSettings(cfg);
     }
-    const cfg=doc.data();
-    localStorage.setItem(APP_SETTINGS_K,JSON.stringify(cfg));
-    applyAppSettings(cfg);
   }catch(e){
-    // Retry after 3s — don't require auth since appConfig should be readable
-    setTimeout(()=>{ if(fbDb) loadAppSettingsFromCloud(); },3000);
+    // If it fails (auth/network), use cached version silently
+    applyAppSettingsCached();
   }
 }
 
@@ -6021,24 +6057,18 @@ function applyAppSettings(cfg){
     if(el) el.style.display=show?'inline-block':'none';
   });
 
-  // Call button — on PC show number to copy, on mobile use tel:
+  // Call button — uses callSupport() which handles mobile vs PC
   const callBtn=document.getElementById('supportCallBtn');
   if(callBtn){
     callBtn.style.display=show?'inline-block':'none';
-    const isMobile=/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
-    if(isMobile){
-      callBtn.href='tel:+'+rawPhone;
-      callBtn.onclick=null;
-    } else {
-      callBtn.href='#';
-      callBtn.onclick=(e)=>{
-        e.preventDefault();
-        navigator.clipboard?.writeText('+'+rawPhone).then(()=>{
-          callBtn.textContent='✅ Copied!';
-          setTimeout(()=>{callBtn.textContent='📞 Call';},2000);
-        }).catch(()=>{ alert('Support: +'+rawPhone); });
-      };
-    }
+    callBtn.href='#';
+    callBtn.onclick=(e)=>{e.preventDefault();callSupport();};
+  }
+  // Help panel call button
+  const helpCallBtn=document.getElementById('helpSupportCallBtn');
+  if(helpCallBtn){
+    helpCallBtn.style.display=show?'inline-block':'none';
+    helpCallBtn.onclick=()=>callSupport();
   }
 
   // App name (only if custom)
