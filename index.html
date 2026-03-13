@@ -2673,11 +2673,15 @@ async function pullFirestore(uid,key,rerender=false){
 
     const cloudPushedAt=doc.data().pushedAt||0;
     const localPushedAt=S.pushedAt||0;
-    _addSyncLog('pull: cloud='+cloudPushedAt+' local='+localPushedAt+' cloudTxs='+(decData.txs?.length||0));
+    const cloudTxs=decData.txs?.length||0;
+    const localTxs=S.txs?.length||0;
+    _addSyncLog('pull: cloud='+cloudPushedAt+' local='+localPushedAt+' cloudTxs='+cloudTxs);
 
+    // Always merge — mergeState handles deduplication and picks newer items
     const merged=mergeState(S,decData);
     S={...freshState(),...merged};
     S.lastSync=new Date().toISOString();
+    _addSyncLog('push: ✅ pushedAt set to '+Date.now());
     S.pushedAt=Math.max(cloudPushedAt, localPushedAt);
     fixState();
 
@@ -2862,6 +2866,9 @@ function saveLocal(){
 // ── AUTO-SYNC: pull latest from Firestore when user returns to app ──
 document.addEventListener('visibilitychange',()=>{
   if(document.visibilityState==='visible'&&fbDb&&currentUser?.uid){
+    // Pull immediately when user comes back to the app
+    _addSyncLog('App foregrounded — pulling fresh data');
+    pullFirestore(currentUser.uid,currentPassword,true).catch(()=>{});
     localStorage.setItem('tfi_last_pull', Date.now());
     pullFirestore(currentUser.uid,currentPassword,true).catch(()=>{});
     // Check for direct messages from admin
@@ -2922,20 +2929,28 @@ function startRealtimeSync(uid, key){
       const ourPushedAt   = S.pushedAt || 0;
       _addSyncLog('cloudPushedAt='+cloudPushedAt+' ourPushedAt='+ourPushedAt);
 
-      if(cloudPushedAt > 0 && cloudPushedAt <= ourPushedAt){
-        _addSyncLog('→ skip: our data is same or newer');
-        return;
-      }
-
+      // Decrypt first so we can compare actual data, not just timestamps
       const decData = dec(encData, key);
       if(!decData){ _addSyncLog('→ DECRYPT FAILED — key mismatch?'); return; }
 
-      _addSyncLog('→ merging: cloud txs='+( decData.txs?.length||0)+' local txs='+(S.txs?.length||0));
+      // Skip ONLY if cloud is strictly older AND has fewer/same transactions
+      // Timestamps alone are not reliable — always check actual tx count
+      const cloudTxCount = decData.txs?.length || 0;
+      const localTxCount = S.txs?.length || 0;
+      const cloudIsOlder = cloudPushedAt > 0 && cloudPushedAt < ourPushedAt;
+      const cloudHasMoreData = cloudTxCount > localTxCount;
+
+      if(cloudIsOlder && !cloudHasMoreData){
+        _addSyncLog('→ skip: cloud older ('+cloudPushedAt+'<'+ourPushedAt+') and no new txs');
+        return;
+      }
+
+      _addSyncLog('→ merging: cloud txs='+cloudTxCount+' local txs='+localTxCount);
 
       const merged = mergeState(S, decData);
       S = {...freshState(), ...merged};
       S.lastSync = new Date().toISOString();
-      S.pushedAt = cloudPushedAt || Date.now();
+      S.pushedAt = Math.max(cloudPushedAt, ourPushedAt);
       fixState();
 
       const encKey = 'tfi_d_'+btoa(uid).replace(/[^a-z0-9]/gi,'');
