@@ -1828,6 +1828,10 @@ tbody td{padding:11px 12px;border-bottom:1px solid var(--border2);}
     </div>
   </div>
   <button class="btn full" onclick="manualSync();closeO('oSync');">🔄 Sync Now</button>
+  <details style="margin-top:12px;cursor:pointer;">
+    <summary style="font-size:.78rem;color:var(--txt3);font-weight:600;padding:6px 0;user-select:none;">🔍 Diagnostics (tap to expand)</summary>
+    <pre id="syncDiagOut" style="margin-top:10px;font-size:.7rem;color:var(--txt2);background:var(--bg3);border-radius:10px;padding:12px;white-space:pre-wrap;word-break:break-all;line-height:1.6;max-height:280px;overflow-y:auto;">Tap ☁️ Sync in your profile to run diagnostics.</pre>
+  </details>
   <button class="btn ghost full" onclick="closeO('oSync')" style="margin-top:8px;">Close</button>
 </div></div>
 
@@ -2368,11 +2372,10 @@ async function doSignUp(){
   try{
     const cred=await fbAuth.createUserWithEmailAndPassword(email,pw);
     await cred.user.updateProfile({displayName:name});
-    const localKey='tfi_'+sha(cred.user.uid).slice(0,20);
-    await onFirebaseSignIn(cred.user,name,localKey);
+    // Store name for onAuthStateChanged to pick up
+    sessionStorage.setItem('tfi_signup_name',name);
     if(btn){btn.textContent='Create Account →';btn.disabled=false;}
-    document.getElementById('authScreen').style.display='none';
-    showOnboarding();
+    // onAuthStateChanged fires next and handles loading + onboarding
   }catch(e){
     if(btn){btn.textContent='Create Account →';btn.disabled=false;}
     err.textContent=firebaseErrMsg(e);
@@ -2388,11 +2391,9 @@ async function doSignIn(){
   err.textContent='';
   if(btn){btn.textContent='⏳ Signing in…';btn.disabled=true;}
   try{
-    const cred=await fbAuth.signInWithEmailAndPassword(email,pw);
-    const localKey='tfi_'+sha(cred.user.uid).slice(0,20);
-    await onFirebaseSignIn(cred.user,cred.user.displayName||email.split('@')[0],localKey);
+    // Just authenticate — onAuthStateChanged handles everything else
+    await fbAuth.signInWithEmailAndPassword(email,pw);
     if(btn){btn.textContent='Sign In →';btn.disabled=false;}
-    localStorage.getItem(PIN_KEY)?showPinScreen():(hideAuth(),renderAll(),updateUserUI(),updateCloudUI());
   }catch(e){
     if(btn){btn.textContent='Sign In →';btn.disabled=false;}
     err.textContent=firebaseErrMsg(e);
@@ -2712,19 +2713,70 @@ async function pushFirestore(){
   }
 }
 
-function openSyncStatus(){
-  // Populate modal with live sync info before opening
+async function openSyncStatus(){
   const connected=!!(fbDb&&currentUser?.uid);
   const stEl=document.getElementById('syncStatusTxt');
   const lstEl=document.getElementById('syncLastTxt');
   const accEl=document.getElementById('syncAccountTxt');
-  if(stEl)stEl.textContent=connected?'🟢 Connected':'🔴 Offline';
-  if(stEl)stEl.style.color=connected?'var(--green)':'var(--red)';
-  if(lstEl){
-    const t=S.lastSync?new Date(S.lastSync).toLocaleString('en',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}):'Never';
-    lstEl.textContent=t;
-  }
+  if(stEl){stEl.textContent=connected?'🟢 Connected':'🔴 Disconnected';stEl.style.color=connected?'var(--green)':'var(--red)';}
+  if(lstEl){const t=S.lastSync?new Date(S.lastSync).toLocaleString('en',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}):'Never';lstEl.textContent=t;}
   if(accEl)accEl.textContent=currentUser?.email||currentUser?.phone||'Not logged in';
+
+  // Run live diagnostics
+  const diagEl=document.getElementById('syncDiagOut');
+  if(diagEl){
+    diagEl.textContent='Running diagnostics…';
+    const lines=[];
+    lines.push('── IDENTITY ──');
+    lines.push('UID: '+(currentUser?.uid||'❌ None'));
+    lines.push('Email: '+(currentUser?.email||'❌ None'));
+    lines.push('Key set: '+(currentPassword?'✅ Yes ('+currentPassword.slice(0,8)+'…)':'❌ No'));
+    lines.push('');
+    lines.push('── LOCAL STORAGE ──');
+    const uid=currentUser?.uid;
+    if(uid){
+      const encKey='tfi_d_'+btoa(uid).replace(/[^a-z0-9]/gi,'');
+      const raw=localStorage.getItem(encKey);
+      lines.push('Local data: '+(raw?'✅ Found ('+raw.length+' chars)':'❌ Not found'));
+      if(raw&&currentPassword){
+        const d=dec(raw,currentPassword);
+        lines.push('Decrypt local: '+(d?'✅ OK ('+( d.txs?.length||0)+' txs)':'❌ FAILED — wrong key'));
+      }
+    }else{
+      lines.push('Local data: ❌ No UID to check');
+    }
+    lines.push('Migration flag: '+(localStorage.getItem('tfi_migrated_v2_'+(uid||'?'))||'❌ Not set'));
+    lines.push('');
+    lines.push('── FIRESTORE ──');
+    lines.push('fbDb ready: '+(fbDb?'✅ Yes':'❌ No'));
+    if(fbDb&&uid){
+      try{
+        const doc=await fbDb.collection('userData').doc(uid).get();
+        if(doc.exists){
+          const raw=doc.data().data;
+          lines.push('Cloud doc: ✅ Found ('+( raw?.length||0)+' chars)');
+          lines.push('Cloud updatedAt: '+(doc.data().updatedAt||'unknown'));
+          if(raw&&currentPassword){
+            const d=dec(raw,currentPassword);
+            lines.push('Decrypt cloud: '+(d?'✅ OK ('+(d.txs?.length||0)+' txs)':'❌ FAILED — key mismatch!'));
+            if(!d)lines.push('  → Run migration or check key');
+          }
+        }else{
+          lines.push('Cloud doc: ❌ No document in userData/'+uid);
+          lines.push('  → Never pushed, or wrong uid');
+        }
+      }catch(e){
+        lines.push('Cloud read: ❌ ERROR: '+e.code+' — '+e.message);
+        if(e.code==='permission-denied')lines.push('  → Firestore rules blocking read');
+      }
+    }
+    lines.push('');
+    lines.push('── SESSION STATE ──');
+    lines.push('S.txs count: '+(S.txs?.length||0));
+    lines.push('S.lastSync: '+(S.lastSync||'never'));
+    lines.push('S.name: '+(S.name||'(empty)'));
+    diagEl.textContent=lines.join('\n');
+  }
   openO('oSync');
 }
 
@@ -5555,45 +5607,66 @@ function initApp(){
   if(fbAuth){
     fbAuth.onAuthStateChanged(async (fbUser)=>{
       if(fbUser){
-        // User is signed in
+        const uid=fbUser.uid;
+        const localKey='tfi_'+sha(uid).slice(0,20);
+
+        // ── 1. Suspension check ──────────────────────────
+        if(fbDb){
+          try{
+            const pd=await fbDb.collection('publicProfiles').doc(uid).get();
+            if(pd.exists){
+              if(pd.data().suspended){fbAuth.signOut();showWin('🚫 Suspended','Your account has been suspended. Contact support.');return;}
+              if(pd.data().removed){fbAuth.signOut();showWin('❌ Removed','This account is no longer active.');return;}
+            }
+          }catch{}
+        }
+
+        // ── 2. Set identity ──────────────────────────────
+        const signupName=sessionStorage.getItem('tfi_signup_name')||'';
+        sessionStorage.removeItem('tfi_signup_name');
         const session=sessionGet();
-        const name=fbUser.displayName||session?.name||fbUser.email||fbUser.phoneNumber||'User';
-        const localKey='tfi_'+sha(fbUser.uid).slice(0,20);
-        currentUser={uid:fbUser.uid,name,email:fbUser.email||'',phone:fbUser.phoneNumber||''};
+        const name=signupName||fbUser.displayName||session?.name||fbUser.email||fbUser.phoneNumber||'User';
+        currentUser={uid,name,email:fbUser.email||'',phone:fbUser.phoneNumber||''};
         currentPassword=localKey;
-        // Load local data
-        loadLocal(fbUser.uid,localKey);
-        // Update session
-        localStorage.setItem(SESSION_KEY,JSON.stringify({uid:fbUser.uid,name,email:fbUser.email||'',phone:fbUser.phoneNumber||''}));
+        const isNewSignup=!!signupName;
+
+        // ── 3. Load local data first (instant, offline) ──
+        loadLocal(uid,localKey);
+
+        // ── 4. Pull from Firestore (with migration) ──────
+        const migrated=await migrateOldEncryption(uid,localKey);
+        if(!migrated){
+          await pullFirestore(uid,localKey,false);
+        }
+
+        // ── 5. Save session ──────────────────────────────
+        const bestName=S?.name||name;
+        currentUser.name=bestName;
+        localStorage.setItem(SESSION_KEY,JSON.stringify({uid,name:bestName,email:fbUser.email||'',phone:fbUser.phoneNumber||''}));
         localStorage.setItem('tfi_la',Date.now());
-        // Check PIN
+
+        // ── 6. Show app ──────────────────────────────────
         const pin=localStorage.getItem(PIN_KEY);
         if(pin){
           showPinScreen();
+        }else if(isNewSignup||!S.onboardDone){
+          hideAuth();showOnboarding();
         }else{
           hideAuth();renderAll();updateUserUI();updateCloudUI();
         }
-        // Background tasks — pull + migrate old data if needed
-        setTimeout(async()=>{
-          const migrated = await migrateOldEncryption(fbUser.uid, localKey);
-          if(!migrated){
-            await pullFirestore(fbUser.uid,localKey,true);
-          }
-          loadAppSettingsFromCloud();
-        },1500);
-        setTimeout(()=>{
-          const _laNow=new Date().toISOString();
-          // Use S.name as best source of display name (set during onboarding)
-          const _bestName=S?.name||currentUser?.name||fbUser.displayName||fbUser.email||'';
-          const _profileRefresh={lastActive:_laNow,name:_bestName,email:currentUser?.email||fbUser.email||'',uid:fbUser.uid,country:S?.country||'',userType:S?.userType||'other'};
-          fbDb?.collection('users').doc(fbUser.uid).set(_profileRefresh,{merge:true}).catch(()=>{});
-          fbDb?.collection('publicProfiles').doc(fbUser.uid).set(_profileRefresh,{merge:true}).catch(()=>{});
-        },2000);
-        setTimeout(checkBroadcast,3000);
-        setTimeout(applyRecurringTxs,4000);
-        setTimeout(checkStreakWin,5000);
-        setTimeout(loadAppSettingsFromCloud,2000);
         updateNotifBadge();
+        loadAppSettingsFromCloud();
+
+        // ── 7. Background tasks (non-blocking) ───────────
+        setTimeout(()=>{
+          const profileData={lastActive:new Date().toISOString(),name:bestName,
+            email:currentUser.email,uid,country:S?.country||'',userType:S?.userType||'other'};
+          fbDb?.collection('users').doc(uid).set(profileData,{merge:true}).catch(()=>{});
+          fbDb?.collection('publicProfiles').doc(uid).set(profileData,{merge:true}).catch(()=>{});
+        },1000);
+        setTimeout(checkBroadcast,2000);
+        setTimeout(applyRecurringTxs,3000);
+        setTimeout(checkStreakWin,4000);
       }else{
         // No user — check if we were already logged in (token expiry or sign-out)
         const wasLoggedIn=!!currentUser;
