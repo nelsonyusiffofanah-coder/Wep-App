@@ -1916,6 +1916,17 @@ input:checked + .toggle-slider { box-shadow: 0 0 0 2px var(--brand-dim) !importa
 .tx-menu-btn:hover { background: var(--bg3); color: var(--txt); }
 .tx-menu-btn:active { transform: scale(.88); }
 .tx-card { cursor: default !important; }
+
+/* ── TX 3-dot menu button ─────────────────────────────── */
+.tx-menu-btn {
+  width:28px;height:28px;border-radius:8px;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;font-size:1.15rem;color:var(--txt3);
+  flex-shrink:0;transition:all .15s;font-weight:700;line-height:1;
+}
+.tx-menu-btn:hover { background:var(--bg3);color:var(--txt); }
+.tx-menu-btn:active { transform:scale(.88); }
+.tx-card { cursor:default !important; }
 </style>
 </head>
 <body>
@@ -2386,8 +2397,13 @@ input:checked + .toggle-slider { box-shadow: 0 0 0 2px var(--brand-dim) !importa
         <div class="ms-box"><div class="ms-box-lbl">Spent</div><div class="ms-box-val txt-red" id="mOut">—</div></div>
         <div class="ms-box"><div class="ms-box-lbl">Balance</div><div class="ms-box-val" id="mBal">—</div></div>
       </div>
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;">
+        <input class="tx-search" id="txSearch" placeholder="🔍 Search transactions…" oninput="renderMoney()" style="flex:1;"/>
+        <button onclick="openSmartFilter()" style="background:var(--bg2);border:1px solid var(--border2);border-radius:10px;padding:7px 12px;cursor:pointer;font-size:.82rem;color:var(--txt3);display:flex;align-items:center;gap:5px;flex-shrink:0;transition:all .2s;" onmouseover="this.style.borderColor='var(--brand)';this.style.color='var(--brand)'" onmouseout="this.style.borderColor='';this.style.color=''">
+          ⚙️ Filter<span id="_filterBadge" style="display:none;background:var(--brand);color:#fff;border-radius:50%;width:16px;height:16px;font-size:.6rem;font-weight:800;align-items:center;justify-content:center;margin-left:2px;"></span>
+        </button>
+      </div>
       <div class="filter-row">
-        <input class="tx-search" id="txSearch" placeholder="🔍 Search…" oninput="renderMoney()"/>
         <div class="filter-chip active" id="fc-all" onclick="setTxFilter('')">All</div>
         <div class="filter-chip" id="fc-in" onclick="setTxFilter('in')">Income</div>
         <div class="filter-chip" id="fc-out" onclick="setTxFilter('out')">Expenses</div>
@@ -3518,8 +3534,13 @@ input:checked + .toggle-slider { box-shadow: 0 0 0 2px var(--brand-dim) !importa
       <select class="field" id="addGoalSel" style="margin-bottom:0;"><option value="">Link to a goal (optional)</option></select>
     </div>
     <div class="add-desc-row">
-      <input class="add-desc-input" id="addDesc" placeholder="Add a note… (optional)"/>
-      <button class="btn ghost sm" onclick="toggleCalc()">🧮</button>
+      <input class="add-desc-input" id="addDesc" placeholder="Add a note… (optional)" oninput="_autoSuggestCat(this.value)"/>
+      <button id="_receiptAttachBtn" class="btn ghost sm" onclick="openReceiptAttach()" title="Attach receipt" style="flex-shrink:0;">📎</button>
+      <button class="btn ghost sm" onclick="toggleCalc()" style="flex-shrink:0;">🧮</button>
+    </div>
+    <div id="_catSuggestRow" style="display:none;margin-bottom:10px;padding:0 2px;">
+      <div style="font-size:.7rem;color:var(--txt3);margin-bottom:5px;">💡 Suggested:</div>
+      <div id="_catSuggestChips"></div>
     </div>
     <input class="add-date" id="addDate" type="date"/>
     <div class="btn-row">
@@ -4448,14 +4469,18 @@ function firebaseErrMsg(e){
 // SIGN OUT
 // ══════════════════════════════════════════════════════
 function doSignOut(){
-  /* sign out handled inline */
-  stopRealtimeSync();
-  if(fbAuth)fbAuth.signOut().catch(()=>{});
-  localStorage.removeItem(SESSION_KEY);
-  localStorage.removeItem(PIN_KEY);
-  localStorage.removeItem('tfi_la');
-  currentUser=null;currentPassword=null;S=freshState();
-  closeProfile();showAuth();
+  _confirm('You will need to sign in again to access your data.',{
+    title:'Sign Out?',icon:'👋',okLabel:'Sign Out'
+  }).then(confirmed=>{
+    if(!confirmed)return;
+    stopRealtimeSync();
+    if(fbAuth)fbAuth.signOut().catch(()=>{});
+    localStorage.removeItem(SESSION_KEY);
+    localStorage.removeItem(PIN_KEY);
+    localStorage.removeItem('tfi_la');
+    currentUser=null;currentPassword=null;S=freshState();
+    closeProfile();showAuth();
+  });
 }
 
 // Session management
@@ -4632,7 +4657,7 @@ function nextOnboard(step){
     const d=document.getElementById('ob'+i);if(d)d.classList.toggle('active',i===step);
   });
 }
-function finishOnboard(){
+async function finishOnboard(){
   S.userType=selectedUserType;
   S.currency=document.getElementById('obCurrency').value||'₦';
   S.country=document.getElementById('obCountry')?.value||'';
@@ -4996,6 +5021,10 @@ function openAddSheet(type){
 }
 function closeAddSheet(){
   document.getElementById('addSheet').classList.remove('open');
+  _pendingReceiptData=null;
+  const rb=document.getElementById('_receiptAttachBtn');
+  if(rb){rb.style.background='';rb.style.borderColor='';rb.style.color='';rb.textContent='📎';}
+  const sr=document.getElementById('_catSuggestRow');if(sr)sr.style.display='none';
   if(_editingTxId!==null){
     _editingTxId=null;
     const saveBtn=document.querySelector('#addSheet .btn.full');
@@ -5064,9 +5093,11 @@ function saveAddSheet(){
   }
 
   // NEW transaction
-  S.txs.unshift({id:Date.now(),desc:desc||catById(cat).name,amt,type:addType,cat,date,month,goalId,updatedAt:new Date().toISOString()});
+  const _newTx={id:Date.now(),desc:desc||catById(cat).name,amt,type:addType,cat,date,month,goalId,updatedAt:new Date().toISOString(),...(_pendingReceiptData?{receipt:_pendingReceiptData}:{})};
+  S.txs.unshift(_newTx);
   if(goalId&&addType==='save'){const g=S.goals.find(x=>x.id===goalId);if(g){g.saved=(g.saved||0)+amt;if(g.target>0&&g.saved>=g.target){setTimeout(()=>celebrate(),300);showWin('🎯 Goal Reached!','You saved '+fmt(g.target)+' for "'+g.name+'"!');}}}
   addAmtStr='0';closeAddSheet();autoSave();renderHome();renderMoney();
+  _showUndoToast(_newTx);
   // Spending alert after expense
   if(addType==='out'){
     const m=fmtM(new Date(document.getElementById('addDate').value+'T12:00:00'));
@@ -5080,7 +5111,7 @@ function saveAddSheet(){
     }
   }
   if(addType==='in'){
-    setTimeout(()=>{if(confirm(fmt(amt)+' income recorded ✅\n\nAllocate to your envelopes now?'))showTab('plan');},300);
+    setTimeout(()=>{_confirm(fmt(amt)+' income recorded ✅ — allocate to your envelopes now?',{title:'Income Saved!',icon:'💚',okLabel:'Allocate Now',cancelLabel:'Later'}).then(ok=>{if(ok)showTab('plan');});},300);
   }
   if(addType==='save'){
     showWin('💰 Saved!',fmt(amt)+' set aside. Your savings are growing.');
@@ -5117,6 +5148,7 @@ function openTxMenu(id, btn){
     <div onclick="duplicateTx(${id});document.getElementById('_txMenu').remove()" style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:9px;cursor:pointer;font-size:.84rem;font-weight:600;color:var(--txt);transition:background .12s;" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background=''">
       <span style="font-size:1rem;">📋</span> Duplicate
     </div>
+    ${t.receipt?`<div onclick="viewTxReceipt(${id});document.getElementById('_txMenu').remove()" style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:9px;cursor:pointer;font-size:.84rem;font-weight:600;color:var(--txt);transition:background .12s;" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background=''"><span style="font-size:1rem;">📎</span> View Receipt</div>`:''}
     <div style="height:1px;background:var(--border2);margin:3px 6px;"></div>
     <div onclick="deleteTx(${id});document.getElementById('_txMenu').remove()" style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:9px;cursor:pointer;font-size:.84rem;font-weight:600;color:var(--red);transition:background .12s;" onmouseover="this.style.background='var(--red-dim)'" onmouseout="this.style.background=''">
       <span style="font-size:1rem;">🗑️</span> Delete
@@ -5170,7 +5202,12 @@ function renderMoney(){
   const search=(document.getElementById('txSearch')?.value||'').toLowerCase();
   let txs=S.txs.filter(t=>t.month===m);
   if(txFilter)txs=txs.filter(t=>t.type===txFilter);
-  if(search)txs=txs.filter(t=>(t.desc||'').toLowerCase().includes(search)||catById(t.cat).name.toLowerCase().includes(search));
+  if(search)txs=txs.filter(t=>(t.desc||'').toLowerCase().includes(search)||catById(t.cat).name.toLowerCase().includes(search)||String(t.amt).includes(search));
+  if(_activeFilters.cat)txs=txs.filter(t=>t.cat===_activeFilters.cat);
+  if(_activeFilters.amtMin)txs=txs.filter(t=>t.amt>=parseFloat(_activeFilters.amtMin));
+  if(_activeFilters.amtMax)txs=txs.filter(t=>t.amt<=parseFloat(_activeFilters.amtMax));
+  if(_activeFilters.dateFrom)txs=txs.filter(t=>t.date>=_activeFilters.dateFrom);
+  if(_activeFilters.dateTo)txs=txs.filter(t=>t.date<=_activeFilters.dateTo);
   set('moneyCount',count+' transaction'+(count!==1?'s':''));
   const list=document.getElementById('moneyList');if(!list)return;
   if(!txs.length){list.innerHTML=`<div style="text-align:center;color:var(--txt3);padding:28px;font-size:0.82rem;">${search?'No matches.':'No transactions this month. Tap + to add.'}</div>`;return;}
@@ -5181,7 +5218,7 @@ function renderMoney(){
     return`<div class="tx-card">
       <div class="tx-dot" style="background:${cat.color}">${cat.name.charAt(0).toUpperCase()}</div>
       <div class="tx-info" onclick="editTx(${t.id})" style="cursor:pointer;flex:1;min-width:0;">
-        <div class="tx-name">${t.desc||cat.name}</div>
+        <div class="tx-name">${t.desc||cat.name}${t.receipt?'<span style="font-size:.6rem;color:var(--brand);margin-left:4px;">📎</span>':''}</div>
         <div class="tx-meta">${cat.name} · ${t.date}</div>
       </div>
       <div class="tx-amt" style="color:${col};margin-right:4px;" onclick="editTx(${t.id})" style="cursor:pointer;">${sign}${fmt(t.amt)}</div>
@@ -5314,12 +5351,16 @@ function doSpendEnv(){
 }
 function quickFillAll(){
   const m=curM('planMonth');const{income}=calcMonth(m);
-  if(!income){alert('Add income for this month first.');return;}
-  /* fill handled inline */
-  S.cats.filter(c=>c.id!=='income').forEach(c=>{
-    const s=income*(c.pct||0)/100;if(s>0){const env=getEnv(m,c.id);env.allocated=s;}
+  if(!income){_alert('Add your income for this month first.',{title:'No Income Yet',icon:'💚',okLabel:'Got it'});return;}
+  _confirm('Distribute '+fmt(income)+' across all categories based on your allocation percentages?',{
+    title:'Fill All Envelopes',icon:'⚡',okLabel:'Fill All'
+  }).then(confirmed=>{
+    if(!confirmed)return;
+    S.cats.filter(c=>c.id!=='income').forEach(c=>{
+      const s=income*(c.pct||0)/100;if(s>0){const env=getEnv(m,c.id);env.allocated=s;}
+    });
+    autoSave();renderPlan();showWin('⚡ All envelopes filled!','Every naira has a purpose.');
   });
-  autoSave();renderPlan();showWin('⚡ All envelopes filled!','Every naira has a purpose.');
 }
 function openTransferModal(){
   const m=curM('planMonth');
@@ -7332,7 +7373,7 @@ function handleUrlShortcuts(){
   },1200);
 }
 
-function initApp(){
+async function initApp(){
   initTheme();
   // Init UI elements
   const sw=document.getElementById('newCatSwatches');
@@ -8104,9 +8145,11 @@ function logChallengeProgress(id){
   else showWin('✅ Progress logged!',fmt(amt)+' added — total: '+fmt(ch.totalSaved));
 }
 function deleteChallenge(id){
-  /* will use async below */
-  S.challenges=(S.challenges||[]).filter(c=>c.id!==id);
-  autoSave();renderGoals();
+  _confirm('Remove this savings challenge?',{title:'Delete Challenge',icon:'🏆',okLabel:'Delete',danger:true}).then(ok=>{
+    if(!ok)return;
+    S.challenges=(S.challenges||[]).filter(c=>c.id!==id);
+    autoSave();renderGoals();
+  });
 }
 function renderChallenges(){
   const el=document.getElementById('challengeList');if(!el)return;
@@ -8315,6 +8358,284 @@ function renderTxItem(t){
     }
   },{passive:true});
 })();
+
+
+// ═══════════════════════════════════════════════════════════
+// UNDO TRANSACTION
+// Shows a 5-second countdown toast with ↩ Undo button
+// ═══════════════════════════════════════════════════════════
+let _undoTimer=null;
+function _showUndoToast(tx){
+  const old=document.getElementById('_undoToast');
+  if(old)old.remove();
+  if(_undoTimer)clearTimeout(_undoTimer);
+  const col=tx.type==='in'?'var(--green)':tx.type==='save'?'var(--brand)':'var(--red)';
+  const sign=tx.type==='in'?'+':tx.type==='save'?'':'−';
+  const toast=document.createElement('div');
+  toast.id='_undoToast';
+  toast.style.cssText='position:fixed;bottom:100px;left:50%;transform:translateX(-50%);z-index:9990;background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:12px 8px 12px 16px;box-shadow:var(--shadow);display:flex;align-items:center;gap:10px;min-width:280px;max-width:92vw;animation:slideInUp .3s cubic-bezier(.34,1.56,.64,1);';
+  toast.innerHTML='<div style="flex:1;min-width:0;">'
+    +'<div style="font-size:.8rem;font-weight:700;color:var(--txt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+(tx.desc||'Transaction')+' saved</div>'
+    +'<div style="font-size:.72rem;color:'+col+';font-weight:700;">'+sign+fmt(tx.amt)+'</div>'
+    +'</div>'
+    +'<div style="width:34px;height:34px;position:relative;flex-shrink:0;">'
+    +'<svg width="34" height="34" style="transform:rotate(-90deg);"><circle cx="17" cy="17" r="13" fill="none" stroke="var(--border2)" stroke-width="3"/>'
+    +'<circle id="_undoCircle" cx="17" cy="17" r="13" fill="none" stroke="var(--brand)" stroke-width="3" stroke-dasharray="82" stroke-dashoffset="0" style="transition:stroke-dashoffset 5s linear;"/></svg>'
+    +'<div id="_undoCount" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:.6rem;font-weight:800;color:var(--txt3);">5</div>'
+    +'</div>'
+    +'<button id="_undoBtn" style="background:var(--brand-dim);border:1px solid var(--brand);border-radius:10px;color:var(--brand);font-family:Outfit,sans-serif;font-size:.78rem;font-weight:800;padding:8px 14px;cursor:pointer;white-space:nowrap;flex-shrink:0;">↩ Undo</button>'
+    +'<button onclick="document.getElementById(\'_undoToast\').remove()" style="background:none;border:none;color:var(--txt3);cursor:pointer;padding:4px;font-size:.9rem;flex-shrink:0;">✕</button>';
+  document.body.appendChild(toast);
+  document.getElementById('_undoBtn').onclick=function(){ _undoLastTx(tx.id); };
+  let count=5;
+  setTimeout(function(){
+    const c=document.getElementById('_undoCircle');
+    if(c)c.style.strokeDashoffset='82';
+  },50);
+  const tick=setInterval(function(){
+    count--;
+    const el=document.getElementById('_undoCount');
+    if(el)el.textContent=count;
+    if(count<=0){ clearInterval(tick); const t=document.getElementById('_undoToast'); if(t)t.remove(); }
+  },1000);
+  _undoTimer=setTimeout(function(){ clearInterval(tick); const t=document.getElementById('_undoToast'); if(t)t.remove(); },5500);
+}
+function _undoLastTx(id){
+  const el=document.getElementById('_undoToast');
+  if(el)el.remove();
+  if(_undoTimer)clearTimeout(_undoTimer);
+  const idx=S.txs.findIndex(function(x){return x.id===id;});
+  if(idx===-1)return;
+  const tx=S.txs[idx];
+  if(tx.goalId&&tx.type==='save'){
+    const g=S.goals.find(function(x){return x.id===tx.goalId;});
+    if(g)g.saved=Math.max(0,(g.saved||0)-tx.amt);
+  }
+  S.txs.splice(idx,1);
+  autoSave();renderHome();renderMoney();
+  showWin('↩ Undone',tx.desc+' removed.');
+}
+
+// ═══════════════════════════════════════════════════════════
+// AUTO CATEGORY SUGGESTION
+// ═══════════════════════════════════════════════════════════
+const CAT_KEYWORDS={
+  food:['food','eat','lunch','dinner','breakfast','rice','bread','market','restaurant','snack','drink','yam','plantain','stew','soup','chicken','fish','meat','vegetable','fruit','grocery','supermarket','eatery','pepper'],
+  transport:['transport','taxi','uber','bolt','bus','fuel','petrol','diesel','okada','keke','tyre','fare','journey','ticket','bike','ride'],
+  rent:['rent','house','apartment','housing','landlord','lodge','hostel','accommodation','property'],
+  utilities:['electricity','nepa','phcn','bill','internet','wifi','data','airtime','recharge','light','power','mtn','airtel','glo','9mobile','subscription'],
+  health:['hospital','clinic','pharmacy','medicine','drug','doctor','health','treatment','medical','injection','malaria','fever','chemist','lab'],
+  tithe:['tithe','offering','church','mosque','donation','charity','giving','pastor','sheikh','zakat'],
+  family:['family','parent','mum','mummy','dad','daddy','mother','father','sister','brother','wife','husband','school fees','fees','uniform'],
+  savings:['save','saving','investment','fixed','deposit','piggy','wallet','target']
+};
+function suggestCategory(description){
+  if(!description||description.length<2)return null;
+  const lower=description.toLowerCase();
+  for(const catId of Object.keys(CAT_KEYWORDS)){
+    for(const kw of CAT_KEYWORDS[catId]){
+      if(lower.includes(kw)){
+        const cat=S.cats.find(function(c){return c.id===catId||c.name.toLowerCase().includes(catId);});
+        if(cat)return cat.id;
+        const byName=S.cats.find(function(c){return c.name.toLowerCase().includes(kw);});
+        if(byName)return byName.id;
+      }
+    }
+  }
+  return null;
+}
+function _autoSuggestCat(desc){
+  if(addType==='in')return;
+  const suggested=suggestCategory(desc);
+  const row=document.getElementById('_catSuggestRow');
+  const chips=document.getElementById('_catSuggestChips');
+  if(!suggested||!row||!chips){if(row)row.style.display='none';return;}
+  if(suggested===selectedCat){row.style.display='none';return;}
+  const cat=catById(suggested);
+  row.style.display='block';
+  chips.innerHTML='<div onclick="selectedCat=\''+suggested+'\';renderAddCats();document.getElementById(\'_catSuggestRow\').style.display=\'none\'" style="display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:20px;cursor:pointer;font-size:.76rem;font-weight:700;border:1.5px solid '+cat.color+';color:'+cat.color+';background:'+cat.color+'18;">'
+    +'<span style="width:7px;height:7px;border-radius:50%;background:'+cat.color+';display:inline-block;"></span>'
+    +cat.name+' — tap to apply</div>';
+}
+
+// ═══════════════════════════════════════════════════════════
+// RECEIPT ATTACHMENT
+// ═══════════════════════════════════════════════════════════
+let _pendingReceiptData=null;
+function openReceiptAttach(){
+  const inp=document.createElement('input');
+  inp.type='file';inp.accept='image/*';inp.capture='environment';
+  inp.onchange=function(e){
+    const file=e.target.files[0];
+    if(!file)return;
+    if(file.size>2097152){showWin('⚠️ Too large','Please use a photo under 2MB.');return;}
+    const reader=new FileReader();
+    reader.onload=function(ev){
+      _pendingReceiptData=ev.target.result;
+      const btn=document.getElementById('_receiptAttachBtn');
+      if(btn){btn.style.background='var(--green-dim)';btn.style.borderColor='var(--green)';btn.style.color='var(--green)';btn.textContent='📎 ✓';}
+      showWin('📎 Receipt attached','Photo saved with this transaction.');
+    };
+    reader.readAsDataURL(file);
+  };
+  inp.click();
+}
+function viewTxReceipt(id){
+  const t=S.txs.find(function(x){return x.id===id;});
+  if(!t||!t.receipt){showWin('📎 No Receipt','No receipt attached.');return;}
+  const old=document.getElementById('_receiptViewer');if(old)old.remove();
+  const overlay=document.createElement('div');
+  overlay.id='_receiptViewer';
+  overlay.style.cssText='position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.92);display:flex;align-items:center;justify-content:center;padding:16px;';
+  overlay.innerHTML='<div style="position:relative;max-width:500px;width:100%;">'
+    +'<img src="'+t.receipt+'" style="width:100%;border-radius:16px;max-height:80vh;object-fit:contain;"/>'
+    +'<button onclick="document.getElementById(\'_receiptViewer\').remove()" style="position:absolute;top:-12px;right:-12px;background:var(--bg2);border:1px solid var(--border);border-radius:50%;width:34px;height:34px;font-size:1rem;cursor:pointer;">✕</button>'
+    +'</div>';
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click',function(e){if(e.target===overlay)overlay.remove();});
+}
+
+// ═══════════════════════════════════════════════════════════
+// SMART FILTERS
+// ═══════════════════════════════════════════════════════════
+let _activeFilters={cat:'',amtMin:'',amtMax:'',dateFrom:'',dateTo:''};
+function openSmartFilter(){
+  const old=document.getElementById('_filterPanel');
+  if(old){old.remove();return;}
+  const panel=document.createElement('div');
+  panel.id='_filterPanel';
+  panel.style.cssText='background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:14px;margin-bottom:12px;animation:slideDown .2s ease;';
+  const cats=S.cats.filter(function(c){return c.id!=='income';});
+  let catChips='<div onclick="_fSetCat(\'\')" style="padding:4px 11px;border-radius:20px;font-size:.72rem;font-weight:700;cursor:pointer;background:'+(!_activeFilters.cat?'var(--brand)':'var(--bg3)')+';color:'+(!_activeFilters.cat?'#fff':'var(--txt3)')+';border:1px solid '+(!_activeFilters.cat?'var(--brand)':'var(--border2)')+';">All</div>';
+  cats.forEach(function(c){
+    const sel=_activeFilters.cat===c.id;
+    catChips+='<div onclick="_fSetCat(\''+c.id+'\')" style="padding:4px 11px;border-radius:20px;font-size:.72rem;font-weight:700;cursor:pointer;background:'+(sel?c.color+'22':'var(--bg3)')+';color:'+(sel?c.color:'var(--txt3)')+';border:1px solid '+(sel?c.color:'var(--border2)')+';">'+c.name+'</div>';
+  });
+  panel.innerHTML='<div style="font-size:.72rem;font-weight:800;color:var(--txt3);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">🔍 Smart Filters</div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">'
+    +'<div><div style="font-size:.68rem;color:var(--txt3);font-weight:700;margin-bottom:4px;">MIN AMOUNT</div><input id="_fAmtMin" type="number" value="'+_activeFilters.amtMin+'" placeholder="0" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;color:var(--txt);padding:7px 10px;font-size:.82rem;outline:none;" oninput="applySmartFilter()"/></div>'
+    +'<div><div style="font-size:.68rem;color:var(--txt3);font-weight:700;margin-bottom:4px;">MAX AMOUNT</div><input id="_fAmtMax" type="number" value="'+_activeFilters.amtMax+'" placeholder="Any" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;color:var(--txt);padding:7px 10px;font-size:.82rem;outline:none;" oninput="applySmartFilter()"/></div>'
+    +'<div><div style="font-size:.68rem;color:var(--txt3);font-weight:700;margin-bottom:4px;">FROM DATE</div><input id="_fDateFrom" type="date" value="'+_activeFilters.dateFrom+'" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;color:var(--txt);padding:7px 10px;font-size:.82rem;outline:none;" oninput="applySmartFilter()"/></div>'
+    +'<div><div style="font-size:.68rem;color:var(--txt3);font-weight:700;margin-bottom:4px;">TO DATE</div><input id="_fDateTo" type="date" value="'+_activeFilters.dateTo+'" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;color:var(--txt);padding:7px 10px;font-size:.82rem;outline:none;" oninput="applySmartFilter()"/></div>'
+    +'</div>'
+    +'<div style="font-size:.68rem;color:var(--txt3);font-weight:700;margin-bottom:6px;">CATEGORY</div>'
+    +'<div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px;">'+catChips+'</div>'
+    +'<div style="display:flex;gap:8px;">'
+    +'<button onclick="_clearFilters()" style="flex:1;background:var(--bg3);border:1px solid var(--border2);border-radius:10px;color:var(--txt3);font-size:.78rem;font-weight:700;padding:8px;cursor:pointer;">Clear</button>'
+    +'<button onclick="document.getElementById(\'_filterPanel\').remove()" style="flex:1;background:var(--brand);border:none;border-radius:10px;color:#fff;font-size:.78rem;font-weight:700;padding:8px;cursor:pointer;">Done</button>'
+    +'</div>';
+  const list=document.getElementById('moneyList');
+  if(list)list.parentNode.insertBefore(panel,list);
+}
+function _fSetCat(catId){
+  _activeFilters.cat=catId;
+  applySmartFilter();
+  const old=document.getElementById('_filterPanel');if(old)old.remove();
+  openSmartFilter();
+}
+function applySmartFilter(){
+  _activeFilters.amtMin=document.getElementById('_fAmtMin')?.value||'';
+  _activeFilters.amtMax=document.getElementById('_fAmtMax')?.value||'';
+  _activeFilters.dateFrom=document.getElementById('_fDateFrom')?.value||'';
+  _activeFilters.dateTo=document.getElementById('_fDateTo')?.value||'';
+  const badge=document.getElementById('_filterBadge');
+  const active=Object.values(_activeFilters).filter(Boolean).length;
+  if(badge){badge.textContent=active>0?active:'';badge.style.display=active>0?'flex':'none';}
+  renderMoney();
+}
+function _clearFilters(){
+  _activeFilters={cat:'',amtMin:'',amtMax:'',dateFrom:'',dateTo:''};
+  ['_fAmtMin','_fAmtMax','_fDateFrom','_fDateTo'].forEach(function(id){
+    const el=document.getElementById(id);if(el)el.value='';
+  });
+  applySmartFilter();
+}
+
+// ═══════════════════════════════════════════════════════════
+// TRANSACTION 3-DOT CONTEXT MENU
+// ═══════════════════════════════════════════════════════════
+function openTxMenu(id,btn){
+  const old=document.getElementById('_txMenu');if(old)old.remove();
+  const t=S.txs.find(function(x){return x.id===id;});
+  if(!t)return;
+  const rect=btn.getBoundingClientRect();
+  const menu=document.createElement('div');
+  menu.id='_txMenu';
+  const top=Math.min(rect.bottom+4, window.innerHeight-180);
+  const left=Math.max(8, Math.min(rect.left-130, window.innerWidth-180));
+  menu.style.cssText='position:fixed;z-index:9999;top:'+top+'px;left:'+left+'px;background:var(--bg2);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow);padding:6px;min-width:170px;animation:popIn .15s ease;';
+  function row(icon,label,action,danger){
+    const d=document.createElement('div');
+    d.style.cssText='display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:9px;cursor:pointer;font-size:.84rem;font-weight:600;color:'+(danger?'var(--red)':'var(--txt)')+';transition:background .12s;';
+    d.innerHTML='<span>'+icon+'</span> '+label;
+    d.onmouseover=function(){this.style.background=danger?'var(--red-dim)':'var(--bg3)';};
+    d.onmouseout=function(){this.style.background='';};
+    d.onclick=function(){menu.remove();action();};
+    return d;
+  }
+  menu.appendChild(row('✏️','Edit',function(){editTx(id);}));
+  menu.appendChild(row('📋','Duplicate',function(){duplicateTx(id);}));
+  if(t.receipt){
+    menu.appendChild(row('📎','View Receipt',function(){viewTxReceipt(id);}));
+  }
+  const sep=document.createElement('div');
+  sep.style.cssText='height:1px;background:var(--border2);margin:3px 6px;';
+  menu.appendChild(sep);
+  menu.appendChild(row('🗑️','Delete',function(){deleteTx(id);},true));
+  document.body.appendChild(menu);
+  setTimeout(function(){
+    document.addEventListener('click',function _c(e){
+      if(!menu.contains(e.target)){menu.remove();document.removeEventListener('click',_c);}
+    });
+  },10);
+}
+function duplicateTx(id){
+  const t=S.txs.find(function(x){return x.id===id;});
+  if(!t)return;
+  const copy=Object.assign({},t,{id:Date.now(),date:new Date().toISOString().split('T')[0],updatedAt:new Date().toISOString()});
+  copy.month=copy.date.slice(0,7);
+  delete copy.receipt;
+  S.txs.unshift(copy);
+  autoSave();renderMoney();renderHome();
+  showWin('📋 Duplicated','Transaction copied to today.');
+}
+
+// ═══════════════════════════════════════════════════════════
+// PULL TO REFRESH
+// ═══════════════════════════════════════════════════════════
+(function(){
+  var startY=0,pulling=false,indicator=null,THRESHOLD=72;
+  document.addEventListener('touchstart',function(e){
+    if(window.scrollY===0&&e.touches[0]){startY=e.touches[0].clientY;pulling=true;}
+  },{passive:true});
+  document.addEventListener('touchmove',function(e){
+    if(!pulling)return;
+    var dy=e.touches[0].clientY-startY;
+    if(dy>16&&window.scrollY===0){
+      if(!indicator){
+        indicator=document.createElement('div');
+        indicator.style.cssText='position:fixed;top:52px;left:50%;transform:translateX(-50%) translateY(-10px);z-index:9997;background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:6px 16px;font-size:.74rem;font-weight:700;color:var(--txt3);display:flex;align-items:center;gap:6px;box-shadow:var(--shadow);opacity:0;transition:all .25s;white-space:nowrap;';
+        indicator.textContent='↓ Pull to refresh';
+        document.body.appendChild(indicator);
+        setTimeout(function(){if(indicator){indicator.style.opacity='1';indicator.style.transform='translateX(-50%) translateY(0)';}},10);
+      }
+      if(dy>THRESHOLD&&indicator)indicator.textContent='↑ Release to sync';
+    }
+  },{passive:true});
+  document.addEventListener('touchend',function(e){
+    if(!pulling)return;pulling=false;
+    var dy=(e.changedTouches[0]?e.changedTouches[0].clientY:startY)-startY;
+    if(indicator){indicator.style.opacity='0';setTimeout(function(){if(indicator&&indicator.parentNode){indicator.parentNode.removeChild(indicator);}indicator=null;},250);}
+    if(dy>THRESHOLD&&typeof pullFirestore==='function'&&currentUser&&currentUser.uid){
+      var pill=document.getElementById('syncPill');
+      if(pill){pill.textContent='🔄 Syncing…';pill.style.display='flex';}
+      pullFirestore(currentUser.uid,currentPassword,true)
+        .then(function(){return pushFirestore();})
+        .then(function(){if(pill){pill.textContent='✅ Synced';setTimeout(function(){if(pill)pill.textContent='☁️ Sync';},2000);}})
+        .catch(function(){});
+    }
+  },{passive:true});
+}());
 
 </script>
 
