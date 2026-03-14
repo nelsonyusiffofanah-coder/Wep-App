@@ -73,7 +73,7 @@ function _updateNetworkUI(){
 }
 window.addEventListener('online', _updateNetworkUI);
 window.addEventListener('offline', _updateNetworkUI);
-window.addEventListener('DOMContentLoaded', _updateNetworkUI);
+window.addEventListener('load', _updateNetworkUI);
 
 // ── PWA INSTALL PROMPT ────────────────────────────────
 let deferredPrompt;
@@ -5527,7 +5527,7 @@ async function renderAdminStats(){
       <div class="admin-stat-ico">📧</div>
       <div style="font-family:'Sora',sans-serif;font-size:1.8rem;font-weight:800;color:var(--purple);">${verifiedCount}</div>
       <div style="font-size:0.74rem;color:var(--txt3);margin-top:3px;font-weight:600;">Email Users</div>
-    </div>\`;
+    </div>`;
   window._adminUsers=users;
   renderAdminUsers(users);
   renderActivityLog(users);
