@@ -14,7 +14,6 @@
 
 <!-- iOS home screen support -->
 <link rel="apple-touch-icon" href="/icon-192.png"/>
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
 <meta name="mobile-web-app-capable" content="yes"/>
 <meta name="description" content="Trackinfin — Smart money tracking for African entrepreneurs. Track income, expenses, credits, goals and business all in one place."/>
 
@@ -42,10 +41,6 @@ window.addEventListener('error', e=>{
 // ── SERVICE WORKER REGISTRATION ───────────────────────
 if('serviceWorker' in navigator){
   window.addEventListener('load',()=>{
-    // Unregister ALL old service workers first, then re-register fresh
-    navigator.serviceWorker.getRegistrations().then(regs=>{
-      regs.forEach(r=>r.unregister());
-    });
     navigator.serviceWorker.register('/sw.js',{scope:'/'})
       .then(reg=>{
         reg.update();
@@ -3611,7 +3606,9 @@ const APP_SETTINGS_K  = 'tfi_app_settings';
 const DEFAULT_ADMIN   = 'Admin@Trackinfin2024'; // ⚠️ Change this in Admin Panel > Change Password on first login
 const LOCK_TIMEOUT    = 5 * 60 * 1000;
 // ★ SET YOUR ADMIN EMAIL HERE — only this email can access admin panel
+// ⚠️ REQUIRED: Replace 'your@email.com' with your real email before deploying!
 const ADMIN_OWNER_EMAIL = 'your@email.com';
+if(ADMIN_OWNER_EMAIL==='your@email.com'){console.warn('[Trackinfin] ADMIN_OWNER_EMAIL is still the placeholder. Set it to your real email in the source before going live.');}
 
 const PALETTE = ['#0EA5E9','#F0B429','#06D6A0','#EF476F','#FF9F1C','#38BDF8','#8B5CF6','#3A86FF','#FB5607','#06A77D','#FFD166','#0284C7'];
 
@@ -3794,13 +3791,13 @@ async function doSignIn(){
 
 async function doForgotPassword(){
   const email=document.getElementById('siEmail').value.trim();
-  if(!email){alert('Enter your email address first.');return;}
-  if(!fbAuth){alert('Firebase not connected.');return;}
+  if(!email){showWin('⚠️ Email Required','Enter your email address in the field above first.');return;}
+  if(!fbAuth){showWin('⚠️ Not Connected','Firebase is not connected yet. Please wait a moment and try again.');return;}
   try{
     await fbAuth.sendPasswordResetEmail(email);
-    alert('✅ Password reset email sent to '+email+'. Check your inbox.');
+    showWin('✅ Reset Email Sent','Check your inbox at '+email+' for a password reset link.');
   }catch(e){
-    alert('Error: '+firebaseErrMsg(e));
+    showWin('❌ Error',firebaseErrMsg(e)||'Could not send reset email. Please try again.');
   }
 }
 
@@ -3808,22 +3805,14 @@ async function doForgotPassword(){
 async function onFirebaseSignIn(fbUser, displayName, localKey){
   const uid=fbUser.uid;
   const email=fbUser.email||fbUser.phoneNumber||uid;
-  // Check suspension BEFORE loading anything
+  // Check suspension BEFORE loading anything — fully guarded, never blocks sign-in
   if(fbDb){
     try{
-      const profileDoc=await fbDb.collection('publicProfiles').doc(uid).get();
-      if(profileDoc.exists){
+      const profileDoc=await fbDb.collection('publicProfiles').doc(uid).get().catch(()=>null);
+      if(profileDoc?.exists){
         const pd=profileDoc.data();
-        if(pd.suspended===true){
-          fbAuth.signOut().catch(()=>{});
-          showWin('🚫 Account Suspended','Your account has been suspended. Contact support for help.');
-          return;
-        }
-        if(pd.removed===true){
-          fbAuth.signOut().catch(()=>{});
-          showWin('❌ Account Removed','This account is no longer active. Contact support.');
-          return;
-        }
+        if(pd.suspended===true){fbAuth.signOut().catch(()=>{});showWin('🚫 Account Suspended','Your account has been suspended. Contact support for help.');return;}
+        if(pd.removed===true){fbAuth.signOut().catch(()=>{});showWin('❌ Account Removed','This account is no longer active. Contact support.');return;}
       }
     }catch(e){console.warn('Suspension check:',e.message);}
   }
@@ -3855,14 +3844,11 @@ async function onFirebaseSignIn(fbUser, displayName, localKey){
 // All data sync happens via Firestore in the section below
 // ══════════════════════════════════════════════════════
 
-// FIRESTORE SYNC — Firebase only (JSONBin fully removed)
-// Stub functions to prevent crashes from any lingering references
-function getAdminKey(){return '';}
-function getRegistryId(){return '';}
-function getRegistry(){return Promise.resolve(null);}
-function setRegistry(){return Promise.resolve(false);}
-function registerUser(){return Promise.resolve(false);}
-function pushBin(){return Promise.resolve(false);}
+// DEPRECATED: JSONBin integration removed in v10.
+// These stubs prevent crashes from any code that still references them.
+const getAdminKey=()=>'',getRegistryId=()=>'';
+const getRegistry=()=>Promise.resolve(null),setRegistry=()=>Promise.resolve(false);
+const registerUser=()=>Promise.resolve(false),pushBin=()=>Promise.resolve(false);
 
 // ── mergeState — merge remote data into local, keeping newest entries ──
 function mergeState(local, remote){
@@ -3909,8 +3895,9 @@ function mergeState(local, remote){
   return merged;
 }
 
-// ── autoSave — save locally (saveLocal debounces Firestore push) ──
-function autoSave(){ saveLocal(); }
+// ── autoSave — debounced 400ms so rapid UI changes don't encrypt on every keystroke ──
+let _autoSaveTimer;
+function autoSave(){clearTimeout(_autoSaveTimer);_autoSaveTimer=setTimeout(saveLocal,400);}
 
 function pullBin(){return Promise.resolve(null);}
 
@@ -4454,20 +4441,34 @@ function updateCloudUI(){
 function firebaseErrMsg(e){
   const map={
     'auth/email-already-in-use':'This email already has an account. Sign in instead.',
-    'auth/user-not-found':'No account with this email. Create an account first.',
+    'auth/user-not-found':'No account found with this email. Create an account first.',
     'auth/wrong-password':'Wrong password. Try again or reset your password.',
     'auth/invalid-email':'Enter a valid email address.',
     'auth/weak-password':'Password too weak. Use at least 6 characters.',
     'auth/too-many-requests':'Too many attempts. Wait a few minutes and try again.',
-    'auth/network-request-failed':'No internet connection. Check your network.',
+    'auth/network-request-failed':'No internet connection. Check your network and try again.',
     'auth/invalid-verification-code':'Wrong SMS code. Check your messages and try again.',
-    'auth/invalid-phone-number':'Invalid phone number. Include country code.',
+    'auth/invalid-phone-number':'Invalid phone number. Include your country code.',
     'auth/quota-exceeded':'SMS limit reached. Try email login instead.',
-    'auth/captcha-check-failed':'Security check failed. Refresh and try again.',
+    'auth/captcha-check-failed':'Security check failed. Refresh the page and try again.',
     'auth/user-disabled':'This account has been disabled. Contact support.',
-    'auth/invalid-credential':'Email or password is incorrect.',
+    'auth/invalid-credential':'Email or password is incorrect. Try again or reset your password.',
+    'auth/operation-not-allowed':'Email/password sign-in is not enabled. Go to Firebase Console, Authentication, Sign-in methods and enable Email/Password.',
+    'auth/configuration-not-found':'Firebase Authentication is not configured. Check your Firebase project settings.',
+    'auth/internal-error':'A Firebase internal error occurred. Check your internet and try again.',
+    'auth/missing-password':'Please enter your password.',
+    'auth/missing-email':'Please enter your email address.',
+    'auth/popup-closed-by-user':'The sign-in popup was closed. Please try again.',
+    'auth/requires-recent-login':'For security, please sign out and sign in again.',
+    'auth/account-exists-with-different-credential':'An account already exists with this email using a different sign-in method.',
+    'auth/expired-action-code':'This link has expired. Please request a new one.',
+    'auth/invalid-action-code':'This link is invalid or already used.',
+    'auth/app-not-authorized':'This app is not authorised for Firebase Authentication. Check your API key and authorised domains in Firebase Console.',
   };
-  return map[e.code]||e.message||'Something went wrong. Please try again.';
+  const friendly=map[e.code];
+  if(friendly) return friendly;
+  if(e.code) return (e.message||'Sign-in failed.')+' ['+e.code+']';
+  return e.message||'Something went wrong. Please try again.';
 }
 
 // ══════════════════════════════════════════════════════
@@ -4499,7 +4500,7 @@ function pkDel(){pinBuf=pinBuf.slice(0,-1);updatePinDots();set('pinErr','');}
 function updatePinDots(){for(let i=0;i<4;i++)document.getElementById('pd'+i).className='pin-dot'+(i<pinBuf.length?' on':'');}
 function checkPin(){
   const s=localStorage.getItem(PIN_KEY);
-  if(s&&hp(pinBuf)===s)unlockApp();
+  if(s&&sha(pinBuf)===s)unlockApp();
   else{set('pinErr','Wrong PIN — try again');pinBuf='';updatePinDots();document.querySelectorAll('.pin-dot').forEach(d=>{d.style.animation='shake .4s';setTimeout(()=>d.style.animation='',500);});}
 }
 function unlockApp(){if(!currentPassword){showPwFallback();return;}hideAuth();renderAll();updateUserUI();updateCloudUI();updateNotifBadge();}
@@ -4509,7 +4510,9 @@ async function unlockWithPassword(){
   const s=sessionGet();if(!s){showAuth();return;}
   const uid=s.uid||s.email;
   const localKey='tfi_'+sha(uid).slice(0,20);
-  if(!loadLocal(uid,localKey)){set('pinPassErr','Incorrect — use your Trackinfin password');return;}
+  // Run migration check first — users on old encryption scheme need this
+  const migrated=await migrateOldEncryption(uid,localKey);
+  if(!migrated&&!loadLocal(uid,localKey)){set('pinPassErr','Incorrect — use your Trackinfin password');return;}
   currentPassword=localKey;
   document.getElementById('pinGridWrap').style.display='block';
   document.getElementById('pinPassWrap').style.display='none';
@@ -4519,16 +4522,16 @@ function doSetupPin(){
   const p1=document.getElementById('np1').value,p2=document.getElementById('np2').value,err=document.getElementById('npErr');
   if(!/^\d{4}$/.test(p1)){err.textContent='Must be 4 digits.';return;}
   if(p1!==p2){err.textContent='PINs do not match.';return;}
-  localStorage.setItem(PIN_KEY,hp(p1));set('pinStatusLbl','Active ✅');closeO('oSetupPin');
+  localStorage.setItem(PIN_KEY,sha(p1));set('pinStatusLbl','Active ✅');closeO('oSetupPin');
   showWin('🔢 PIN Set!','Use your 4-digit PIN to open the app quickly.');
 }
 function skipPin(){closeO('oSetupPin');}
 function doChangePin(){
   const old=document.getElementById('cp0').value,n1=document.getElementById('cp1').value,n2=document.getElementById('cp2').value,err=document.getElementById('cpErr');
-  if(hp(old)!==localStorage.getItem(PIN_KEY)){err.textContent='Current PIN is wrong.';return;}
+  if(sha(old)!==localStorage.getItem(PIN_KEY)){err.textContent='Current PIN is wrong.';return;}
   if(!/^\d{4}$/.test(n1)){err.textContent='New PIN must be 4 digits.';return;}
   if(n1!==n2){err.textContent='PINs do not match.';return;}
-  localStorage.setItem(PIN_KEY,hp(n1));closeO('oChangePin');showWin('🔒 PIN Updated','Your new PIN is active.');
+  localStorage.setItem(PIN_KEY,sha(n1));closeO('oChangePin');showWin('🔒 PIN Updated','Your new PIN is active.');
 }
 
 // Auto-lock
@@ -4552,6 +4555,8 @@ function showAuthTab(tab){
 }
 
 function showAuthMethod(method){
+  // Clear any existing recaptcha verifier to prevent "already rendered" Firebase error
+  if(recaptchaVerifier){try{recaptchaVerifier.clear();}catch(e){} recaptchaVerifier=null;}
   // Email vs Phone method
   document.getElementById('authEmail').style.display = method==='email' ? 'block':'none';
   document.getElementById('authPhone').style.display = method==='phone' ? 'block':'none';
@@ -5079,7 +5084,7 @@ function saveAddSheet(){
   const desc=document.getElementById('addDesc').value.trim();
   const date=document.getElementById('addDate').value;
   if(!amt||amt<=0){showWin('⚠️','Enter an amount first.');return;}
-  if(!date){alert('Enter a date.');return;}
+  if(!date){showWin('⚠️ Date Required','Please pick a date for this transaction.');return;}
   const month=fmtM(new Date(date+'T12:00:00'));
   const goalId=document.getElementById('addGoalSel')?.value||'';
   const cat=selectedCat||'other';
@@ -6603,12 +6608,12 @@ function doRestore(e){
   const reader=new FileReader();
   reader.onload=ev=>{
     try{const d=JSON.parse(ev.target.result);if(!d.txs)throw new Error('Invalid backup');S={...freshState(),...d};fixState();saveLocal();renderAll();_alert('Your data has been fully restored.',{title:'Backup Restored',icon:'✅',okLabel:'Great'});}
-    catch(err){alert('Could not restore: '+err.message);}
+    catch(err){showWin('❌ Restore Failed','Could not read backup file: '+err.message);}
   };
   reader.readAsText(file);e.target.value='';
 }
 function exportExcel(){
-  if(!window.XLSX){alert('Excel export not available.');return;}
+  if(!window.XLSX){showWin('⚠️ Not Available','Excel export library is not loaded. Please check your connection and reload.');return;}
   const m=curM('moneyMonth')||curM('homeMonth');
   const txs=S.txs.filter(t=>t.month===m);
   const data=[['Date','Description','Category','Type','Amount'],
@@ -6845,13 +6850,16 @@ function doAdminLogin(){
   const err=document.getElementById('adminLoginErr');
   if(!email||!pw){err.textContent='Enter email and password.';return;}
   const sh=localStorage.getItem(ADMIN_KEY),se=localStorage.getItem(ADMIN_EMAIL_K);
-  if(!sh){if(pw===DEFAULT_ADMIN){localStorage.setItem(ADMIN_KEY,sha(pw));localStorage.setItem(ADMIN_EMAIL_K,sha(email));localStorage.setItem(ADMIN_EMAIL_P,email);
-    // Persist admin identity to Firestore
-    if(fbDb){fbDb.collection('appConfig').doc('admin').set({adminEmail:email,setupAt:new Date().toISOString()},{merge:true}).catch(()=>{});}
-    // Generate secure broadcast token (stored in Firestore + localStorage)
-    // This token is checked by Firestore Rules before allowing broadcast writes
-    _ensureAdminToken();
-    closeAdminLogin();openAdminPanel(email);alert('⚠️ First login — change your password now!');}else{err.textContent='Wrong password. Use default for first login.';}return;}
+  if(!sh){
+    if(pw===DEFAULT_ADMIN){
+      localStorage.setItem(ADMIN_KEY,sha(pw));localStorage.setItem(ADMIN_EMAIL_K,sha(email));localStorage.setItem(ADMIN_EMAIL_P,email);
+      if(fbDb){fbDb.collection('appConfig').doc('admin').set({adminEmail:email,setupAt:new Date().toISOString()},{merge:true}).catch(()=>{});}
+      _ensureAdminToken();
+      closeAdminLogin();openAdminPanel(email);
+      showWin('⚠️ Action Required','First login detected — please change your admin password now via the Admin Panel.');
+    }else{err.textContent='Wrong password. Use default for first login.';}
+    return;
+  }
   if(sha(email)!==se){err.textContent='Email not recognised.';return;}
   if(sha(pw)!==sh){err.textContent='Incorrect password.';return;}
   closeAdminLogin();openAdminPanel(email);
@@ -6860,7 +6868,7 @@ function openAdminPanel(email){
   // Ensure token exists and is synced to Firestore
   _ensureAdminToken().catch(()=>{});
   const panel=document.getElementById('adminPanel');
-  if(!panel){alert('Admin panel not found');return;}
+  if(!panel){console.error('Admin panel element not found in DOM');return;}
   panel.style.display='block';
   document.body.style.overflow='hidden';
   const ep=localStorage.getItem(ADMIN_EMAIL_P)||email;
@@ -6879,7 +6887,7 @@ function doAdminChangePw(){
   if(n1.length<8){err.textContent='Min 8 characters.';return;}
   if(n1!==n2){err.textContent='Passwords do not match.';return;}
   if(n1===DEFAULT_ADMIN){err.textContent='Cannot reuse default password.';return;}
-  localStorage.setItem(ADMIN_KEY,sha(n1));document.getElementById('adminChangePwSection').style.display='none';alert('✅ Password updated!');
+  localStorage.setItem(ADMIN_KEY,sha(n1));document.getElementById('adminChangePwSection').style.display='none';showWin('✅ Password Updated','Your new admin password is active.');
 }
 
 // Admin cloud setup removed — Firebase handles everything
@@ -7060,7 +7068,7 @@ function renderAdminUsers(users){
 // ── Admin Registry Dispatcher (replaces string onclick injection) ────
 window._aAct = function(action, idx){
   const u = window._adminRegistry && window._adminRegistry[idx];
-  if(!u){ alert('User not found in registry. Please refresh.'); return; }
+  if(!u){ showWin('⚠️ Not Found','User not found in registry. Please refresh the admin panel.'); return; }
   if(action==='suspend')   adminSuspend(u);
   else if(action==='unsuspend') adminUnsuspend(u);
   else if(action==='msg')  adminSendDirectMessage(u);
@@ -7245,7 +7253,7 @@ async function sendBroadcast(){
 }
 function adminExportUsers(){
   const users=window._adminUsers||[];
-  if(!users.length){alert('No users to export.');return;}
+  if(!users.length){showWin('⚠️ No Users','No users available to export yet.');return;}
   const headers=['Name','Email','Country','User Type','Joined','Last Active','Status'];
   const rows=users.map(u=>[
     u.name||'',
@@ -7399,43 +7407,36 @@ async function initApp(){
 }
 
 // Extracted so it can be called after delayed Firebase init too
+let _authListenerStarted=false;
 function _setupAuthListener(){
-  if(!fbAuth) return;
+  if(_authListenerStarted||!fbAuth)return;
+  _authListenerStarted=true;
   fbAuth.onAuthStateChanged(async (fbUser)=>{
       if(fbUser){
         const uid=fbUser.uid;
         const localKey='tfi_'+sha(uid).slice(0,20);
 
-        // ── 1. Suspension check (reads both publicProfiles + adminActions) ─
+        // ── 1. Suspension check — each read individually guarded ────────
         if(fbDb){
           try{
-            const [pd,ad]=await Promise.all([
-              fbDb.collection('publicProfiles').doc(uid).get().catch(()=>null),
-              fbDb.collection('adminActions').doc(uid).get().catch(()=>null)
-            ]);
+            // publicProfiles: user owns their doc, always readable
+            const pd=await fbDb.collection('publicProfiles').doc(uid).get().catch(()=>null);
             const profileData=pd?.exists?pd.data():{};
+            if(profileData.suspended){await fbAuth.signOut().catch(()=>{});showWin('🚫 Account Suspended','Your account has been suspended. Contact support for assistance.');return;}
+            if(profileData.removed){await fbAuth.signOut().catch(()=>{});showWin('❌ Account Removed','This account is no longer active. Contact support.');return;}
+            // adminActions: may be permission-denied for brand-new users — that is fine, just skip
+            const ad=await fbDb.collection('adminActions').doc(uid).get().catch(()=>null);
             const actionData=ad?.exists?ad.data():{};
-            // Check suspension from either source
-            if(profileData.suspended||actionData.suspended){
-              await fbAuth.signOut();
-              showWin('🚫 Account Suspended','Your account has been suspended. Contact support for assistance.');
-              return;
-            }
-            if(profileData.removed||actionData.removed){
-              await fbAuth.signOut();
-              showWin('❌ Account Removed','This account is no longer active. Contact support.');
-              return;
-            }
-            // Deliver unread direct message from admin
+            if(actionData.suspended){await fbAuth.signOut().catch(()=>{});showWin('🚫 Account Suspended','Your account has been suspended. Contact support for assistance.');return;}
+            if(actionData.removed){await fbAuth.signOut().catch(()=>{});showWin('❌ Account Removed','This account is no longer active. Contact support.');return;}
+            // Deliver unread DM from admin
             const dm=actionData.directMsg||profileData.directMsg;
             if(dm&&!dm.read&&dm.text){
               addNotification({id:'dm_'+dm.sentAt,type:'broadcast',bcastType:'info',title:'📩 Message from Admin',text:dm.text,time:dm.sentAt,read:false});
-              // Mark as read in both collections
-              const markRead={directMsg:{...dm,read:true}};
-              fbDb.collection('adminActions').doc(uid).set(markRead,{merge:true}).catch(()=>{});
-              fbDb.collection('publicProfiles').doc(uid).set(markRead,{merge:true}).catch(()=>{});
+              // Mark read only on publicProfiles (user-writable) — adminActions is admin-write-only
+              fbDb.collection('publicProfiles').doc(uid).set({directMsg:{...dm,read:true}},{merge:true}).catch(()=>{});
             }
-          }catch(e){console.warn('Suspension check failed:',e.message);}
+          }catch(e){console.warn('Suspension check:',e.message);}
         }
 
         // ── 2. Set identity ──────────────────────────────
@@ -8671,10 +8672,14 @@ function duplicateTx(id){
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script>
-// Firebase is now loaded — initialize the app
-initApp();
-// Render header bar immediately (before auth completes)
-renderHeaderActions();
+// Firebase SDKs are now parsed — initialize after DOM is fully ready
+if(document.readyState==='loading'){
+  document.addEventListener('DOMContentLoaded',function(){initApp();renderHeaderActions();});
+}else{
+  // DOM already ready (script deferred or async context)
+  initApp();
+  renderHeaderActions();
+}
 </script>
 </body>
 </html>
