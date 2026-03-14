@@ -2316,12 +2316,6 @@ input:checked + .toggle-slider { box-shadow: 0 0 0 2px var(--brand-dim) !importa
         </div>
       </div>
 
-      <!-- Primary CTA -->
-      <button class="mhero-cta" onclick="openAddSheet('out')">
-        <span style="font-size:1.35rem;line-height:1;">&#65291;</span>
-        <span>Add Transaction</span>
-      </button>
-
       <!-- Quick actions -->
       <div class="mhero-qa">
         <div class="mhero-qa-item" onclick="openAddSheet('in')">
@@ -2698,7 +2692,17 @@ input:checked + .toggle-slider { box-shadow: 0 0 0 2px var(--brand-dim) !importa
           <div class="settings-item" onclick="exportPDF()"><div class="sett-ico" style="background:var(--red-dim);">📄</div><div class="sett-info"><div class="sett-name">Export to PDF</div><div class="sett-sub">Formatted financial report</div></div><div class="sett-right">›</div></div>
           <div class="settings-item" onclick="exportWord()"><div class="sett-ico" style="background:var(--brand-dim);">📝</div><div class="sett-info"><div class="sett-name">Export to Word</div><div class="sett-sub">Editable document</div></div><div class="sett-right">›</div></div>
           <div class="settings-item" onclick="exportGDrive()"><div class="sett-ico" style="background:var(--gold-dim);">☁️</div><div class="sett-info"><div class="sett-name">Save to Google Drive</div><div class="sett-sub">Send backup to your Drive</div></div><div class="sett-right">›</div></div>
-          <div class="settings-item" onclick="doBackup()"><div class="sett-ico" style="background:var(--bg3);">💾</div><div class="sett-info"><div class="sett-name">Download Backup</div><div class="sett-sub">Save encrypted backup file</div></div><div class="sett-right">›</div></div>
+          
+        <!-- Notification Reminders -->
+        <div class="notif-perm-btn" onclick="requestNotifPermission()">
+          <div style="width:36px;height:36px;border-radius:9px;background:var(--brand-dim);display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0;">🔔</div>
+          <div style="flex:1;">
+            <div style="font-size:0.84rem;font-weight:700;">Reminders & Notifications</div>
+            <div style="font-size:0.72rem;color:var(--txt3);" id="notifPermStatus">Tap to enable due-date alerts</div>
+          </div>
+          <div style="font-size:0.8rem;color:var(--txt3);">›</div>
+        </div>
+        <div class="settings-item" onclick="doBackup()"><div class="sett-ico" style="background:var(--bg3);">💾</div><div class="sett-info"><div class="sett-name">Download Backup</div><div class="sett-sub">Save encrypted backup file</div></div><div class="sett-right">›</div></div>
           <div class="settings-item" onclick="document.getElementById('restoreFile').click()"><div class="sett-ico" style="background:var(--bg3);">📂</div><div class="sett-info"><div class="sett-name">Restore Backup</div><div class="sett-sub">Load data from backup file</div></div><div class="sett-right">›</div></div>
           <input type="file" id="restoreFile" accept=".json" style="display:none;" onchange="doRestore(event)"/>
         </div>
@@ -2785,6 +2789,13 @@ input:checked + .toggle-slider { box-shadow: 0 0 0 2px var(--brand-dim) !importa
 
   <!-- BOTTOM NAV -->
   <!-- BOTTOM NAV -->
+  <div id="swipeDots">
+    <div class="sdot sdot-active" id="sdot-0"></div>
+    <div class="sdot" id="sdot-1"></div>
+    <div class="sdot" id="sdot-2"></div>
+    <div class="sdot" id="sdot-3"></div>
+    <div class="sdot" id="sdot-4"></div>
+  </div>
   <nav id="bottomNav">
     <div class="bnav-item active" id="bn-home" onclick="showTab('home')"><span class="bico">🏠</span><span class="blbl">Home</span></div>
     <div class="bnav-item" id="bn-money" onclick="showTab('money')"><span class="bico">💸</span><span class="blbl">Money</span></div>
@@ -4765,7 +4776,10 @@ function hideAuth(){
   document.getElementById('fab').style.display='flex';
   document.getElementById('calcToggle').style.display='flex';
   handleUrlShortcuts();
-  setTimeout(applyAppSettingsCached,500); // apply cached settings after DOM ready
+  setTimeout(applyAppSettingsCached,500);
+  setTimeout(()=>{_showSwipeHint();_maybeAskNotifPermission();_rescheduleAllNotifications();},3000);
+  // Update notification status in settings
+  setTimeout(()=>{const el=document.getElementById('notifPermStatus');if(el){const p=Notification&&Notification.permission;el.textContent=p==='granted'?'✅ Enabled — you will get reminders':p==='denied'?'❌ Blocked in browser settings':'Tap to enable due-date alerts';}},500);
 }
 function showPinScreen(){
   document.getElementById('authScreen').style.display='none';
@@ -5375,16 +5389,16 @@ function renderPlan(){
     return `<div class="${cardClass}">
       <div class="env-top">
         <div class="env-cat"><div class="env-dot" style="background:${c.color}"></div>
-          <div><div class="env-name">${c.name}</div><div class="env-suggest">Suggested: ${fmt(suggested)}</div></div>
+          <div><div class="env-name">${c.name}</div><div class="env-suggest">${alloc>0&&remain<=0?"✅ All spent — reset for next round":"Suggested: "+fmt(suggested)}</div></div>
         </div>
-        <div><div class="env-avail-lbl">Available</div><div class="env-avail" style="color:${remain<=0&&alloc>0?'var(--red)':'var(--green)'}">${fmt(remain)}</div></div>
+        <div><div class="env-avail-lbl">Available</div><div class="env-avail" style="color:${alloc>0&&remain<=0?'var(--green)':alloc===0?'var(--txt3)':'var(--green)'}">${alloc>0&&remain<=0?'✓ 0':fmt(remain)}</div></div>
       </div>
       ${alloc>0?`<div class="env-bar"><div class="env-bar-fill" style="width:${pct}%;background:${barColor}"></div></div>
         <div class="env-stats"><span>Filled: ${fmt(alloc)}</span><span>Spent: ${fmt(spent)}</span><span>${pct.toFixed(0)}%</span></div>`
         :`<div style="font-size:0.72rem;color:var(--txt3);text-align:center;padding:8px;background:var(--bg3);border-radius:8px;margin-bottom:10px;">Empty — tap Fill to allocate</div>`}
       <div class="env-actions">
         <div class="env-btn fill" onclick="openFillEnv('${c.id}','${c.name.replace(/'/g,"\\'")}',${suggested})">📬 Fill</div>
-        ${alloc>0&&remain>0?`<div class="env-btn spend" onclick="openSpendEnv('${c.id}','${c.name.replace(/'/g,"\\'")}',${remain})">💸 Spend</div>`:alloc>0?`<div class="env-btn" style="opacity:.5;cursor:default;">✓ Done</div>`:''}
+        ${alloc>0&&remain>0?`<div class="env-btn spend" onclick="openSpendEnv('${c.id}','${c.name.replace(/'/g,"\'")}',${remain})">💸 Spend</div>`:alloc>0&&remain<=0?`<div class="env-btn" style="background:var(--green-dim);border-color:rgba(6,214,160,.3);color:var(--green);cursor:pointer;" onclick="resetEnvelope('${c.id}','${c.name.replace(/'/g,"\'")}')">🔄 Reset</div>`:''}
       </div>
     </div>`;
   }).join('');
@@ -5395,16 +5409,18 @@ function renderObligations(m,income){
   const obls=S.obligations||[];
   if(!obls.length){el.innerHTML='<div style="color:var(--txt3);font-size:0.78rem;padding:10px 0;">No obligations yet. Tap + Add to set up recurring bills.</div>';return;}
   const now=new Date();const year=now.getFullYear();const monthNum=parseInt(m.split('-')[1]);
-  el.innerHTML=obls.map(o=>{
+  el.innerHTML=obls.map((o,oi)=>{
     const dueDate=new Date(year,monthNum-1,Math.min(o.day,28));
     const days=Math.ceil((dueDate-now)/86400000);
+    const paid=o.paidMonths&&o.paidMonths[m];
     const env=getEnv(m,'other');const avail=(env.allocated||0)-(env.spent||0);
-    const covered=avail>=o.amt;const overdue=days<0;
-    return `<div class="obl-card ${overdue?'danger':covered?'covered':'warning'}">
-      <div class="obl-date">${days<0?'Overdue':days===0?'Today':'In '+days+'d'}</div>
+    const covered=paid||avail>=o.amt;const overdue=days<0&&!paid;
+    return `<div class="obl-card ${paid?'covered':overdue?'danger':covered?'covered':'warning'}">
+      <div class="obl-date">${paid?'✅ Paid this month':days<0?'Overdue':days===0?'Due Today':'In '+days+'d'}</div>
       <div class="obl-name">${o.name}</div>
-      <div class="obl-amt" style="color:${overdue?'var(--red)':covered?'var(--green)':'var(--orange)'}">${fmt(o.amt)}</div>
-      <div class="obl-status" style="color:${overdue?'var(--red)':covered?'var(--green)':'var(--orange)'}">${overdue?'⚠️ Overdue':covered?'✅ Covered':'⚠️ Not covered'}</div>
+      <div class="obl-amt" style="color:${paid?'var(--green)':overdue?'var(--red)':covered?'var(--green)':'var(--orange)'}">${fmt(o.amt)}</div>
+      <div class="obl-status" style="color:${paid?'var(--green)':overdue?'var(--red)':covered?'var(--green)':'var(--orange)'};">${paid?'✅ Done':''+overdue?'⚠️ Overdue':covered?'✅ Covered':'⚠️ Not covered'}</div>
+      ${!paid?`<div onclick="markOblPaid(${oi},'${m}')" style="margin-top:6px;padding:4px 0;border-radius:7px;background:var(--green-dim);color:var(--green);border:1px solid rgba(6,214,160,.3);cursor:pointer;text-align:center;font-size:0.7rem;font-weight:700;">👍 Mark as Paid</div>`:''}
     </div>`;
   }).join('');
 }
@@ -6773,6 +6789,25 @@ function exportPDF(){
 @media(max-width:420px){.admin-stat-grid{grid-template-columns:repeat(2,1fr);}}
 .admin-stat{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:16px;text-align:center;}
 .admin-stat-ico{font-size:1.4rem;margin-bottom:6px;}
+
+/* ── SWIPE NAV ANIMATIONS ─────────────────────────────── */
+.tab-panel{will-change:transform,opacity;}
+.tab-slide-in-r {animation:tabInR .26s cubic-bezier(.25,.46,.45,.94) both;}
+.tab-slide-in-l {animation:tabInL .26s cubic-bezier(.25,.46,.45,.94) both;}
+.tab-slide-out-l{animation:tabOutL .22s cubic-bezier(.55,.06,.68,.19) both;pointer-events:none;}
+.tab-slide-out-r{animation:tabOutR .22s cubic-bezier(.55,.06,.68,.19) both;pointer-events:none;}
+@keyframes tabInR   {from{opacity:.3;transform:translateX(52px);}  to{opacity:1;transform:none;}}
+@keyframes tabInL   {from{opacity:.3;transform:translateX(-52px);} to{opacity:1;transform:none;}}
+@keyframes tabOutL  {from{opacity:1;transform:none;} to{opacity:0;transform:translateX(-28px);}}
+@keyframes tabOutR  {from{opacity:1;transform:none;} to{opacity:0;transform:translateX(28px);}}
+/* Swipe position dots */
+#swipeDots{position:fixed;bottom:calc(60px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);display:flex;gap:5px;z-index:199;pointer-events:none;}
+.sdot{width:5px;height:5px;border-radius:50%;background:var(--border2);transition:all .25s cubic-bezier(.34,1.56,.64,1);}
+.sdot.sdot-active{width:18px;border-radius:3px;background:var(--brand);box-shadow:0 0 8px var(--brand-glow);}
+/* Notification permission button in settings */
+.notif-perm-btn{display:flex;align-items:center;gap:10px;padding:13px 16px;background:var(--bg2);border:1.5px solid var(--border);border-radius:12px;cursor:pointer;margin-bottom:10px;transition:all .2s;}
+.notif-perm-btn:active{transform:scale(.97);}
+
 </style></head>
     <body>
     <h1>💰 Trackinfin — Financial Report</h1>
@@ -9120,6 +9155,265 @@ function exportAnalyticsCSV(){
   a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
   a.download='trackinfin-analytics-'+new Date().toISOString().split('T')[0]+'.csv';
   a.click();URL.revokeObjectURL(a.href);
+}
+
+
+// ══════════════════════════════════════════════════════
+// ENVELOPE RESET
+// ══════════════════════════════════════════════════════
+function resetEnvelope(catId, catName){
+  _confirm('This clears the allocated and spent amounts for "'+catName+'" so you can fill it fresh next round.',{
+    title:'Reset Envelope?',icon:'🔄',okLabel:'Reset',danger:false
+  }).then(ok=>{
+    if(!ok)return;
+    const m=curM('planMonth');
+    const env=getEnv(m,catId);
+    env.allocated=0; env.spent=0;
+    autoSave(); renderPlan(); renderHome();
+    showWin('🔄 Envelope Reset',catName+' is now empty and ready to fill again.');
+  });
+}
+
+// ══════════════════════════════════════════════════════
+// OBLIGATION MARK AS PAID
+// ══════════════════════════════════════════════════════
+function markOblPaid(oblIdx, month){
+  const o=S.obligations&&S.obligations[oblIdx];
+  if(!o)return;
+  if(!o.paidMonths)o.paidMonths={};
+  o.paidMonths[month]=true;
+  autoSave(); renderPlan();
+  showWin('👍 Marked as Paid',o.name+' is marked done for this month.');
+  // Schedule a reminder for next month
+  _scheduleOblReminder(o);
+}
+
+// ══════════════════════════════════════════════════════
+// PUSH NOTIFICATIONS — permission + scheduling
+// ══════════════════════════════════════════════════════
+async function requestNotifPermission(){
+  if(!('Notification' in window)){showWin('⚠️ Not supported','Your browser does not support notifications.');return false;}
+  if(Notification.permission==='granted') return true;
+  if(Notification.permission==='denied'){showWin('🔔 Notifications blocked','Please enable notifications for Trackinfin in your browser settings, then try again.');return false;}
+  const result = await Notification.requestPermission();
+  if(result==='granted'){
+    showWin('🔔 Notifications on','You will now get reminders for due dates and goals.');
+    _rescheduleAllNotifications();
+    return true;
+  }
+  return false;
+}
+
+function _getSW(){
+  return navigator.serviceWorker&&navigator.serviceWorker.ready.then(reg=>reg).catch(()=>null);
+}
+
+async function _sendToSW(data){
+  const reg = await (navigator.serviceWorker&&navigator.serviceWorker.ready);
+  if(reg&&reg.active) reg.active.postMessage(data);
+}
+
+function _scheduleOblReminder(obl){
+  if(Notification.permission!=='granted') return;
+  const now=new Date();
+  const dueDate=new Date(now.getFullYear(),now.getMonth(),Math.min(obl.day,28));
+  // Remind 3 days before due
+  const reminderDate=new Date(dueDate.getTime()-3*86400000);
+  const delay=reminderDate.getTime()-Date.now();
+  if(delay<=0) return; // already past
+  _sendToSW({
+    type:'SCHEDULE_NOTIFICATION',
+    title:'📅 '+obl.name+' due soon',
+    body:fmt(obl.amt)+' is due on the '+obl.day+'th. Make sure your envelope is ready.',
+    tag:'obl-'+obl.name.replace(/\s/g,'-'),
+    delay: Math.min(delay, 2147483647), // max safe setTimeout
+    url:'/'
+  });
+}
+
+async function _rescheduleAllNotifications(){
+  if(Notification.permission!=='granted') return;
+  // Obligations
+  (S.obligations||[]).forEach(o=>_scheduleOblReminder(o));
+  // Goals — remind 7 days before target date
+  (S.goals||[]).forEach(g=>{
+    if(!g.target||!g.deadline) return;
+    const deadline=new Date(g.deadline);
+    const reminderDate=new Date(deadline.getTime()-7*86400000);
+    const delay=reminderDate.getTime()-Date.now();
+    if(delay<=0) return;
+    _sendToSW({
+      type:'SCHEDULE_NOTIFICATION',
+      title:'🎯 Goal deadline approaching',
+      body:'"'+g.name+'" — '+g.deadline+'. Progress: '+Math.round((g.saved||0)/g.target*100)+'%.',
+      tag:'goal-'+g.id,
+      delay: Math.min(delay, 2147483647),
+      url:'/'
+    });
+  });
+  // Credits overdue — notify at 8am on due date
+  (S.credits||[]).forEach(cr=>{
+    if(!cr.due||cr.paid) return;
+    const dueMs=new Date(cr.due).getTime();
+    const delay=dueMs-Date.now();
+    if(delay<=0){
+      // Already overdue — show immediately once per session
+      const key='tfi_notif_cr_'+cr.id;
+      if(!sessionStorage.getItem(key)){
+        sessionStorage.setItem(key,'1');
+        _sendToSW({type:'SCHEDULE_NOTIFICATION',title:'⚠️ Credit overdue',body:(cr.type==='owed'?cr.name:cr.debtor)+' — '+fmt(cr.amt)+' was due '+cr.due,tag:'cr-'+cr.id,delay:500,url:'/'});
+      }
+    } else {
+      _sendToSW({type:'SCHEDULE_NOTIFICATION',title:'💰 Payment due today',body:(cr.type==='owed'?cr.name:cr.debtor)+' owes you '+fmt(cr.amt),tag:'cr-'+cr.id,delay:Math.min(delay,2147483647),url:'/'});
+    }
+  });
+}
+
+// Listen for notification clicks from SW
+navigator.serviceWorker&&navigator.serviceWorker.addEventListener('message',e=>{
+  if(e.data&&e.data.type==='NOTIFICATION_CLICK'){
+    // Focus the app tab that's already open
+    window.focus();
+  }
+});
+
+// Auto-request permission once after user is logged in and active 30s
+function _maybeAskNotifPermission(){
+  if(Notification.permission!=='default') return; // already decided
+  if(localStorage.getItem('tfi_notif_asked')) return;
+  setTimeout(async()=>{
+    if(!currentUser) return;
+    localStorage.setItem('tfi_notif_asked','1');
+    // Show our own prompt first — nicer than raw browser dialog
+    _confirm(
+      'Get reminders for bill due dates, goal deadlines and overdue credits - right in your notification bar.',
+      {title:'🔔 Enable Reminders?',icon:'🔔',okLabel:'Turn On',danger:false}
+    ).then(async ok=>{
+      if(!ok) return;
+      await requestNotifPermission();
+    });
+  }, 30000);
+}
+
+// ══════════════════════════════════════════════════════
+// SWIPE NAVIGATION ENGINE — safe, auth-aware
+// ══════════════════════════════════════════════════════
+let _currentTabIdx = 0;
+
+// Patch showTab to be direction-aware
+const _origShowTab = showTab;
+function showTab(name, dir){
+  const toIdx = TABS.indexOf(name);
+  if(toIdx < 0){ _origShowTab(name); return; }
+  const fromIdx = _currentTabIdx;
+  if(fromIdx === toIdx) return;
+  const goForward = dir==='fwd' || (dir===undefined && toIdx > fromIdx);
+  const fromEl = document.getElementById('tab-'+TABS[fromIdx]);
+  const toEl   = document.getElementById('tab-'+name);
+  if(!toEl){ _origShowTab(name); return; }
+
+  // Update nav items
+  TABS.forEach(t=>document.getElementById('bn-'+t)?.classList.toggle('active',t===name));
+  _currentTabIdx = toIdx;
+  _updateSwipeDots(toIdx);
+
+  // Animate
+  toEl.style.display='block';
+  [fromEl,toEl].forEach(el=>el&&el.classList.remove('tab-slide-in-r','tab-slide-in-l','tab-slide-out-l','tab-slide-out-r'));
+  void toEl.offsetWidth;
+  if(goForward){
+    fromEl&&fromEl.classList.add('tab-slide-out-l');
+    toEl.classList.add('tab-slide-in-r');
+  } else {
+    fromEl&&fromEl.classList.add('tab-slide-out-r');
+    toEl.classList.add('tab-slide-in-l');
+  }
+  setTimeout(()=>{
+    if(fromEl){ fromEl.classList.remove('active','tab-slide-out-l','tab-slide-out-r'); fromEl.style.display=''; }
+    toEl.classList.remove('tab-slide-in-r','tab-slide-in-l');
+    toEl.classList.add('active');
+  }, 260);
+
+  // Render content
+  if(name==='money')renderMoney();
+  else if(name==='plan')renderPlan();
+  else if(name==='details')renderDetails();
+  else if(name==='settings')renderSettings();
+  else if(name==='home')renderHome();
+  window.scrollTo({top:0,behavior:'instant'});
+  if(navigator.vibrate) navigator.vibrate(6);
+}
+
+function _updateSwipeDots(idx){
+  TABS.forEach((_,i)=>{
+    const d=document.getElementById('sdot-'+i);
+    if(d) d.classList.toggle('sdot-active',i===idx);
+  });
+}
+
+// Touch swipe engine — only on the main app, never on auth/overlays
+(function(){
+  const MIN_DIST=55, MAX_VERT=70, EDGE=28;
+  let sx=0,sy=0,t0=0,tracking=false;
+
+  function blocked(el){
+    // Never swipe when any overlay/modal/sheet/panel is open
+    if(document.querySelector('.overlay.open,.add-sheet-body,.notif-inbox.open')) return true;
+    let n=el;
+    while(n&&n!==document.body){
+      if(n.id&&/panel|modal|sheet|overlay|inbox|admin|calc/i.test(n.id)) return true;
+      if(n.tagName==='INPUT'||n.tagName==='TEXTAREA'||n.tagName==='SELECT') return true;
+      if(n.classList&&(n.classList.contains('overlay')||n.classList.contains('modal'))) return true;
+      const st=window.getComputedStyle(n);
+      if((st.overflowX==='scroll'||st.overflowX==='auto')&&n.scrollWidth>n.clientWidth+4) return true;
+      n=n.parentElement;
+    }
+    return false;
+  }
+
+  document.addEventListener('touchstart',e=>{
+    // Only track if the main app is visible (not auth screen)
+    if(document.getElementById('app')?.style.display==='none') return;
+    const t=e.touches[0];
+    if(t.clientX<EDGE||t.clientX>window.innerWidth-EDGE) return;
+    if(blocked(e.target)) return;
+    sx=t.clientX; sy=t.clientY; t0=Date.now(); tracking=true;
+  },{passive:true});
+
+  document.addEventListener('touchmove',e=>{
+    if(!tracking) return;
+    const t=e.touches[0];
+    if(Math.abs(t.clientY-sy)>45&&Math.abs(t.clientY-sy)>Math.abs(t.clientX-sx)) tracking=false;
+  },{passive:true});
+
+  document.addEventListener('touchend',e=>{
+    if(!tracking){tracking=false;return;}
+    tracking=false;
+    const t=e.changedTouches[0];
+    const dx=t.clientX-sx, dy=Math.abs(t.clientY-sy), dt=Date.now()-t0;
+    const vel=Math.abs(dx)/dt;
+    if(Math.abs(dx)<MIN_DIST&&vel<0.5) return;
+    if(dy>MAX_VERT) return;
+    if(dx<0){ const n=TABS[_currentTabIdx+1]; if(n) showTab(n,'fwd'); }
+    else     { const n=TABS[_currentTabIdx-1]; if(n) showTab(n,'bwd'); }
+  },{passive:true});
+})();
+
+// ══════════════════════════════════════════════════════
+// FIRST LAUNCH SWIPE HINT
+// ══════════════════════════════════════════════════════
+function _showSwipeHint(){
+  if(localStorage.getItem('tfi_swipe_hint')) return;
+  if(!currentUser) return;
+  setTimeout(()=>{
+    const d=document.createElement('div');
+    d.style.cssText='position:fixed;bottom:calc(78px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);z-index:9980;background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:10px 18px;display:flex;align-items:center;gap:10px;box-shadow:var(--shadow);font-size:0.82rem;white-space:nowrap;animation:slideInUp .35s cubic-bezier(.34,1.56,.64,1);';
+    d.innerHTML='<span style="font-size:1.1rem;">👆</span><span style="color:var(--txt2);">Swipe left/right to switch screens</span><span id="_shClose" style="margin-left:6px;color:var(--txt3);cursor:pointer;">✕</span>';
+    document.body.appendChild(d);
+    const close=()=>{d.remove();localStorage.setItem('tfi_swipe_hint','1');};
+    document.getElementById('_shClose')?.addEventListener('click',close);
+    setTimeout(close,4000);
+  },2500);
 }
 
 </script>
