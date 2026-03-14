@@ -45,26 +45,54 @@ if('serviceWorker' in navigator){
     navigator.serviceWorker.register('/sw.js',{scope:'/'})
       .then(reg=>{
         reg.update();
+        // ── New SW version available — notify user ──
+        reg.addEventListener('updatefound',()=>{
+          const newSW=reg.installing;
+          if(!newSW)return;
+          newSW.addEventListener('statechange',()=>{
+            if(newSW.state==='installed'&&navigator.serviceWorker.controller){
+              // New version is ready — show update bar
+              const bar=document.createElement('div');
+              bar.id='swUpdateBar';
+              bar.style.cssText='position:fixed;bottom:80px;left:12px;right:12px;z-index:9998;background:linear-gradient(135deg,#0EA5E9,#6366F1);border-radius:14px;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:10px;box-shadow:0 8px 32px rgba(0,0,0,.4);';
+              bar.innerHTML='<span style="font-size:0.84rem;font-weight:700;color:#fff;">🚀 New version available!</span><button onclick="window.location.reload()" style="background:#fff;color:#0EA5E9;border:none;border-radius:8px;font-weight:800;font-size:0.76rem;padding:7px 13px;cursor:pointer;white-space:nowrap;">Update Now</button>';
+              document.body.appendChild(bar);
+              setTimeout(()=>bar.remove(),30000);
+            }
+          });
+        });
       })
       .catch(e=>console.warn('SW registration failed:',e));
   });
 }
 
+// ── Network status listener ───────────────────────────
+function _updateNetworkUI(){
+  const banner=document.getElementById('offlineBanner');
+  if(banner) banner.style.display=navigator.onLine?'none':'block';
+}
+window.addEventListener('online', _updateNetworkUI);
+window.addEventListener('offline', _updateNetworkUI);
+window.addEventListener('DOMContentLoaded', _updateNetworkUI);
+
 // ── PWA INSTALL PROMPT ────────────────────────────────
 let deferredPrompt;
 function showInstallUI(){
-  if(localStorage.getItem('tfi_install_dismissed')==='1')return;
+  // Header install button — always show if not dismissed and not already installed
   const btn=document.getElementById('headerInstallBtn');
-  if(btn)btn.style.display='flex';
-  const banner=document.getElementById('installBanner');
-  if(banner)banner.style.display='flex';
-  const row=document.getElementById('installAppRow');
-  if(row)row.style.display='flex';
+  if(btn&&!localStorage.getItem('tfi_install_dismissed'))btn.style.display='flex';
 }
 window.addEventListener('beforeinstallprompt',(e)=>{
   e.preventDefault();
   deferredPrompt=e;
   showInstallUI();
+  // Show install banner immediately
+  const banner=document.getElementById('installBanner');
+  const dismissed=localStorage.getItem('tfi_install_dismissed');
+  if(banner&&(!dismissed||dismissed===''))banner.style.display='flex';
+  // Show Install App row in Settings
+  const row=document.getElementById('installAppRow');
+  if(row)row.style.display='flex';
 });
 window.addEventListener('appinstalled',()=>{
   const b=document.getElementById('installBanner');
@@ -790,7 +818,7 @@ input:checked + .toggle-slider:before{transform:translateX(20px);}
 /* Admin */
 #adminLoginScreen{position:fixed;inset:0;z-index:9996;background:rgba(0,0,0,.95);display:none;align-items:center;justify-content:center;padding:20px;}
 #adminPanel{display:none;position:fixed;inset:0;z-index:9995;background:var(--bg);overflow-y:auto;padding:20px;}
-.admin-stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:20px;}
+.admin-stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:20px;}
 .admin-stat{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:16px;position:relative;overflow:hidden;}
 .admin-stat-ico{position:absolute;top:10px;right:12px;font-size:1rem;opacity:.2;}
 table{width:100%;border-collapse:collapse;font-size:0.8rem;}
@@ -1038,6 +1066,10 @@ tbody td{padding:11px 12px;border-bottom:1px solid var(--border2);}
 
 <!-- ════════════ APP ════════════ -->
 <div id="app">
+  <!-- Network status bar — shows when offline -->
+  <div id="offlineBanner" style="display:none;background:#EF476F;color:#fff;text-align:center;font-size:0.74rem;font-weight:700;padding:6px 12px;position:sticky;top:0;z-index:9999;letter-spacing:.3px;">
+    ⚡ You're offline — changes saved locally and will sync when connected
+  </div>
   <header>
     <div class="h-brand" id="logoTap" onclick="handleLogoTap()">
       <div class="h-logo">💰</div>
@@ -1908,7 +1940,12 @@ tbody td{padding:11px 12px;border-bottom:1px solid var(--border2);}
     <div class="prof-av-lg" id="profAv"></div>
     <div class="prof-name" id="profName">—</div>
     <div class="prof-email" id="profEmail">—</div>
-    <div class="prof-actions">
+    <div style="margin-bottom:14px;">
+    <button onclick="shareApp()" style="width:100%;background:linear-gradient(135deg,var(--brand),var(--brand3));border:none;border-radius:12px;color:#fff;font-family:'Outfit',sans-serif;font-size:0.86rem;font-weight:700;padding:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">
+      📲 Share Trackinfin with a Friend
+    </button>
+  </div>
+  <div class="prof-actions">
       <button class="btn ghost sm" onclick="openO('oSetupPin');closeProfile()">🔢 PIN</button>
       <button class="btn ghost sm" onclick="doBackup()">💾 Backup</button>
       <button class="btn ghost sm" onclick="openSyncStatus();closeProfile()">☁️ Sync</button>
@@ -2040,7 +2077,7 @@ tbody td{padding:11px 12px;border-bottom:1px solid var(--border2);}
     <div class="modal-title" style="color:var(--red);">🔐 Admin</div>
     <input class="field" id="adminEmail" type="email" placeholder="Admin email"/>
     <div class="eye-wrap"><input class="field" id="adminPass" type="password" placeholder="Admin password" style="margin-bottom:0;" onkeydown="if(event.key==='Enter')doAdminLogin()"/><span class="eye" onclick="toggleVis('adminPass',this)">👁</span></div>
-    <div style="font-size:0.7rem;color:var(--txt3);text-align:center;margin:8px 0;">Default: <code style="color:var(--gold);">Admin@Trackinfin2024</code></div>
+    <div style="font-size:0.7rem;color:var(--txt3);text-align:center;margin:8px 0;">First-time login uses the default password.</div>
     <div class="err" id="adminLoginErr"></div>
     <div class="btn-row"><button class="btn red full" onclick="doAdminLogin()">Enter</button><button class="btn ghost full" onclick="closeAdminLogin()">Cancel</button></div>
   </div>
@@ -2235,6 +2272,21 @@ tbody td{padding:11px 12px;border-bottom:1px solid var(--border2);}
 // ── Config (admin pastes keys here) ──────────────────
 // JSONBin removed — Firebase Firestore handles all sync
 
+// ── Share / Referral ──────────────────────────────────
+function shareApp(){
+  const text='I use Trackinfin to track my money — income, savings, expenses and credit all in one place. Try it: https://trackinfin.pages.dev';
+  if(navigator.share){
+    navigator.share({title:'Trackinfin — Your Money, Your Control',text,url:'https://trackinfin.pages.dev'}).catch(()=>{});
+  }else{
+    // Fallback: copy to clipboard
+    navigator.clipboard?.writeText(text).then(()=>{
+      showWin('🔗 Link copied!','Share it with a friend via WhatsApp, SMS or social media.');
+    }).catch(()=>{
+      prompt('Copy this link to share:','https://trackinfin.pages.dev');
+    });
+  }
+}
+
 // ══════════════════════════════════════════════════════
 // FIREBASE CONFIGURATION
 // ══════════════════════════════════════════════════════
@@ -2262,7 +2314,7 @@ const ADMIN_KEY     = 'tfi_admin_hash';
 const ADMIN_EMAIL_K = 'tfi_admin_email';
 const ADMIN_EMAIL_P = 'tfi_admin_ep';
 const APP_SETTINGS_K  = 'tfi_app_settings';
-const DEFAULT_ADMIN   = 'Admin@Trackinfin2024';
+const DEFAULT_ADMIN   = 'Admin@Trackinfin2024'; // ⚠️ Change this in Admin Panel > Change Password on first login
 const LOCK_TIMEOUT    = 5 * 60 * 1000;
 // ★ SET YOUR ADMIN EMAIL HERE — only this email can access admin panel
 const ADMIN_OWNER_EMAIL = 'your@email.com';
@@ -2430,32 +2482,22 @@ async function doForgotPassword(){
 async function onFirebaseSignIn(fbUser, displayName, localKey){
   const uid=fbUser.uid;
   const email=fbUser.email||fbUser.phoneNumber||uid;
-  // Check suspension BEFORE loading anything (reads publicProfiles + adminActions)
+  // Check suspension BEFORE loading anything
   if(fbDb){
     try{
-      const [profileDoc,adminDoc]=await Promise.all([
-        fbDb.collection('publicProfiles').doc(uid).get(),
-        fbDb.collection('adminActions').doc(uid).get()
-      ]);
-      const pd=profileDoc.exists?profileDoc.data():{};
-      const ad=adminDoc.exists?adminDoc.data():{};
-      if(pd.suspended===true||ad.suspended===true){
-        fbAuth.signOut().catch(()=>{});
-        showWin('🚫 Account Suspended','Your account has been suspended. Contact support for help.');
-        return;
-      }
-      if(pd.removed===true||ad.removed===true){
-        fbAuth.signOut().catch(()=>{});
-        showWin('❌ Account Removed','This account is no longer active. Contact support.');
-        return;
-      }
-      // Deliver unread direct message from admin
-      const dm=ad.directMsg||pd.directMsg;
-      if(dm&&!dm.read&&dm.text){
-        setTimeout(()=>showWin('📩 Message from Admin',dm.text),2000);
-        const readPayload={directMsg:{...dm,read:true}};
-        fbDb.collection('adminActions').doc(uid).set(readPayload,{merge:true}).catch(()=>{});
-        fbDb.collection('publicProfiles').doc(uid).set(readPayload,{merge:true}).catch(()=>{});
+      const profileDoc=await fbDb.collection('publicProfiles').doc(uid).get();
+      if(profileDoc.exists){
+        const pd=profileDoc.data();
+        if(pd.suspended===true){
+          fbAuth.signOut().catch(()=>{});
+          showWin('🚫 Account Suspended','Your account has been suspended. Contact support for help.');
+          return;
+        }
+        if(pd.removed===true){
+          fbAuth.signOut().catch(()=>{});
+          showWin('❌ Account Removed','This account is no longer active. Contact support.');
+          return;
+        }
       }
     }catch(e){console.warn('Suspension check:',e.message);}
   }
@@ -5453,13 +5495,42 @@ async function renderAdminStats(){
   const online=users.filter(u=>u.lastActive&&(now-toMs(u.lastActive))<300000).length;
   const today=users.filter(u=>u.lastActive&&(now-toMs(u.lastActive))<86400000).length;
   const thisWeek=users.filter(u=>u.joinedAt&&(now-toMs(u.joinedAt))<604800000).length;
+  const suspendedCount=users.filter(u=>u.suspended).length;
+  const verifiedCount=users.filter(u=>u.email&&u.email.includes('@')).length;
   if(el)el.innerHTML=`
-    <div class="admin-stat-card"><div class="admin-stat-num">${users.length}</div><div class="admin-stat-lbl">Total Users</div></div>
-    <div class="admin-stat-card"><div class="admin-stat-num" style="color:var(--green);">${online}</div><div class="admin-stat-lbl">Online Now</div></div>
-    <div class="admin-stat-card"><div class="admin-stat-num" style="color:var(--brand);">${today}</div><div class="admin-stat-lbl">Active Today</div></div>
-    <div class="admin-stat-card"><div class="admin-stat-num" style="color:var(--gold);">${thisWeek}</div><div class="admin-stat-lbl">New This Week</div></div>`;
+    <div class="admin-stat" style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:16px;">
+      <div class="admin-stat-ico">👥</div>
+      <div style="font-family:'Sora',sans-serif;font-size:1.8rem;font-weight:800;">${users.length}</div>
+      <div style="font-size:0.74rem;color:var(--txt3);margin-top:3px;font-weight:600;">Total Users</div>
+    </div>
+    <div class="admin-stat" style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:16px;">
+      <div class="admin-stat-ico">🟢</div>
+      <div style="font-family:'Sora',sans-serif;font-size:1.8rem;font-weight:800;color:var(--green);">${online}</div>
+      <div style="font-size:0.74rem;color:var(--txt3);margin-top:3px;font-weight:600;">Online Now</div>
+    </div>
+    <div class="admin-stat" style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:16px;">
+      <div class="admin-stat-ico">📅</div>
+      <div style="font-family:'Sora',sans-serif;font-size:1.8rem;font-weight:800;color:var(--brand);">${today}</div>
+      <div style="font-size:0.74rem;color:var(--txt3);margin-top:3px;font-weight:600;">Active Today</div>
+    </div>
+    <div class="admin-stat" style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:16px;">
+      <div class="admin-stat-ico">✨</div>
+      <div style="font-family:'Sora',sans-serif;font-size:1.8rem;font-weight:800;color:var(--gold);">${thisWeek}</div>
+      <div style="font-size:0.74rem;color:var(--txt3);margin-top:3px;font-weight:600;">New This Week</div>
+    </div>
+    <div class="admin-stat" style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:16px;">
+      <div class="admin-stat-ico">🚫</div>
+      <div style="font-family:'Sora',sans-serif;font-size:1.8rem;font-weight:800;color:var(--red);">${suspendedCount}</div>
+      <div style="font-size:0.74rem;color:var(--txt3);margin-top:3px;font-weight:600;">Suspended</div>
+    </div>
+    <div class="admin-stat" style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:16px;">
+      <div class="admin-stat-ico">📧</div>
+      <div style="font-family:'Sora',sans-serif;font-size:1.8rem;font-weight:800;color:var(--purple);">${verifiedCount}</div>
+      <div style="font-size:0.74rem;color:var(--txt3);margin-top:3px;font-weight:600;">Email Users</div>
+    </div>\`;
   window._adminUsers=users;
   renderAdminUsers(users);
+  renderActivityLog(users);
   const logEl=document.getElementById('adminActivityLog');
   if(logEl){
     const recent=users.filter(u=>u.lastActive).sort((a,b)=>toMs(b.lastActive)-toMs(a.lastActive)).slice(0,10);
@@ -5502,11 +5573,9 @@ function renderAdminUsers(users){
   if(countEl)countEl.textContent=`Showing ${filtered.length} of ${users.length} users`;
   if(!filtered.length){tbody.innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--txt3);padding:24px;">No users match this filter.</td></tr>';return;}
   const typeIcons={farmer:'🌾',trader:'🛒',salary:'💼',business:'🏪',poultry:'🐔',student:'🎓',other:'👤'};
-  // Reset registry each render
-  window._adminRegistry=[];
-  tbody.innerHTML=filtered.map(u=>{
-    const idx=window._adminRegistry.length;
-    window._adminRegistry.push(u);
+  window._adminRegistry={};
+  tbody.innerHTML=filtered.map((u,ridx)=>{
+    window._adminRegistry[ridx]=u;
     const ini=(u.name||'?').split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
     const col=PALETTE[Math.abs(hp(u.email||''))%PALETTE.length];
     const laMs=toMs(u.lastActive);
@@ -5517,7 +5586,6 @@ function renderAdminUsers(users){
     const activeToday=laMs&&(now-laMs)<86400000;
     const stc=online?'var(--green)':activeToday?'var(--gold)':'var(--txt3)';
     const stLabel=online?'🟢 Online':activeToday?'🟡 Today':'⚫ Offline';
-    const typeIcons={farmer:'🌾',trader:'🛒',salary:'💼',business:'🏪',poultry:'🐔',student:'🎓',other:'👤'};
     const typeIcon=typeIcons[u.userType||'other']||'👤';
     const suspended=u.suspended?'opacity:0.5;':'';
     return`<tr style="${suspended}border-bottom:1px solid var(--border2);">
@@ -5537,16 +5605,29 @@ function renderAdminUsers(users){
       <td style="padding:10px 8px;"><span style="font-size:.74rem;font-weight:600;color:${stc};">${stLabel}</span></td>
       <td style="padding:10px 8px;text-align:right;white-space:nowrap;">
         ${!u.suspended
-          ?`<button onclick="window._aAct('suspend',${idx})" style="background:var(--orange-dim);border:1px solid rgba(255,159,28,.2);border-radius:6px;color:var(--orange);font-size:.7rem;padding:4px 9px;cursor:pointer;margin-right:3px;">Suspend</button>`
-          :`<button onclick="window._aAct('unsuspend',${idx})" style="background:var(--green-dim);border:1px solid rgba(6,214,160,.2);border-radius:6px;color:var(--green);font-size:.7rem;padding:4px 9px;cursor:pointer;margin-right:3px;">Unsuspend</button>`
+          ?`<button onclick="window._aAct('suspend',${ridx})" style="background:var(--orange-dim);border:1px solid rgba(255,159,28,.2);border-radius:6px;color:var(--orange);font-size:.7rem;padding:4px 9px;cursor:pointer;margin-right:3px;">Suspend</button>`
+          :`<button onclick="window._aAct('unsuspend',${ridx})" style="background:var(--green-dim);border:1px solid rgba(6,214,160,.2);border-radius:6px;color:var(--green);font-size:.7rem;padding:4px 9px;cursor:pointer;margin-right:3px;">Unsuspend</button>`
         }
-        <button onclick="window._aAct('dm',${idx})" style="background:var(--brand-dim);border:1px solid rgba(14,165,233,.2);border-radius:6px;color:var(--brand);font-size:.7rem;padding:4px 9px;cursor:pointer;margin-right:3px;">📩 Msg</button>
-        <button onclick="window._aAct('view',${idx})" style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--txt2);font-size:.7rem;padding:4px 9px;cursor:pointer;margin-right:3px;">👁</button>
-        <button onclick="window._aAct('remove',${idx})" style="background:var(--red-dim);border:1px solid rgba(239,71,111,.2);border-radius:6px;color:var(--red);font-size:.7rem;padding:4px 9px;cursor:pointer;">✕</button>
+        <button onclick="window._aAct('msg',${ridx})" style="background:var(--brand-dim);border:1px solid rgba(14,165,233,.2);border-radius:6px;color:var(--brand);font-size:.7rem;padding:4px 9px;cursor:pointer;margin-right:3px;">📩 Msg</button>
+        <button onclick="window._aAct('view',${ridx})" style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--txt2);font-size:.7rem;padding:4px 9px;cursor:pointer;margin-right:3px;">👁</button>
+        <button onclick="window._aAct('resetpw',${ridx})" style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--txt2);font-size:.7rem;padding:4px 9px;cursor:pointer;margin-right:3px;">🔑</button>
+        <button onclick="window._aAct('remove',${ridx})" style="background:var(--red-dim);border:1px solid rgba(239,71,111,.2);border-radius:6px;color:var(--red);font-size:.7rem;padding:4px 9px;cursor:pointer;">✕</button>
       </td>
     </tr>`;
   }).join('');
 }
+
+// ── Admin Registry Dispatcher (replaces string onclick injection) ────
+window._aAct = function(action, idx){
+  const u = window._adminRegistry && window._adminRegistry[idx];
+  if(!u){ alert('User not found in registry. Please refresh.'); return; }
+  if(action==='suspend')   adminSuspend(u);
+  else if(action==='unsuspend') adminUnsuspend(u);
+  else if(action==='msg')  adminSendDirectMessage(u);
+  else if(action==='view') adminViewUserData(u);
+  else if(action==='remove') adminRemove(u);
+  else if(action==='resetpw'&&u.email) adminResetPassword(u.email);
+};
 
 // ── Activity Log ──────────────────────────────────────
 function renderActivityLog(users){
@@ -5571,130 +5652,154 @@ function renderActivityLog(users){
   </div>`).join('');
 }
 
-// ── Admin user actions — all use Firestore publicProfiles ──────
-// ── Admin action dispatcher ───────────────────────────
-window._adminRegistry = window._adminRegistry || [];
-window._aAct = function(action, idx){
-  const u = window._adminRegistry[idx];
-  if(!u){ alert('User not found. Please refresh.'); return; }
-  if(action==='suspend')   adminSuspend(u);
-  else if(action==='unsuspend') adminUnsuspend(u);
-  else if(action==='dm')   adminSendDirectMessage(u);
-  else if(action==='view') adminViewUserData(u.uid, u.name||'User');
-  else if(action==='remove') adminRemove(u);
-};
+// ── Admin user actions — write to adminActions (any auth user can write) ──
+// adminActions/{uid} is open write for authenticated users (your Firestore rules)
+// publicProfiles is only writable by the owner, so admin writes go to adminActions
 
 async function adminRemove(u){
-  if(!u||!u.uid){showWin('⚠️ Error','No user data. Click Refresh.');return;}
-  const name=u.name||u.email||'this user';
-  if(!confirm('Remove "'+name+'"?\n\nThey will be blocked from the platform.'))return;
-  if(!fbDb){showWin('⚠️ Not connected','Firebase not connected.');return;}
+  if(typeof u === 'string'){ const users=window._adminUsers||[]; u=users.find(x=>x.email===u||x.uid===u); if(!u)return; }
+  const name=u.name||u.email||'User';
+  if(!confirm('Permanently remove "'+name+'"?\n\nThey will be blocked from logging in.'))return;
+  if(!fbDb){showWin('⚠️ Error','Firebase not connected.');return;}
+  const payload={removed:true,removedAt:new Date().toISOString(),removedBy:currentUser?.email||'admin'};
   try{
-    const payload={removed:true,removedAt:new Date().toISOString(),removedBy:currentUser?.email||'admin'};
-    await fbDb.collection('adminActions').doc(u.uid).set(payload,{merge:true});
-    fbDb.collection('publicProfiles').doc(u.uid).set(payload,{merge:true}).catch(()=>{});
+    if(u.uid){
+      await fbDb.collection('adminActions').doc(u.uid).set(payload,{merge:true});
+      fbDb.collection('publicProfiles').doc(u.uid).set(payload,{merge:true}).catch(()=>{});
+    }
     window._adminUsers=(window._adminUsers||[]).filter(x=>x.uid!==u.uid);
     renderAdminUsers(window._adminUsers);
-    showWin('✅ Removed',name+' has been removed.');
-  }catch(e){showWin('⚠️ Error removing user',e.message);}
+    showWin('✅ User removed',name+' has been removed from the platform.');
+  }catch(e){showWin('⚠️ Error','Could not remove user: '+e.message);}
 }
 
 async function adminSuspend(u){
-  if(!u||!u.uid){showWin('⚠️ Error','No user data. Click Refresh.');return;}
-  const name=u.name||u.email||'this user';
+  if(typeof u === 'string'){ const users=window._adminUsers||[]; u=users.find(x=>x.email===u||x.uid===u); if(!u)return; }
+  const name=u.name||u.email||'User';
   if(!confirm('Suspend "'+name+'"?\n\nThey will be blocked from logging in.'))return;
-  if(!fbDb){showWin('⚠️ Not connected','Firebase not connected.');return;}
+  if(!fbDb){showWin('⚠️ Error','Firebase not connected.');return;}
+  const payload={suspended:true,suspendedAt:new Date().toISOString(),suspendedBy:currentUser?.email||'admin'};
   try{
-    const payload={suspended:true,suspendedAt:new Date().toISOString(),suspendedBy:currentUser?.email||'admin'};
-    await fbDb.collection('adminActions').doc(u.uid).set(payload,{merge:true});
-    fbDb.collection('publicProfiles').doc(u.uid).set(payload,{merge:true}).catch(()=>{});
+    if(u.uid){
+      await fbDb.collection('adminActions').doc(u.uid).set(payload,{merge:true});
+      fbDb.collection('publicProfiles').doc(u.uid).set(payload,{merge:true}).catch(()=>{});
+    }
     u.suspended=true;
     renderAdminUsers(window._adminUsers);
-    showWin('🚫 Suspended',name+' is now blocked from logging in.');
-  }catch(e){showWin('⚠️ Error suspending user',e.message);}
+    showWin('🚫 User suspended',name+' is now blocked from logging in.');
+  }catch(e){showWin('⚠️ Error','Could not suspend: '+e.message);}
 }
 
 async function adminUnsuspend(u){
-  if(!u||!u.uid){showWin('⚠️ Error','No user data. Click Refresh.');return;}
-  const name=u.name||u.email||'this user';
-  if(!confirm('Unsuspend "'+name+'"?'))return;
-  if(!fbDb){showWin('⚠️ Not connected','Firebase not connected.');return;}
+  if(typeof u === 'string'){ const users=window._adminUsers||[]; u=users.find(x=>x.email===u||x.uid===u); if(!u)return; }
+  const name=u.name||u.email||'User';
+  if(!fbDb){showWin('⚠️ Error','Firebase not connected.');return;}
+  const payload={suspended:false,unsuspendedAt:new Date().toISOString()};
   try{
-    const payload={suspended:false,suspendedAt:null,unsuspendedAt:new Date().toISOString()};
-    await fbDb.collection('adminActions').doc(u.uid).set(payload,{merge:true});
-    fbDb.collection('publicProfiles').doc(u.uid).set(payload,{merge:true}).catch(()=>{});
+    if(u.uid){
+      await fbDb.collection('adminActions').doc(u.uid).set(payload,{merge:true});
+      fbDb.collection('publicProfiles').doc(u.uid).set(payload,{merge:true}).catch(()=>{});
+    }
     u.suspended=false;
     renderAdminUsers(window._adminUsers);
     showWin('✅ Unsuspended',name+' can now log in again.');
-  }catch(e){showWin('⚠️ Error unsuspending user',e.message);}
+  }catch(e){showWin('⚠️ Error','Could not unsuspend: '+e.message);}
 }
 
 async function adminSendDirectMessage(u){
-  if(!u||!u.uid){showWin('⚠️ Missing UID','No UID for this user. Click Refresh.');return;}
+  // u is the full user object from registry
+  if(typeof u === 'string'){ const users=window._adminUsers||[]; u=users.find(x=>x.email===u||x.uid===u); if(!u)return; }
   const name=u.name||u.email||'User';
-  const msg=prompt('Message to '+name+':\n(they will see this in their notification inbox)');
-  if(!msg||!msg.trim())return;
-  if(!fbDb){showWin('⚠️ Not connected','Firebase not connected.');return;}
-  try{
-    const payload={directMsg:{text:msg.trim(),sentAt:new Date().toISOString(),sentBy:currentUser?.email||'admin',read:false}};
-    await fbDb.collection('adminActions').doc(u.uid).set(payload,{merge:true});
-    fbDb.collection('publicProfiles').doc(u.uid).set(payload,{merge:true}).catch(()=>{});
-    showWin('✅ Message sent',name+' will see your message in their inbox.');
-  }catch(e){showWin('⚠️ Error sending message',e.message);}
+  if(!fbDb){showWin('⚠️ Error','Firebase not connected.');return;}
+  // Use a proper modal instead of prompt() — build inline
+  const existing=document.getElementById('_dmModal');if(existing)existing.remove();
+  const modal=document.createElement('div');modal.className='overlay';modal.id='_dmModal';modal.style.display='flex';
+  modal.innerHTML=`<div class="modal" style="max-width:400px;">
+    <div class="modal-title">📩 Message to ${name}</div>
+    <div class="modal-sub">They will see this in their notification inbox next time they open the app.</div>
+    <textarea class="field" id="_dmText" style="resize:none;min-height:90px;" placeholder="Type your message to ${name}…"></textarea>
+    <div class="err" id="_dmErr"></div>
+    <div class="btn-row">
+      <button class="btn" onclick="window._sendDM('${u.uid}','${name.replace(/'/g,"\\'")}')">📩 Send Message</button>
+      <button class="btn ghost" onclick="document.getElementById('_dmModal').remove()">Cancel</button>
+    </div>
+  </div>`;
+  document.body.appendChild(modal);
+  setTimeout(()=>document.getElementById('_dmText')?.focus(),100);
+  window._sendDM=async function(uid,uname){
+    const txt=document.getElementById('_dmText')?.value?.trim();
+    if(!txt){document.getElementById('_dmErr').textContent='Please write a message.';return;}
+    const payload={directMsg:{text:txt,sentAt:new Date().toISOString(),sentBy:currentUser?.email||'admin',read:false}};
+    try{
+      await fbDb.collection('adminActions').doc(uid).set(payload,{merge:true});
+      fbDb.collection('publicProfiles').doc(uid).set(payload,{merge:true}).catch(()=>{});
+      document.getElementById('_dmModal')?.remove();
+      showWin('✅ Message sent',uname+' will see it in their notification inbox.');
+    }catch(e){document.getElementById('_dmErr').textContent='Error: '+e.message;}
+  };
 }
 
-
 async function adminResetPassword(email){
-  if(!fbAuth){alert('Firebase Auth not connected.');return;}
+  if(!fbAuth){showWin('⚠️ Error','Firebase Auth not connected.');return;}
   if(!confirm('Send password reset email to '+email+'?'))return;
   try{
     await fbAuth.sendPasswordResetEmail(email);
     showWin('📧 Reset sent','Password reset email sent to '+email);
-  }catch(e){alert('Error: '+e.message);}
+  }catch(e){showWin('⚠️ Error',e.message);}
 }
 
-async function adminViewUserData(uid,name){
-  if(!fbDb)return;
+async function adminViewUserData(u){
+  // u can be full user object or uid string
+  if(typeof u === 'string'){ const users=window._adminUsers||[]; u=users.find(x=>x.uid===u)||{uid:u}; }
+  const uid=u.uid; const name=u.name||'User';
+  if(!fbDb||!uid){showWin('⚠️ Error','Firebase not connected.');return;}
+  // Show a proper info panel, not alert()
+  const existing=document.getElementById('_viewModal');if(existing)existing.remove();
+  const modal=document.createElement('div');modal.className='overlay';modal.id='_viewModal';modal.style.display='flex';
+  modal.innerHTML=`<div class="modal" style="max-width:420px;"><div class="modal-title">👤 ${name}</div><div id="_viewBody" style="font-size:0.82rem;color:var(--txt2);line-height:2;">⏳ Loading…</div><button class="btn ghost full" style="margin-top:12px;" onclick="document.getElementById('_viewModal').remove()">Close</button></div>`;
+  document.body.appendChild(modal);
   try{
-    const doc=await fbDb.collection('publicProfiles').doc(uid).get();
-    if(!doc.exists){alert('No profile data found for this user.');return;}
-    const d=doc.data();
-    const info=[
-      'Name: '+(d.name||'—'),
-      'Email: '+(d.email||'—'),
-      'Country: '+(d.country||'—'),
-      'User Type: '+(d.userType||'—'),
-      'Joined: '+(d.joinedAt?new Date(d.joinedAt).toLocaleDateString():'—'),
-      'Last Active: '+(d.lastActive?new Date(d.lastActive).toLocaleString():'—'),
-      'Provider: '+(d.provider||'—'),
-      'Suspended: '+(d.suspended?'Yes':'No'),
-    ].join('\n');
-    alert('👤 '+name+'\n\n'+info);
-  }catch(e){alert('Error: '+e.message);}
+    const [pd,ad]=await Promise.all([
+      fbDb.collection('publicProfiles').doc(uid).get().catch(()=>null),
+      fbDb.collection('adminActions').doc(uid).get().catch(()=>null)
+    ]);
+    const d={...(pd?.exists?pd.data():{}),...(ad?.exists?ad.data():{})};
+    const el=document.getElementById('_viewBody');if(!el)return;
+    const rows=[
+      ['Name',d.name||'—'],['Email',d.email||'—'],['Phone',d.phone||'—'],
+      ['Country',d.country||'—'],['User Type',d.userType||'—'],
+      ['Joined',d.joinedAt?new Date(d.joinedAt).toLocaleDateString('en',{month:'long',day:'numeric',year:'numeric'}):'—'],
+      ['Last Active',d.lastActive?new Date(d.lastActive).toLocaleString():'—'],
+      ['Suspended',d.suspended?'<span style="color:var(--red);">Yes</span>':'<span style="color:var(--green);">No</span>'],
+      ['Removed',d.removed?'<span style="color:var(--red);">Yes</span>':'No'],
+      ['UID','<code style="font-size:0.7rem;">'+uid+'</code>'],
+    ];
+    el.innerHTML=rows.map(([k,v])=>`<div style="display:flex;justify-content:space-between;gap:10px;padding:5px 0;border-bottom:1px solid var(--border2);"><span style="color:var(--txt3);font-weight:600;">${k}</span><span>${v}</span></div>`).join('');
+  }catch(e){const el=document.getElementById('_viewBody');if(el)el.textContent='Error: '+e.message;}
 }
 async function sendBroadcast(){
   if(!localStorage.getItem('tfi_admin_hash')){showWin('⛔ Not Authorised','Admin access required.');return;}
   const msg=document.getElementById('broadcastMsg').value.trim();
   const title=(document.getElementById('bcastTitle')?.value||'').trim()||'Message from Admin';
   const type=document.getElementById('bcastType')?.value||'info';
-  if(!msg){alert('Enter a message first.');return;}
-  if(!fbDb){alert('Firebase not connected.');return;}
+  if(!msg){showWin('⚠️ Missing','Enter a message first.');return;}
+  if(!fbDb){showWin('⚠️ Error','Firebase not connected.');return;}
   const payload={text:msg,title,type,sentAt:new Date().toISOString(),sentBy:currentUser?.email||'admin'};
   try{
-    // Write to adminActions/broadcast (open write for authenticated users)
+    // Primary write: adminActions/broadcast — open write for authenticated users
     await fbDb.collection('adminActions').doc('broadcast').set(payload);
-    // Also try the broadcast collection (may work depending on rules)
-    fbDb.collection('broadcast').doc('latest').set({...payload,adminToken:localStorage.getItem('tfi_admin_tok')||''}).catch(()=>{});
+    // Secondary write: broadcast/latest — may fail if rules are strict, that's ok
+    fbDb.collection('broadcast').doc('latest').set(payload).catch(()=>{});
     const users=window._adminUsers||[];
     closeO('oAdminBroadcast');
     document.getElementById('broadcastMsg').value='';
     const ti=document.getElementById('bcastTitle');if(ti)ti.value='';
-    showWin('📢 Broadcast sent!','Will appear in '+users.length+' users\' notification inbox.');
+    showWin('📢 Broadcast sent!','Will reach '+users.length+' user'+(users.length!==1?'s':'')+' when they next open the app.');
   }catch(e){
     if(e.code==='permission-denied'){
-      showWin('⛔ Permission Denied','Your admin token may be out of sync. Open admin panel to refresh it.');
+      showWin('⛔ Permission Denied','Make sure the adminActions collection allows authenticated writes in Firestore Rules.');
     }else{
-      alert('Error: '+e.message);
+      showWin('⚠️ Error','Could not send broadcast: '+e.message);
     }
   }
 }
@@ -5756,13 +5861,24 @@ async function saveAdminSettings(){
 // RENDER ALL
 // ══════════════════════════════════════════════════════
 function renderAll(){
-  renderHome();renderMoney();
-  if(document.getElementById('tab-plan')?.classList.contains('active'))renderPlan();
-  if(document.getElementById('tab-details')?.classList.contains('active'))renderDetails();
-  renderSettings();updateUserUI();updateCloudUI();renderHeaderActions();
-  const score=calcScore();set('healthScoreNum',score);
-  const hs=document.getElementById('healthScore');
-  if(hs){hs.style.color=gradeColor(score);hs.title='Score: '+score+'/100';}
+  try{
+    renderHome();
+  }catch(e){console.warn('renderHome:',e.message);}
+  try{
+    renderMoney();
+  }catch(e){console.warn('renderMoney:',e.message);}
+  try{
+    if(document.getElementById('tab-plan')?.classList.contains('active'))renderPlan();
+  }catch(e){console.warn('renderPlan:',e.message);}
+  try{
+    if(document.getElementById('tab-details')?.classList.contains('active'))renderDetails();
+  }catch(e){console.warn('renderDetails:',e.message);}
+  try{
+    renderSettings();updateUserUI();updateCloudUI();renderHeaderActions();
+    const score=calcScore();set('healthScoreNum',score);
+    const hs=document.getElementById('healthScore');
+    if(hs){hs.style.color=gradeColor(score);hs.title='Score: '+score+'/100';}
+  }catch(e){console.warn('renderAll post:',e.message);}
 }
 
 // ══════════════════════════════════════════════════════
@@ -5834,15 +5950,36 @@ function initApp(){
         const uid=fbUser.uid;
         const localKey='tfi_'+sha(uid).slice(0,20);
 
-        // ── 1. Suspension check ──────────────────────────
+        // ── 1. Suspension check (reads both publicProfiles + adminActions) ─
         if(fbDb){
           try{
-            const pd=await fbDb.collection('publicProfiles').doc(uid).get();
-            if(pd.exists){
-              if(pd.data().suspended){fbAuth.signOut();showWin('🚫 Suspended','Your account has been suspended. Contact support.');return;}
-              if(pd.data().removed){fbAuth.signOut();showWin('❌ Removed','This account is no longer active.');return;}
+            const [pd,ad]=await Promise.all([
+              fbDb.collection('publicProfiles').doc(uid).get().catch(()=>null),
+              fbDb.collection('adminActions').doc(uid).get().catch(()=>null)
+            ]);
+            const profileData=pd?.exists?pd.data():{};
+            const actionData=ad?.exists?ad.data():{};
+            // Check suspension from either source
+            if(profileData.suspended||actionData.suspended){
+              await fbAuth.signOut();
+              showWin('🚫 Account Suspended','Your account has been suspended. Contact support for assistance.');
+              return;
             }
-          }catch{}
+            if(profileData.removed||actionData.removed){
+              await fbAuth.signOut();
+              showWin('❌ Account Removed','This account is no longer active. Contact support.');
+              return;
+            }
+            // Deliver unread direct message from admin
+            const dm=actionData.directMsg||profileData.directMsg;
+            if(dm&&!dm.read&&dm.text){
+              addNotification({id:'dm_'+dm.sentAt,type:'broadcast',bcastType:'info',title:'📩 Message from Admin',text:dm.text,time:dm.sentAt,read:false});
+              // Mark as read in both collections
+              const markRead={directMsg:{...dm,read:true}};
+              fbDb.collection('adminActions').doc(uid).set(markRead,{merge:true}).catch(()=>{});
+              fbDb.collection('publicProfiles').doc(uid).set(markRead,{merge:true}).catch(()=>{});
+            }
+          }catch(e){console.warn('Suspension check failed:',e.message);}
         }
 
         // ── 2. Set identity ──────────────────────────────
@@ -5927,19 +6064,19 @@ function initApp(){
 async function checkBroadcast(){
   if(!fbDb)return;
   try{
-    // Check both broadcast/latest and adminActions/broadcast
+    // Read from both sources — adminActions/broadcast is primary
     const [doc1,doc2]=await Promise.all([
-      fbDb.collection('broadcast').doc('latest').get().catch(()=>null),
-      fbDb.collection('adminActions').doc('broadcast').get().catch(()=>null)
+      fbDb.collection('adminActions').doc('broadcast').get().catch(()=>null),
+      fbDb.collection('broadcast').doc('latest').get().catch(()=>null)
     ]);
-    const seen=localStorage.getItem('tfi_bcast_seen');
-    // Pick whichever is newer
+    const d1=doc1?.exists?doc1.data():null;
+    const d2=doc2?.exists?doc2.data():null;
+    // Pick newest
     let bm=null;
-    const d1=doc1&&doc1.exists?doc1.data():null;
-    const d2=doc2&&doc2.exists?doc2.data():null;
-    if(d1&&d2) bm=d1.sentAt>=d2.sentAt?d1:d2;
+    if(d1&&d2) bm=(d1.sentAt||'')>=(d2.sentAt||'')?d1:d2;
     else bm=d1||d2;
-    if(!bm)return;
+    if(!bm||!bm.text)return;
+    const seen=localStorage.getItem('tfi_bcast_seen');
     if(seen&&seen>=bm.sentAt)return;
     localStorage.setItem('tfi_bcast_seen',bm.sentAt);
     addNotification({
