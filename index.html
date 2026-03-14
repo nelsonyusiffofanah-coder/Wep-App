@@ -158,76 +158,115 @@ window.addEventListener('appinstalled',()=>{
   if(typeof showWin==='function')showWin('🎉 App Installed!','Trackinfin is on your home screen. Open it anytime!');
 });
 function doInstall(){
+  // ── Case 1: Chrome has the native prompt ready — best case ──────
   if(deferredPrompt){
     deferredPrompt.prompt();
     deferredPrompt.userChoice.then(r=>{
       deferredPrompt=null;
       const b=document.getElementById('installBanner');
       if(b)b.style.display='none';
-      if(r.outcome==='accepted'){
-        // appinstalled event will handle the rest
-      } else {
-        // User declined — dismiss for 3 days
+      if(r.outcome!=='accepted'){
         localStorage.setItem('tfi_install_dismissed','t'+(Date.now()+259200000));
       }
     });
     return;
   }
-  // No native prompt — show platform-specific instructions
-  const ios=/iphone|ipad|ipod/i.test(navigator.userAgent);
-  const isAndroid=/android/i.test(navigator.userAgent);
-  if(ios){
+  // ── Case 2: iOS Safari ───────────────────────────────────────────
+  if(/iphone|ipad|ipod/i.test(navigator.userAgent)){
     const tip=document.getElementById('iosInstallTip');
-    if(tip){tip.style.display='flex';}
+    if(tip) tip.style.display='flex';
     return;
   }
-  // Show the how-to-install modal for Android/Desktop
-  _showInstallHowTo();
+  // ── Case 3: Android Chrome without prompt ────────────────────────
+  // Chrome may have suppressed the prompt. Show a rich guide with
+  // a direct "Open Install Page" button that forces Chrome to re-evaluate.
+  _showInstallGuide();
 }
 
-function _showInstallHowTo(){
+function _showInstallGuide(){
   const isAndroid=/android/i.test(navigator.userAgent);
-  const old=document.getElementById('_installHowToModal');if(old)old.remove();
-  const m=document.createElement('div');m.className='overlay';m.id='_installHowToModal';m.style.display='flex';
-  m.innerHTML=`<div class="modal" style="max-width:380px;">
-    <div style="text-align:center;margin-bottom:20px;">
-      <div style="width:64px;height:64px;border-radius:20px;background:linear-gradient(135deg,#0EA5E9,#6366F1);display:flex;align-items:center;justify-content:center;font-size:2rem;margin:0 auto 12px;box-shadow:0 8px 24px rgba(14,165,233,.4);">💰</div>
-      <div style="font-family:'Sora',sans-serif;font-size:1.1rem;font-weight:800;">Install Trackinfin</div>
-      <div style="font-size:0.78rem;color:var(--txt3);margin-top:4px;">Add to your home screen in seconds</div>
+  const siteUrl=window.location.href.split('?')[0];
+  const old=document.getElementById('_igModal');if(old)old.remove();
+  const m=document.createElement('div');
+  m.className='overlay';m.id='_igModal';m.style.cssText='display:flex;z-index:99999;';
+  m.innerHTML=`
+  <div class="modal" style="max-width:400px;padding:0;overflow:hidden;border-radius:24px;">
+    <!-- Header -->
+    <div style="background:linear-gradient(135deg,#070f1f,#0d1e38);padding:24px 22px 20px;position:relative;overflow:hidden;">
+      <div style="position:absolute;top:-30px;right:-30px;width:120px;height:120px;border-radius:50%;background:radial-gradient(circle,rgba(14,165,233,.25),transparent 70%);pointer-events:none;"></div>
+      <div style="display:flex;align-items:center;gap:14px;position:relative;">
+        <div style="width:56px;height:56px;border-radius:16px;background:linear-gradient(135deg,#0EA5E9,#6366F1);display:flex;align-items:center;justify-content:center;font-size:1.8rem;box-shadow:0 6px 20px rgba(14,165,233,.4);flex-shrink:0;">&#128176;</div>
+        <div>
+          <div style="font-family:'Sora',sans-serif;font-size:1.05rem;font-weight:900;color:#fff;">Install Trackinfin</div>
+          <div style="font-size:.72rem;color:rgba(255,255,255,.55);margin-top:3px;">Works offline &nbsp;&#183;&nbsp; Free forever</div>
+          <div style="display:flex;gap:2px;margin-top:5px;"><span style="color:#FFD700;font-size:.65rem;">&#9733;&#9733;&#9733;&#9733;&#9733;</span><span style="color:rgba(255,255,255,.4);font-size:.63rem;margin-left:4px;">Finance &nbsp;&#183;&nbsp; Free</span></div>
+        </div>
+      </div>
     </div>
-    ${isAndroid?`
-    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:18px;">
-      <div style="display:flex;align-items:center;gap:12px;background:var(--bg3);border-radius:13px;padding:12px;">
-        <div style="width:30px;height:30px;border-radius:50%;background:#0EA5E9;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:800;color:#fff;flex-shrink:0;">1</div>
-        <div style="font-size:0.82rem;color:var(--txt2);">Tap the <strong style="color:var(--txt);">⋮ menu</strong> in the top-right of Chrome</div>
+    <!-- Body -->
+    <div style="padding:20px 22px;">
+      ${isAndroid?`
+      <div style="font-size:.78rem;color:var(--txt3);margin-bottom:14px;line-height:1.5;">Chrome needs you to add it manually. It takes <strong style="color:var(--txt);">10 seconds</strong>:</div>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px;">
+        <div style="display:flex;align-items:center;gap:12px;background:var(--bg3);border-radius:13px;padding:11px 14px;">
+          <div style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#0EA5E9,#38BDF8);display:flex;align-items:center;justify-content:center;font-size:.78rem;font-weight:800;color:#fff;flex-shrink:0;">1</div>
+          <div style="font-size:.82rem;color:var(--txt2);">Tap the <strong style="color:var(--txt);">&#8942; menu</strong> at the top-right of Chrome</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;background:var(--bg3);border-radius:13px;padding:11px 14px;">
+          <div style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#6366F1,#8B5CF6);display:flex;align-items:center;justify-content:center;font-size:.78rem;font-weight:800;color:#fff;flex-shrink:0;">2</div>
+          <div style="font-size:.82rem;color:var(--txt2);">Tap <strong style="color:var(--txt);">"Add to Home screen"</strong></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;background:var(--bg3);border-radius:13px;padding:11px 14px;">
+          <div style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#06D6A0,#0EA5E9);display:flex;align-items:center;justify-content:center;font-size:.78rem;font-weight:800;color:#fff;flex-shrink:0;">3</div>
+          <div style="font-size:.82rem;color:var(--txt2);">Tap <strong style="color:var(--txt);">Add</strong> &#8594; it appears on your home screen &#127881;</div>
+        </div>
       </div>
-      <div style="display:flex;align-items:center;gap:12px;background:var(--bg3);border-radius:13px;padding:12px;">
-        <div style="width:30px;height:30px;border-radius:50%;background:#6366F1;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:800;color:#fff;flex-shrink:0;">2</div>
-        <div style="font-size:0.82rem;color:var(--txt2);">Tap <strong style="color:var(--txt);">"Add to Home screen"</strong></div>
+      <div style="background:var(--brand-dim);border:1px solid var(--border);border-radius:12px;padding:11px 14px;margin-bottom:16px;font-size:.76rem;color:var(--txt2);line-height:1.5;">
+        &#128161; <strong>Tip:</strong> If you don't see "Add to Home screen", tap <strong>&#8942;</strong> &#8594; scroll down in the menu &#8594; look for <strong>Install app</strong> or <strong>Add to Home screen</strong>.
+      </div>`:`
+      <div style="font-size:.78rem;color:var(--txt3);margin-bottom:14px;line-height:1.5;">Add Trackinfin to your home screen for instant offline access:</div>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px;">
+        <div style="display:flex;align-items:center;gap:12px;background:var(--bg3);border-radius:13px;padding:11px 14px;">
+          <div style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#0EA5E9,#38BDF8);display:flex;align-items:center;justify-content:center;font-size:.78rem;font-weight:800;color:#fff;flex-shrink:0;">1</div>
+          <div style="font-size:.82rem;color:var(--txt2);">In Chrome, tap the <strong style="color:var(--txt);">&#8942; menu</strong> or the install icon in the address bar</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;background:var(--bg3);border-radius:13px;padding:11px 14px;">
+          <div style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#6366F1,#8B5CF6);display:flex;align-items:center;justify-content:center;font-size:.78rem;font-weight:800;color:#fff;flex-shrink:0;">2</div>
+          <div style="font-size:.82rem;color:var(--txt2);">Click <strong style="color:var(--txt);">"Install Trackinfin"</strong> or <strong style="color:var(--txt);">"Add to Home screen"</strong></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;background:var(--bg3);border-radius:13px;padding:11px 14px;">
+          <div style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#06D6A0,#0EA5E9);display:flex;align-items:center;justify-content:center;font-size:.78rem;font-weight:800;color:#fff;flex-shrink:0;">3</div>
+          <div style="font-size:.82rem;color:var(--txt2);">Confirm &#8594; Trackinfin installs like a real app instantly &#127881;</div>
+        </div>
+      </div>`}
+      <!-- Action buttons -->
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <button onclick="document.getElementById('_igModal').remove()" class="btn full" style="background:linear-gradient(135deg,var(--brand),var(--brand3));font-size:.86rem;padding:13px;">
+          &#10003; Got it — I'll install now
+        </button>
+        <button onclick="_igCopyLink('${siteUrl}')" id="_igCopyBtn" style="background:var(--bg3);border:1px solid var(--border);border-radius:12px;color:var(--txt2);font-family:'Outfit',sans-serif;font-size:.8rem;font-weight:700;padding:11px;cursor:pointer;transition:all .2s;" onmouseover="this.style.borderColor='var(--brand)'" onmouseout="this.style.borderColor='var(--border)'">
+          &#128279; Copy link to share or open fresh
+        </button>
       </div>
-      <div style="display:flex;align-items:center;gap:12px;background:var(--bg3);border-radius:13px;padding:12px;">
-        <div style="width:30px;height:30px;border-radius:50%;background:#06D6A0;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:800;color:#fff;flex-shrink:0;">3</div>
-        <div style="font-size:0.82rem;color:var(--txt2);">Tap <strong style="color:var(--txt);">Add</strong> — it's on your home screen! 🎉</div>
-      </div>
-    </div>`:`
-    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:18px;">
-      <div style="display:flex;align-items:center;gap:12px;background:var(--bg3);border-radius:13px;padding:12px;">
-        <div style="width:30px;height:30px;border-radius:50%;background:#0EA5E9;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:800;color:#fff;flex-shrink:0;">1</div>
-        <div style="font-size:0.82rem;color:var(--txt2);">In Chrome, tap the <strong style="color:var(--txt);">⋮ menu</strong> or address bar install icon</div>
-      </div>
-      <div style="display:flex;align-items:center;gap:12px;background:var(--bg3);border-radius:13px;padding:12px;">
-        <div style="width:30px;height:30px;border-radius:50%;background:#6366F1;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:800;color:#fff;flex-shrink:0;">2</div>
-        <div style="font-size:0.82rem;color:var(--txt2);">Click <strong style="color:var(--txt);">"Install Trackinfin"</strong></div>
-      </div>
-      <div style="display:flex;align-items:center;gap:12px;background:var(--bg3);border-radius:13px;padding:12px;">
-        <div style="width:30px;height:30px;border-radius:50%;background:#06D6A0;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:800;color:#fff;flex-shrink:0;">3</div>
-        <div style="font-size:0.82rem;color:var(--txt2);">Confirm — it installs like a real app instantly! 🎉</div>
-      </div>
-    </div>`}
-    <button class="btn full" onclick="document.getElementById('_installHowToModal').remove()">Got it!</button>
+    </div>
   </div>`;
   document.body.appendChild(m);
+  m.addEventListener('click',function(e){if(e.target===m)m.remove();});
 }
+
+function _igCopyLink(url){
+  const btn=document.getElementById('_igCopyBtn');
+  const copy=t=>{const ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);};
+  if(navigator.clipboard){
+    navigator.clipboard.writeText(url).then(()=>{
+      if(btn){btn.textContent='&#10003; Link copied! Open in Chrome to install';btn.style.color='var(--green)';}
+    }).catch(()=>{copy(url);if(btn){btn.textContent='&#10003; Copied!';btn.style.color='var(--green)';}});
+  }else{
+    copy(url);
+    if(btn){btn.textContent='&#10003; Copied! Paste in Chrome to install';btn.style.color='var(--green)';}
+  }
+}
+
 function triggerInstall(){doInstall();}
 function dismissInstall(){
   const b=document.getElementById('installBanner');
@@ -382,6 +421,121 @@ function dismissInstall(){
   --input:#FFEDD5; --shadow:0 4px 20px rgba(234,88,12,.12);
   --overlay:rgba(0,0,0,.6);
   --green:#059669; --red:#DC2626;
+}
+
+/* ════ WEALTH THEMES ══════════════════════════════════ */
+
+/* 9. Obsidian — Pure black, 24k gold, silver accents
+   Inspired by Bloomberg Terminal + Monarch Money dark
+   "I am wealthy. My money works for me."                */
+[data-theme="obsidian"] {
+  --brand:#D4AF37; --brand2:#F0D060; --brand3:#B8960C;
+  --brand-dim:rgba(212,175,55,.1); --brand-glow:rgba(212,175,55,.35);
+  --gold:#C0C0C0; --gold2:#E8E8E8; --gold-dim:rgba(192,192,192,.1);
+  --bg:#080808; --bg2:#111111; --bg3:#1A1A1A; --bg4:#222222;
+  --txt:#F5F0E8; --txt2:#A09070; --txt3:#5A4A30;
+  --border:rgba(212,175,55,.15); --border2:rgba(255,255,255,.05);
+  --input:#141414; --shadow:0 8px 40px rgba(0,0,0,.9);
+  --overlay:rgba(0,0,0,.92);
+  --green:#4ADE80; --red:#F87171;
+  --orange:#F59E0B; --purple:#A78BFA;
+  --green-dim:rgba(74,222,128,.1); --red-dim:rgba(248,113,113,.1);
+  --orange-dim:rgba(245,158,11,.1); --purple-dim:rgba(167,139,250,.1);
+}
+
+/* Obsidian special: gold gradient text on brand elements */
+[data-theme="obsidian"] .auth-brand-name,
+[data-theme="obsidian"] .pin-brand,
+[data-theme="obsidian"] .h-name {
+  background:linear-gradient(135deg,#D4AF37,#F0D060,#B8960C) !important;
+  -webkit-background-clip:text !important;
+  -webkit-text-fill-color:transparent !important;
+  background-clip:text !important;
+}
+[data-theme="obsidian"] body::before {
+  background:
+    radial-gradient(ellipse 70% 50% at 100% 0%, rgba(212,175,55,.07), transparent 60%),
+    radial-gradient(ellipse 50% 40% at 0% 100%, rgba(212,175,55,.04), transparent 55%);
+}
+[data-theme="obsidian"] .mhero {
+  background:linear-gradient(145deg,#111111,#0d0d0d) !important;
+  border-color:rgba(212,175,55,.2) !important;
+}
+[data-theme="obsidian"] .mhero::before {
+  background:radial-gradient(circle,rgba(212,175,55,.12),transparent 65%) !important;
+}
+[data-theme="obsidian"] .mhero-bal.pos { color:#D4AF37 !important; }
+[data-theme="obsidian"] .mhero-score-fill {
+  background:linear-gradient(90deg,#B8960C,#D4AF37,#F0D060) !important;
+}
+[data-theme="obsidian"] .mhero-cta {
+  background:linear-gradient(135deg,#B8960C,#D4AF37) !important;
+  color:#080808 !important;
+  box-shadow:0 6px 24px rgba(212,175,55,.35) !important;
+}
+[data-theme="obsidian"] .btn {
+  /* keep default brand buttons gold */
+}
+[data-theme="obsidian"] header {
+  background:rgba(8,8,8,.94) !important;
+  border-bottom-color:rgba(212,175,55,.12) !important;
+}
+[data-theme="obsidian"] #bottomNav {
+  background:rgba(14,14,14,.97) !important;
+  border-top-color:rgba(212,175,55,.1) !important;
+}
+
+/* 10. Sapphire — Midnight blue, diamond blue, platinum white
+    Inspired by YNAB's clean confidence + premium banking apps
+    "Calm wealth. Old money energy."                       */
+[data-theme="sapphire"] {
+  --brand:#3B6FD4; --brand2:#5B8FEF; --brand3:#1E40AF;
+  --brand-dim:rgba(59,111,212,.12); --brand-glow:rgba(59,111,212,.35);
+  --gold:#93C5FD; --gold2:#BFDBFE; --gold-dim:rgba(147,197,253,.1);
+  --bg:#050818; --bg2:#0A1228; --bg3:#0F1A38; --bg4:#162248;
+  --txt:#EEF2FF; --txt2:#7B96D0; --txt3:#3A5080;
+  --border:rgba(59,111,212,.15); --border2:rgba(255,255,255,.05);
+  --input:#0C1630; --shadow:0 8px 40px rgba(0,0,0,.75);
+  --overlay:rgba(0,0,0,.88);
+  --green:#34D399; --red:#F87171;
+  --orange:#FBBF24; --purple:#A78BFA;
+  --green-dim:rgba(52,211,153,.1); --red-dim:rgba(248,113,113,.1);
+  --orange-dim:rgba(251,191,36,.1); --purple-dim:rgba(167,139,250,.1);
+}
+
+/* Sapphire special: platinum header, diamond glow */
+[data-theme="sapphire"] .auth-brand-name,
+[data-theme="sapphire"] .pin-brand,
+[data-theme="sapphire"] .h-name {
+  background:linear-gradient(135deg,#60A5FA,#93C5FD,#3B6FD4) !important;
+  -webkit-background-clip:text !important;
+  -webkit-text-fill-color:transparent !important;
+  background-clip:text !important;
+}
+[data-theme="sapphire"] body::before {
+  background:
+    radial-gradient(ellipse 80% 60% at 100% 0%, rgba(59,111,212,.12), transparent 60%),
+    radial-gradient(ellipse 60% 40% at 0% 100%, rgba(147,197,253,.06), transparent 55%);
+}
+[data-theme="sapphire"] .mhero {
+  background:linear-gradient(145deg,#0A1228,#081020) !important;
+  border-color:rgba(59,111,212,.2) !important;
+}
+[data-theme="sapphire"] .mhero-cta {
+  background:linear-gradient(135deg,#1E40AF,#3B6FD4,#5B8FEF) !important;
+  box-shadow:0 6px 24px rgba(59,111,212,.4) !important;
+}
+[data-theme="sapphire"] .mhero-bal.pos { color:#34D399 !important; }
+[data-theme="sapphire"] .mhero-score-fill {
+  background:linear-gradient(90deg,#1E40AF,#3B6FD4,#93C5FD) !important;
+}
+[data-theme="sapphire"] header {
+  background:rgba(5,8,24,.94) !important;
+  border-bottom-color:rgba(59,111,212,.15) !important;
+}
+[data-theme="sapphire"] #bottomNav {
+  background:rgba(8,12,32,.97) !important;
+  border-top-color:rgba(59,111,212,.12) !important;
 }
 
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
@@ -2920,7 +3074,15 @@ input:checked + .toggle-slider { box-shadow: 0 0 0 2px var(--brand-dim) !importa
     <div style="font-size:0.66rem;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--txt3);margin-bottom:8px;">🌸 Soft & Light</div>
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;" id="themeGridFemale"></div>
   </div>
-  <button class="btn ghost full" onclick="closeO('oThemePicker')">Close</button>
+  <!-- Wealth themes section -->
+  <div style="display:flex;align-items:center;gap:8px;margin:16px 0 10px;">
+    <div style="height:1px;flex:1;background:linear-gradient(90deg,transparent,rgba(212,175,55,.5),transparent);"></div>
+    <div style="font-size:0.7rem;font-weight:900;color:#D4AF37;text-transform:uppercase;letter-spacing:2px;">&#128081; Wealth</div>
+    <div style="height:1px;flex:1;background:linear-gradient(90deg,transparent,rgba(212,175,55,.5),transparent);"></div>
+  </div>
+  <div style="font-size:0.72rem;color:var(--txt3);margin-bottom:10px;line-height:1.5;">Premium dark themes for serious wealth tracking.</div>
+  <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;" id="themeGridWealth"></div>
+  <button class="btn ghost full" onclick="closeO('oThemePicker')" style="margin-top:16px;">Close</button>
 </div></div>
 
 <!-- ══════════════════════════════════════════════════
@@ -5457,6 +5619,9 @@ const THEMES=[
   {id:'lavender',name:'Lavender',  gender:'female',preview:['#F5F3FF','#8B5CF6','#EC4899'],  desc:'Soft purple & lilac'},
   {id:'ocean',   name:'Ocean',     gender:'female',preview:['#F0FDFA','#0D9488','#F97316'],  desc:'Teal & seafoam'},
   {id:'sunset',  name:'Sunset',    gender:'female',preview:['#FFF7ED','#EA580C','#D97706'],  desc:'Warm peach & coral'},
+  // Wealth themes
+  {id:'obsidian', name:'Obsidian',  gender:'male',  preview:['#080808','#D4AF37','#C0C0C0'],  desc:'Black & 24k Gold'},
+  {id:'sapphire', name:'Sapphire',  gender:'male',  preview:['#050818','#1E40AF','#60A5FA'],  desc:'Midnight Blue & Diamond'},
 ];
 function renderSettings(){
   applyAppSettingsCached(); // apply cached immediately
@@ -7278,8 +7443,9 @@ function setBcastType(t){
 // THEME MODAL
 // ══════════════════════════════════════════════════════
 function openThemeModal(){
-  const male=THEMES.filter(t=>t.gender==='male');
+  const male=THEMES.filter(t=>t.gender==='male'&&t.id!=='obsidian'&&t.id!=='sapphire');
   const female=THEMES.filter(t=>t.gender==='female');
+  const wealth=THEMES.filter(t=>t.id==='obsidian'||t.id==='sapphire');
   const renderGrid=(themes,gridId)=>{
     const el=document.getElementById(gridId);if(!el)return;
     el.innerHTML=themes.map(t=>`
@@ -7294,6 +7460,7 @@ function openThemeModal(){
   };
   renderGrid(male,'themeGridMale');
   renderGrid(female,'themeGridFemale');
+  renderGrid(wealth,'themeGridWealth');
   openO('oThemePicker');
 }
 function renderThemeModalGrid(){
