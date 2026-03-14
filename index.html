@@ -4777,7 +4777,7 @@ function hideAuth(){
   document.getElementById('calcToggle').style.display='flex';
   handleUrlShortcuts();
   setTimeout(applyAppSettingsCached,500);
-  setTimeout(()=>{_showSwipeHint();_maybeAskNotifPermission();_rescheduleAllNotifications();},3000);
+  setTimeout(()=>{_showSwipeHint();_maybeAskNotifPermission();_rescheduleAllNotifications();_fireScheduledNotifs();},3000);
   // Update notification status in settings
   setTimeout(()=>{const el=document.getElementById('notifPermStatus');if(el){const p=Notification&&Notification.permission;el.textContent=p==='granted'?'✅ Enabled — you will get reminders':p==='denied'?'❌ Blocked in browser settings':'Tap to enable due-date alerts';}},500);
 }
@@ -4878,17 +4878,52 @@ function finishOnboard(){
 // NAVIGATION
 // ══════════════════════════════════════════════════════
 const TABS=['home','money','plan','details','settings'];
-function showTab(name){
-  TABS.forEach(t=>{
-    document.getElementById('tab-'+t)?.classList.toggle('active',t===name);
-    document.getElementById('bn-'+t)?.classList.toggle('active',t===name);
+let _currentTabIdx=0;
+
+function showTab(name,dir){
+  const toIdx=TABS.indexOf(name);
+  if(toIdx<0)return;
+  const fromIdx=_currentTabIdx;
+  const fromName=TABS[fromIdx];
+  if(fromName===name)return;
+  const goFwd=dir==='fwd'||(dir===undefined&&toIdx>fromIdx);
+  const fromEl=document.getElementById('tab-'+fromName);
+  const toEl=document.getElementById('tab-'+name);
+  if(!toEl)return;
+
+  // Show destination immediately
+  toEl.style.display='block';
+  // Clear old classes
+  [fromEl,toEl].forEach(el=>{
+    if(el)el.classList.remove('tab-slide-in-r','tab-slide-in-l','tab-slide-out-l','tab-slide-out-r');
   });
+  void toEl.offsetWidth; // force reflow before animating
+
+  if(goFwd){
+    if(fromEl)fromEl.classList.add('tab-slide-out-l');
+    toEl.classList.add('tab-slide-in-r');
+  }else{
+    if(fromEl)fromEl.classList.add('tab-slide-out-r');
+    toEl.classList.add('tab-slide-in-l');
+  }
+  setTimeout(()=>{
+    if(fromEl){fromEl.classList.remove('active','tab-slide-out-l','tab-slide-out-r');fromEl.style.display='';}
+    toEl.classList.remove('tab-slide-in-r','tab-slide-in-l');
+    toEl.classList.add('active');
+  },260);
+
+  // Update bottom nav
+  TABS.forEach(t=>document.getElementById('bn-'+t)?.classList.toggle('active',t===name));
+  _currentTabIdx=toIdx;
+  _updateSwipeDots(toIdx);
+
   if(name==='money')renderMoney();
   else if(name==='plan')renderPlan();
   else if(name==='details')renderDetails();
   else if(name==='settings')renderSettings();
   else if(name==='home')renderHome();
-  window.scrollTo({top:0,behavior:'smooth'});
+  window.scrollTo({top:0,behavior:'instant'});
+  if(navigator.vibrate)navigator.vibrate(6);
 }
 function switchDetail(tab){
   currentDetailTab=tab;
@@ -5056,6 +5091,9 @@ function renderHome(){
   const monthNum=parseInt(m.split('-')[1]);
   const year2=now.getFullYear();
   const dueSoon=(S.obligations||[]).filter(o=>{
+    // Hide if already marked paid this month
+    const paidEntry=o.paidMonths&&o.paidMonths[m];
+    if(paidEntry) return false;
     const d=new Date(year2,monthNum-1,Math.min(o.day,28));
     const days=Math.ceil((d-now)/86400000);
     return days>=0&&days<=7;
@@ -5412,7 +5450,8 @@ function renderObligations(m,income){
   el.innerHTML=obls.map((o,oi)=>{
     const dueDate=new Date(year,monthNum-1,Math.min(o.day,28));
     const days=Math.ceil((dueDate-now)/86400000);
-    const paid=o.paidMonths&&o.paidMonths[m];
+    const paidRec=o.paidMonths&&o.paidMonths[m];
+    const paid=paidRec&&(paidRec===true||paidRec.paid===true);
     const env=getEnv(m,'other');const avail=(env.allocated||0)-(env.spent||0);
     const covered=paid||avail>=o.amt;const overdue=days<0&&!paid;
     return `<div class="obl-card ${paid?'covered':overdue?'danger':covered?'covered':'warning'}">
@@ -9162,15 +9201,27 @@ function exportAnalyticsCSV(){
 // ENVELOPE RESET
 // ══════════════════════════════════════════════════════
 function resetEnvelope(catId, catName){
-  _confirm('This clears the allocated and spent amounts for "'+catName+'" so you can fill it fresh next round.',{
-    title:'Reset Envelope?',icon:'🔄',okLabel:'Reset',danger:false
+  _confirm('This marks "'+catName+'" as complete and clears it for next round. The history is saved.',{
+    title:'Reset Envelope?',icon:'🔄',okLabel:'Reset & Clear',danger:false
   }).then(ok=>{
     if(!ok)return;
     const m=curM('planMonth');
     const env=getEnv(m,catId);
+    // Archive the completed envelope into history before clearing
+    if(!S.envHistory) S.envHistory=[];
+    S.envHistory.unshift({
+      catId, catName,
+      month: m,
+      allocated: env.allocated||0,
+      spent: env.spent||0,
+      completedAt: new Date().toISOString()
+    });
+    // Keep only last 200 records
+    if(S.envHistory.length>200) S.envHistory=S.envHistory.slice(0,200);
+    // Clear the envelope so it shows empty / ready to fill
     env.allocated=0; env.spent=0;
     autoSave(); renderPlan(); renderHome();
-    showWin('🔄 Envelope Reset',catName+' is now empty and ready to fill again.');
+    showWin('🔄 Envelope Reset',''+catName+' cleared. History saved — check Reports for past envelope data.');
   });
 }
 
@@ -9181,10 +9232,17 @@ function markOblPaid(oblIdx, month){
   const o=S.obligations&&S.obligations[oblIdx];
   if(!o)return;
   if(!o.paidMonths)o.paidMonths={};
-  o.paidMonths[month]=true;
-  autoSave(); renderPlan();
-  showWin('👍 Marked as Paid',o.name+' is marked done for this month.');
-  // Schedule a reminder for next month
+  // Store with full timestamp for history
+  o.paidMonths[month]={paid:true, paidAt:new Date().toISOString()};
+  // Archive into payment history log
+  if(!S.oblPayHistory) S.oblPayHistory=[];
+  S.oblPayHistory.unshift({
+    name:o.name, amt:o.amt, month,
+    paidAt:new Date().toISOString()
+  });
+  if(S.oblPayHistory.length>500) S.oblPayHistory=S.oblPayHistory.slice(0,500);
+  autoSave(); renderPlan(); renderHome(); // re-render home to hide it
+  showWin('👍 Paid!',''+o.name+' marked as paid. It will reappear next month.');
   _scheduleOblReminder(o);
 }
 
@@ -9204,29 +9262,67 @@ async function requestNotifPermission(){
   return false;
 }
 
-function _getSW(){
-  return navigator.serviceWorker&&navigator.serviceWorker.ready.then(reg=>reg).catch(()=>null);
+// Notification scheduling — store in localStorage, fire on app open/focus
+function _sendToSW(data){
+  // Also try SW postMessage for background delivery
+  if(navigator.serviceWorker&&navigator.serviceWorker.controller){
+    try{ navigator.serviceWorker.controller.postMessage(data); }catch(e){}
+  }
 }
 
-async function _sendToSW(data){
-  const reg = await (navigator.serviceWorker&&navigator.serviceWorker.ready);
-  if(reg&&reg.active) reg.active.postMessage(data);
+function _storeScheduledNotif(data){
+  try{
+    const stored=JSON.parse(localStorage.getItem('tfi_sched_notifs')||'[]');
+    // Remove existing with same tag
+    const filtered=stored.filter(n=>n.tag!==data.tag);
+    filtered.push({...data, fireAt: Date.now()+(data.delay||0)});
+    localStorage.setItem('tfi_sched_notifs',JSON.stringify(filtered.slice(0,50)));
+  }catch(e){}
+  _sendToSW(data); // also send to SW
+}
+
+function _fireScheduledNotifs(){
+  if(Notification.permission!=='granted') return;
+  try{
+    const stored=JSON.parse(localStorage.getItem('tfi_sched_notifs')||'[]');
+    const now=Date.now();
+    const remaining=[];
+    stored.forEach(n=>{
+      if(n.fireAt<=now){
+        new Notification(n.title,{body:n.body,icon:'/icon-192.png',tag:n.tag||'tfi',silent:false});
+      } else {
+        remaining.push(n);
+        // Also schedule a browser-side setTimeout for ones due in next 24h
+        const delay=n.fireAt-now;
+        if(delay<86400000){
+          setTimeout(()=>{
+            if(Notification.permission==='granted')
+              new Notification(n.title,{body:n.body,icon:'/icon-192.png',tag:n.tag||'tfi',silent:false});
+          },delay);
+        }
+      }
+    });
+    localStorage.setItem('tfi_sched_notifs',JSON.stringify(remaining));
+  }catch(e){}
 }
 
 function _scheduleOblReminder(obl){
   if(Notification.permission!=='granted') return;
+  // Check not already paid this month
+  const m=fmtM(new Date());
+  const alreadyPaid=obl.paidMonths&&obl.paidMonths[m];
+  if(alreadyPaid) return;
   const now=new Date();
   const dueDate=new Date(now.getFullYear(),now.getMonth(),Math.min(obl.day,28));
-  // Remind 3 days before due
   const reminderDate=new Date(dueDate.getTime()-3*86400000);
   const delay=reminderDate.getTime()-Date.now();
-  if(delay<=0) return; // already past
-  _sendToSW({
+  if(delay<=0) return;
+  _storeScheduledNotif({
     type:'SCHEDULE_NOTIFICATION',
     title:'📅 '+obl.name+' due soon',
     body:fmt(obl.amt)+' is due on the '+obl.day+'th. Make sure your envelope is ready.',
-    tag:'obl-'+obl.name.replace(/\s/g,'-'),
-    delay: Math.min(delay, 2147483647), // max safe setTimeout
+    tag:'obl-'+(obl.name||'').replace(/[^a-zA-Z0-9]/g,'-'),
+    delay:Math.min(delay,86400000*6),
     url:'/'
   });
 }
@@ -9242,12 +9338,12 @@ async function _rescheduleAllNotifications(){
     const reminderDate=new Date(deadline.getTime()-7*86400000);
     const delay=reminderDate.getTime()-Date.now();
     if(delay<=0) return;
-    _sendToSW({
+    _storeScheduledNotif({
       type:'SCHEDULE_NOTIFICATION',
-      title:'🎯 Goal deadline approaching',
-      body:'"'+g.name+'" — '+g.deadline+'. Progress: '+Math.round((g.saved||0)/g.target*100)+'%.',
+      title:'🎯 '+g.name+' deadline approaching',
+      body:'Due '+g.deadline+'. Progress: '+Math.round((g.saved||0)/g.target*100)+'%.',
       tag:'goal-'+g.id,
-      delay: Math.min(delay, 2147483647),
+      delay:Math.min(delay,86400000*6),
       url:'/'
     });
   });
@@ -9261,10 +9357,10 @@ async function _rescheduleAllNotifications(){
       const key='tfi_notif_cr_'+cr.id;
       if(!sessionStorage.getItem(key)){
         sessionStorage.setItem(key,'1');
-        _sendToSW({type:'SCHEDULE_NOTIFICATION',title:'⚠️ Credit overdue',body:(cr.type==='owed'?cr.name:cr.debtor)+' — '+fmt(cr.amt)+' was due '+cr.due,tag:'cr-'+cr.id,delay:500,url:'/'});
+        _storeScheduledNotif({type:'SCHEDULE_NOTIFICATION',title:'⚠️ Credit overdue',body:(cr.type==='owed'?cr.name:cr.debtor)+' — '+fmt(cr.amt)+' was due '+cr.due,tag:'cr-'+cr.id,delay:500,url:'/'});
       }
     } else {
-      _sendToSW({type:'SCHEDULE_NOTIFICATION',title:'💰 Payment due today',body:(cr.type==='owed'?cr.name:cr.debtor)+' owes you '+fmt(cr.amt),tag:'cr-'+cr.id,delay:Math.min(delay,2147483647),url:'/'});
+      _storeScheduledNotif({type:'SCHEDULE_NOTIFICATION',title:'💰 Payment due today',body:(cr.type==='owed'?cr.name:cr.debtor)+' owes you '+fmt(cr.amt),tag:'cr-'+cr.id,delay:Math.min(delay,86400000*6),url:'/'});
     }
   });
 }
@@ -9298,52 +9394,6 @@ function _maybeAskNotifPermission(){
 // ══════════════════════════════════════════════════════
 // SWIPE NAVIGATION ENGINE — safe, auth-aware
 // ══════════════════════════════════════════════════════
-let _currentTabIdx = 0;
-
-// Patch showTab to be direction-aware
-const _origShowTab = showTab;
-function showTab(name, dir){
-  const toIdx = TABS.indexOf(name);
-  if(toIdx < 0){ _origShowTab(name); return; }
-  const fromIdx = _currentTabIdx;
-  if(fromIdx === toIdx) return;
-  const goForward = dir==='fwd' || (dir===undefined && toIdx > fromIdx);
-  const fromEl = document.getElementById('tab-'+TABS[fromIdx]);
-  const toEl   = document.getElementById('tab-'+name);
-  if(!toEl){ _origShowTab(name); return; }
-
-  // Update nav items
-  TABS.forEach(t=>document.getElementById('bn-'+t)?.classList.toggle('active',t===name));
-  _currentTabIdx = toIdx;
-  _updateSwipeDots(toIdx);
-
-  // Animate
-  toEl.style.display='block';
-  [fromEl,toEl].forEach(el=>el&&el.classList.remove('tab-slide-in-r','tab-slide-in-l','tab-slide-out-l','tab-slide-out-r'));
-  void toEl.offsetWidth;
-  if(goForward){
-    fromEl&&fromEl.classList.add('tab-slide-out-l');
-    toEl.classList.add('tab-slide-in-r');
-  } else {
-    fromEl&&fromEl.classList.add('tab-slide-out-r');
-    toEl.classList.add('tab-slide-in-l');
-  }
-  setTimeout(()=>{
-    if(fromEl){ fromEl.classList.remove('active','tab-slide-out-l','tab-slide-out-r'); fromEl.style.display=''; }
-    toEl.classList.remove('tab-slide-in-r','tab-slide-in-l');
-    toEl.classList.add('active');
-  }, 260);
-
-  // Render content
-  if(name==='money')renderMoney();
-  else if(name==='plan')renderPlan();
-  else if(name==='details')renderDetails();
-  else if(name==='settings')renderSettings();
-  else if(name==='home')renderHome();
-  window.scrollTo({top:0,behavior:'instant'});
-  if(navigator.vibrate) navigator.vibrate(6);
-}
-
 function _updateSwipeDots(idx){
   TABS.forEach((_,i)=>{
     const d=document.getElementById('sdot-'+i);
@@ -9415,6 +9465,10 @@ function _showSwipeHint(){
     setTimeout(close,4000);
   },2500);
 }
+
+// Fire any due notifications when user returns to app
+window.addEventListener('focus',()=>{if(Notification.permission==='granted')_fireScheduledNotifs();});
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&Notification.permission==='granted')_fireScheduledNotifs();});
 
 </script>
 
