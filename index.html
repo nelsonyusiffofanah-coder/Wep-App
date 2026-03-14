@@ -51,13 +51,9 @@ if('serviceWorker' in navigator){
           if(!newSW)return;
           newSW.addEventListener('statechange',()=>{
             if(newSW.state==='installed'&&navigator.serviceWorker.controller){
-              // New version is ready — show update bar
-              const bar=document.createElement('div');
-              bar.id='swUpdateBar';
-              bar.style.cssText='position:fixed;bottom:80px;left:12px;right:12px;z-index:9998;background:linear-gradient(135deg,#0EA5E9,#6366F1);border-radius:14px;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:10px;box-shadow:0 8px 32px rgba(0,0,0,.4);';
-              bar.innerHTML='<span style="font-size:0.84rem;font-weight:700;color:#fff;">🚀 New version available!</span><button onclick="window.location.reload()" style="background:#fff;color:#0EA5E9;border:none;border-radius:8px;font-weight:800;font-size:0.76rem;padding:7px 13px;cursor:pointer;white-space:nowrap;">Update Now</button>';
-              document.body.appendChild(bar);
-              setTimeout(()=>bar.remove(),30000);
+              // New version ready — show persistent HTML update bar
+              const bar=document.getElementById('swUpdateBar');
+              if(bar){bar.style.display='flex';setTimeout(()=>{bar.style.display='none';},60000);}
             }
           });
         });
@@ -68,31 +64,34 @@ if('serviceWorker' in navigator){
 
 // ── Network status listener ───────────────────────────
 function _updateNetworkUI(){
-  const banner=document.getElementById('offlineBanner');
-  if(banner) banner.style.display=navigator.onLine?'none':'block';
+  const b=document.getElementById('offlineBanner');
+  if(!b)return;
+  b.style.display=navigator.onLine?'none':'block';
+  document.body.style.paddingTop=navigator.onLine?'':'40px';
 }
-window.addEventListener('online', _updateNetworkUI);
-window.addEventListener('offline', _updateNetworkUI);
-window.addEventListener('load', _updateNetworkUI);
+window.addEventListener('online',_updateNetworkUI);
+window.addEventListener('offline',_updateNetworkUI);
+window.addEventListener('load',function(){_updateNetworkUI();});
 
 // ── PWA INSTALL PROMPT ────────────────────────────────
 let deferredPrompt;
 function showInstallUI(){
-  // Header install button — always show if not dismissed and not already installed
+  const dismissed=localStorage.getItem('tfi_install_dismissed');
+  const installed=(dismissed==='1');
+  if(installed)return;
   const btn=document.getElementById('headerInstallBtn');
-  if(btn&&!localStorage.getItem('tfi_install_dismissed'))btn.style.display='flex';
+  if(btn)btn.style.display='flex';
+  const row=document.getElementById('installAppRow');
+  if(row)row.style.display='flex';
 }
 window.addEventListener('beforeinstallprompt',(e)=>{
   e.preventDefault();
   deferredPrompt=e;
   showInstallUI();
-  // Show install banner immediately
-  const banner=document.getElementById('installBanner');
   const dismissed=localStorage.getItem('tfi_install_dismissed');
-  if(banner&&(!dismissed||dismissed===''))banner.style.display='flex';
-  // Show Install App row in Settings
-  const row=document.getElementById('installAppRow');
-  if(row)row.style.display='flex';
+  if(dismissed==='1')return;
+  const banner=document.getElementById('installBanner');
+  if(banner)banner.style.display='flex';
 });
 window.addEventListener('appinstalled',()=>{
   const b=document.getElementById('installBanner');
@@ -134,12 +133,14 @@ function dismissInstall(){
   if(b)b.style.display='none';
   const btn=document.getElementById('headerInstallBtn');
   if(btn)btn.style.display='none';
-  localStorage.setItem('tfi_install_dismissed',Date.now()+259200000);
+  localStorage.setItem('tfi_install_dismissed','t'+(Date.now()+259200000));
 }
 // Re-show install banner after 3 days if dismissed
 (()=>{
   const val=localStorage.getItem('tfi_install_dismissed');
-  if(val&&val.length>1&&Date.now()>parseInt(val))localStorage.removeItem('tfi_install_dismissed');
+  if(val&&val.startsWith('t')&&Date.now()>parseInt(val.slice(1))){
+    localStorage.removeItem('tfi_install_dismissed');
+  }
 })();
 
 // iOS detection — show manual install tip
@@ -830,12 +831,179 @@ tbody td{padding:11px 12px;border-bottom:1px solid var(--border2);}
 .swatch{width:26px;height:26px;border-radius:50%;cursor:pointer;transition:transform .15s;border:2px solid transparent;}
 .swatch:hover{transform:scale(1.2);}
 .swatch.active{border-color:var(--txt);transform:scale(1.15);}
+
+/* ═══════════════════════════════════════════════════════
+   PREMIUM UPGRADES — Design System Enhancements
+═══════════════════════════════════════════════════════ */
+
+/* Spring animation curve used everywhere */
+:root { --spring: cubic-bezier(.34,1.56,.64,1); --ease-out: cubic-bezier(.4,0,.2,1); }
+
+/* Smooth scroll + text selection */
+* { scroll-behavior:smooth; }
+::selection { background:var(--brand-dim); color:var(--brand); }
+
+/* New keyframes */
+@keyframes float { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-5px);} }
+@keyframes breathe { 0%,100%{box-shadow:0 0 0 0 var(--brand-glow);} 50%{box-shadow:0 0 0 10px transparent;} }
+@keyframes shimmer { 0%{background-position:-200% 0;} 100%{background-position:200% 0;} }
+@keyframes slideDown { from{opacity:0;transform:translateY(-10px);} to{opacity:1;transform:none;} }
+
+/* ── Auth screen premium bg ── */
+#authScreen::before {
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:
+    radial-gradient(ellipse 130% 80% at 50% -10%, rgba(14,165,233,.1), transparent 60%),
+    radial-gradient(ellipse 80% 60% at 100% 100%, rgba(99,102,241,.07), transparent 60%);
+}
+#authScreen > * { position:relative; z-index:1; }
+
+/* ── Auth card glow ── */
+.auth-card {
+  box-shadow: var(--shadow), inset 0 1px 0 rgba(255,255,255,.06) !important;
+}
+
+/* ── Bottom nav premium active indicator ── */
+.bnav-item { position:relative; transition:all .2s var(--ease-out); }
+.bnav-item.active::before {
+  content:''; position:absolute; top:0; left:50%; transform:translateX(-50%);
+  width:28px; height:3px; border-radius:0 0 4px 4px;
+  background:var(--brand); box-shadow:0 0 8px var(--brand-glow);
+}
+.bnav-item.active .bico { transform:scale(1.18) !important; }
+.bnav-item.active .blbl { color:var(--brand); font-weight:800; }
+
+/* ── FAB premium ── */
+#fab {
+  width:56px !important; height:56px !important; font-size:1.6rem !important;
+  transition:all .25s var(--spring) !important;
+  box-shadow:0 6px 24px var(--brand-glow) !important;
+}
+#fab:hover { transform:scale(1.12) rotate(12deg) !important; }
+#fab:active { transform:scale(.94) rotate(0deg) !important; }
+
+/* ── Input focus ring ── */
+.field:focus { box-shadow:0 0 0 3px var(--brand-dim) !important; }
+.add-desc-input:focus { box-shadow:0 0 0 3px var(--brand-dim) !important; }
+
+/* ── Modal spring ── */
+.modal { animation:slideUp .3s var(--spring) !important; box-shadow:var(--shadow),inset 0 1px 0 rgba(255,255,255,.06) !important; }
+
+/* ── Sheet spring ── */
+.add-sheet-body, .profile-sheet, .help-sheet, #notifInboxSheet {
+  animation:slideUp .3s var(--spring) !important;
+  box-shadow:0 -8px 40px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.06) !important;
+}
+
+/* ── Hero card dual glow ── */
+.hero::after {
+  content:''; position:absolute; bottom:-40px; left:-40px;
+  width:140px; height:140px; border-radius:50%;
+  background:radial-gradient(circle,var(--gold-dim),transparent 70%);
+  pointer-events:none;
+}
+
+/* ── Quick action cards ── */
+.qa-card {
+  transition:all .22s var(--ease-out) !important;
+  overflow:hidden; position:relative;
+}
+.qa-card:hover { transform:translateY(-2px) !important; box-shadow:0 8px 24px rgba(0,0,0,.14) !important; border-color:var(--brand) !important; }
+.qa-card:active { transform:scale(.97) !important; }
+
+/* ── Transaction cards ── */
+.tx-card { transition:all .2s var(--ease-out) !important; overflow:hidden; }
+.tx-card:hover { transform:translateY(-1px) !important; box-shadow:0 4px 16px rgba(0,0,0,.12) !important; border-color:var(--border) !important; }
+.tx-del { border:1px solid rgba(239,71,111,.2) !important; font-weight:700 !important; padding:5px 10px !important; border-radius:8px !important; }
+
+/* ── Goal cards ── */
+.goal-card { transition:all .25s var(--ease-out) !important; }
+.goal-card:hover { transform:translateY(-3px) !important; border-color:var(--brand) !important; box-shadow:0 8px 24px rgba(0,0,0,.14),0 0 0 1px var(--brand-dim) !important; }
+
+/* ── Envelope progress bar shimmer ── */
+.prog-fill, .env-bar-fill {
+  position:relative; overflow:hidden;
+  transition:width .8s var(--ease-out) !important;
+}
+.prog-fill::after, .env-bar-fill::after {
+  content:''; position:absolute; inset:0;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.25),transparent);
+  background-size:200% 100%;
+  animation:shimmer 2.5s infinite;
+}
+
+/* ── Button ripple ── */
+.btn { position:relative; overflow:hidden; }
+.btn::after { content:''; position:absolute; inset:0; background:rgba(255,255,255,.12); transform:scale(0); border-radius:inherit; transition:transform .25s,opacity .25s; opacity:0; }
+.btn:active::after { transform:scale(1); opacity:1; transition:none; }
+
+/* ── Win toast premium ── */
+#winToast {
+  border-left:3px solid var(--brand) !important;
+  backdrop-filter:blur(20px) !important;
+}
+
+/* ── Settings items ── */
+.settings-item:active { background:var(--brand-dim) !important; }
+
+/* ── Env bar height ── */
+.env-bar { height:6px !important; }
+
+/* ── Credit card hover ── */
+.credit-card { transition:all .2s var(--ease-out) !important; }
+.credit-card:hover { transform:translateY(-1px) !important; box-shadow:0 4px 16px rgba(0,0,0,.1) !important; }
+
+/* ── Mod cards ── */
+.mod-card { transition:all .2s var(--ease-out) !important; }
+.mod-card:hover { transform:translateY(-1px) !important; box-shadow:0 4px 16px rgba(0,0,0,.1) !important; }
+
+/* ── Numpad premium press ── */
+.numpad-key:hover { background:var(--bg4) !important; }
+.numpad-key:active { box-shadow:0 0 0 4px var(--brand-dim) !important; }
+
+/* ── Health score badge hover ── */
+#healthScore { cursor:pointer; transition:all .2s !important; }
+#healthScore:hover { background:var(--brand) !important; color:#fff !important; }
+
+/* ── Scrollbar premium ── */
+::-webkit-scrollbar { width:4px; height:4px; }
+::-webkit-scrollbar-track { background:transparent; }
+::-webkit-scrollbar-thumb { background:var(--border); border-radius:99px; }
+::-webkit-scrollbar-thumb:hover { background:var(--txt3); }
+
+/* ── Pin keys ── */
+.pin-key:active { box-shadow:0 0 0 4px var(--brand-dim) !important; }
 </style>
 </head>
 <body>
 
 <!-- EARLY THEME -->
 <script>(function(){try{var t=localStorage.getItem('tfi_theme')||'midnight';document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+
+<!-- ═══ Premium Splash Screen ═══ -->
+<div id="splashScreen" style="position:fixed;inset:0;z-index:999999;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity .5s ease,visibility .5s ease;">
+  <div style="position:relative;margin-bottom:22px;">
+    <div style="width:84px;height:84px;border-radius:24px;background:linear-gradient(135deg,#0EA5E9,#6366F1);display:flex;align-items:center;justify-content:center;font-size:2.2rem;box-shadow:0 16px 48px rgba(14,165,233,.45);animation:float 2.2s ease-in-out infinite;">💰</div>
+    <div style="position:absolute;inset:-8px;border-radius:32px;border:2px solid rgba(14,165,233,.2);animation:pulse 2s ease-in-out infinite;"></div>
+  </div>
+  <div style="font-family:'Sora',sans-serif;font-size:1.7rem;font-weight:900;background:linear-gradient(135deg,#0EA5E9,#6366F1);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:5px;">Trackinfin</div>
+  <div style="font-size:0.76rem;color:var(--txt3);letter-spacing:1.2px;margin-bottom:36px;">YOUR MONEY · YOUR CONTROL</div>
+  <div style="display:flex;gap:7px;align-items:center;">
+    <div style="width:7px;height:7px;border-radius:50%;background:#0EA5E9;animation:pulse .7s ease-in-out infinite;"></div>
+    <div style="width:7px;height:7px;border-radius:50%;background:#6366F1;animation:pulse .7s ease-in-out .15s infinite;"></div>
+    <div style="width:7px;height:7px;border-radius:50%;background:#06D6A0;animation:pulse .7s ease-in-out .3s infinite;"></div>
+  </div>
+</div>
+<script>
+(function(){
+  window.addEventListener('load',function(){
+    setTimeout(function(){
+      var s=document.getElementById('splashScreen');
+      if(s){s.style.opacity='0';s.style.visibility='hidden';setTimeout(function(){s.remove();},500);}
+    },900);
+  });
+})();
+</script>
 
 <!-- ════════════ AUTH SCREEN ════════════ -->
 <div id="authScreen" style="display:flex;">
@@ -1065,22 +1233,36 @@ tbody td{padding:11px 12px;border-bottom:1px solid var(--border2);}
 </div>
 
 <!-- ════════════ APP ════════════ -->
-<div id="app">
-  <!-- Network status bar — shows when offline -->
-  <div id="offlineBanner" style="display:none;background:#EF476F;color:#fff;text-align:center;font-size:0.74rem;font-weight:700;padding:6px 12px;position:sticky;top:0;z-index:9999;letter-spacing:.3px;">
-    ⚡ You're offline — changes saved locally and will sync when connected
+
+<!-- Offline banner – OUTSIDE #app so it shows even when app is hidden -->
+<div id="offlineBanner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:99999;background:linear-gradient(90deg,#EF476F,#c0392b);color:#fff;text-align:center;font-size:0.76rem;font-weight:700;padding:9px 16px;letter-spacing:.3px;box-shadow:0 2px 16px rgba(239,71,111,.45);">
+  📡 No internet — your data is safe &amp; will sync when you reconnect
+</div>
+
+<!-- SW Update bar – OUTSIDE #app, shown by JS when new version ready -->
+<div id="swUpdateBar" style="display:none;position:fixed;bottom:90px;left:12px;right:12px;z-index:99998;background:linear-gradient(135deg,#0A1628,#1a2a4a);border:1px solid rgba(14,165,233,.35);border-radius:18px;padding:14px 18px;align-items:center;justify-content:space-between;gap:12px;box-shadow:0 12px 40px rgba(0,0,0,.5),0 0 0 1px rgba(255,255,255,.05);">
+  <div style="display:flex;align-items:center;gap:10px;">
+    <span style="font-size:1.3rem;">🚀</span>
+    <div>
+      <div style="font-size:0.86rem;font-weight:800;color:#fff;font-family:'Sora',sans-serif;">New version available!</div>
+      <div style="font-size:0.71rem;color:rgba(255,255,255,.6);">Tap Update to get the latest features</div>
+    </div>
   </div>
+  <button onclick="window.location.reload()" style="background:linear-gradient(135deg,#0EA5E9,#6366F1);color:#fff;border:none;border-radius:12px;font-weight:800;font-size:0.78rem;padding:9px 16px;cursor:pointer;white-space:nowrap;box-shadow:0 4px 14px rgba(14,165,233,.5);font-family:'Outfit',sans-serif;">Update Now</button>
+</div>
+
+<div id="app">
   <header>
     <div class="h-brand" id="logoTap" onclick="handleLogoTap()">
       <div class="h-logo">💰</div>
       <div class="h-name font-display">Track<span>infin</span></div>
     </div>
-    <div class="h-score" id="healthScore" onclick="openReportCard()" style="gap:4px;">
-      <span id="healthScoreNum">—</span><span style="font-size:.65rem;opacity:.8;">pts</span>
+    <div class="h-score" id="healthScore" onclick="openReportCard()" title="Financial Health Score" style="gap:4px;">
+      <span style="font-size:.6rem;">💰</span><span id="healthScoreNum">—</span><span style="font-size:.6rem;opacity:.7;">pts</span>
     </div>
     <div style="flex:1;"></div>
     <div class="sync-pill" id="syncPill" onclick="manualSync()">☁️ Sync</div>
-    <button id="headerInstallBtn" onclick="doInstall()" title="Install App" style="display:none;align-items:center;gap:5px;background:linear-gradient(135deg,var(--brand),var(--brand3));border:none;border-radius:20px;color:#fff;font-family:'Outfit',sans-serif;font-size:0.74rem;font-weight:700;padding:6px 12px;cursor:pointer;white-space:nowrap;box-shadow:0 2px 10px var(--brand-glow);transition:all .2s;">📲 Install</button>
+    <button id="headerInstallBtn" onclick="doInstall()" title="Install App — works offline" style="display:none;align-items:center;gap:6px;background:linear-gradient(135deg,#0EA5E9,#6366F1);border:none;border-radius:20px;color:#fff;font-family:'Outfit',sans-serif;font-size:0.74rem;font-weight:800;padding:7px 14px;cursor:pointer;white-space:nowrap;box-shadow:0 3px 14px rgba(14,165,233,.5);transition:all .2s;animation:pulse 2.5s ease-in-out infinite;">📲 Get App</button>
     <div class="h-actions" id="hActionsBar">
       <!-- rendered by renderHeaderActions() -->
     </div>
@@ -1521,7 +1703,7 @@ tbody td{padding:11px 12px;border-bottom:1px solid var(--border2);}
         </div>
         <div class="settings-section-body" id="sAbout">
           <div class="settings-item" style="cursor:default;"><div class="sett-ico" style="background:var(--brand-dim);">💰</div><div class="sett-info"><div class="sett-name">Trackinfin</div><div class="sett-sub">Version 10.0 · Built for African entrepreneurs</div></div></div>
-          <div class="settings-item" id="installAppRow" onclick="triggerInstall()" style="cursor:pointer;display:none;"><div class="sett-ico" style="background:var(--green-dim);">📲</div><div class="sett-info"><div class="sett-name">Install App</div><div class="sett-sub">Add to home screen — works offline</div></div><div class="sett-right">›</div></div>
+          <div class="settings-item" id="installAppRow" onclick="triggerInstall()" style="cursor:pointer;display:none;background:linear-gradient(90deg,var(--brand-dim),transparent);"><div class="sett-ico" style="background:linear-gradient(135deg,#0EA5E9,#6366F1);">📲</div><div class="sett-info"><div class="sett-name" style="color:var(--brand);">Install Trackinfin App</div><div class="sett-sub">Works offline · Opens instantly · 100% free</div></div><div class="sett-right" style="color:var(--brand);font-weight:700;">↓ Free</div></div>
           <div class="settings-item" id="supportContactRow" style="cursor:default;"><div class="sett-ico" style="background:var(--green-dim);">📞</div><div class="sett-info"><div class="sett-name">Support</div><div class="sett-sub" id="supportNumDisplay">Contact your administrator</div></div><div style="display:flex;gap:6px;flex-shrink:0;"><a id="supportCallBtn" href="#" style="display:none;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--txt2);font-size:0.72rem;font-weight:700;padding:6px 10px;text-decoration:none;white-space:nowrap;">📞 Call</a><button id="supportWaBtn" onclick="openSupportWhatsApp()" style="display:none;background:var(--green-dim);border:1px solid rgba(6,214,160,.2);border-radius:8px;color:var(--green);font-size:0.72rem;font-weight:700;padding:6px 12px;cursor:pointer;white-space:nowrap;">📲 WhatsApp</button></div></div>
           <div class="settings-item" onclick="openO('oFeedback')" style="cursor:pointer;"><div class="sett-ico" style="background:var(--brand-dim);">💬</div><div class="sett-info"><div class="sett-name">Send Feedback</div><div class="sett-sub">Ideas, bugs or praise — we read everything</div></div><div class="sett-right">›</div></div>
           <div class="settings-item" onclick="doSignOut()" style="cursor:pointer;"><div class="sett-ico" style="background:var(--red-dim);">🚪</div><div class="sett-info"><div class="sett-name" style="color:var(--red);">Sign Out</div><div class="sett-sub">Sign out of your account</div></div><div class="sett-right">›</div></div>
@@ -1590,10 +1772,14 @@ tbody td{padding:11px 12px;border-bottom:1px solid var(--border2);}
 <!-- VOCABULARY POPUP -->
 <div id="vocabPopup" class="vocab-popup"></div>
 
-<!-- WIN TOAST -->
+<!-- WIN TOAST — premium -->
 <div id="winToast">
-  <span id="winIco" style="font-size:1.3rem;">🎉</span>
-  <div><div style="font-size:0.86rem;font-weight:700;" id="winTitle"></div><div style="font-size:0.76rem;color:var(--txt3);" id="winSub"></div></div>
+  <span id="winIco" style="font-size:1.4rem;flex-shrink:0;">🎉</span>
+  <div style="flex:1;min-width:0;">
+    <div style="font-size:0.86rem;font-weight:800;font-family:'Sora',sans-serif;" id="winTitle"></div>
+    <div style="font-size:0.74rem;color:var(--txt3);margin-top:2px;line-height:1.4;" id="winSub"></div>
+  </div>
+  <button onclick="document.getElementById('winToast').style.display='none'" style="background:none;border:none;color:var(--txt3);cursor:pointer;font-size:1rem;padding:2px;flex-shrink:0;line-height:1;opacity:.6;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.6'">✕</button>
 </div>
 
 <!-- CELEBRATION -->
@@ -1940,11 +2126,16 @@ tbody td{padding:11px 12px;border-bottom:1px solid var(--border2);}
     <div class="prof-av-lg" id="profAv"></div>
     <div class="prof-name" id="profName">—</div>
     <div class="prof-email" id="profEmail">—</div>
-    <div style="margin-bottom:14px;">
-    <button onclick="shareApp()" style="width:100%;background:linear-gradient(135deg,var(--brand),var(--brand3));border:none;border-radius:12px;color:#fff;font-family:'Outfit',sans-serif;font-size:0.86rem;font-weight:700;padding:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">
-      📲 Share Trackinfin with a Friend
-    </button>
-  </div>
+    <!-- Invite friends card -->
+    <div style="background:linear-gradient(135deg,var(--brand-dim),var(--gold-dim));border:1px solid var(--border);border-radius:16px;padding:14px;margin-bottom:14px;">
+      <div style="font-size:0.68rem;font-weight:700;color:var(--txt3);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:6px;">Invite Friends</div>
+      <div style="font-size:0.78rem;color:var(--txt2);margin-bottom:11px;line-height:1.5;">Help someone take control of their money. It's free.</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+        <button onclick="shareApp('whatsapp')" style="background:#25D366;border:none;border-radius:11px;color:#fff;font-family:'Outfit',sans-serif;font-size:0.78rem;font-weight:700;padding:10px 6px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;">📲 WhatsApp</button>
+        <button onclick="shareApp('copy')" style="background:var(--bg3);border:1px solid var(--border);border-radius:11px;color:var(--txt);font-family:'Outfit',sans-serif;font-size:0.78rem;font-weight:700;padding:10px 6px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;">🔗 Copy Link</button>
+      </div>
+      <button onclick="shareApp()" style="width:100%;background:linear-gradient(135deg,var(--brand),var(--brand3));border:none;border-radius:11px;color:#fff;font-family:'Outfit',sans-serif;font-size:0.78rem;font-weight:700;padding:10px;cursor:pointer;box-shadow:0 4px 12px var(--brand-glow);">↗ Share via...</button>
+    </div>
   <div class="prof-actions">
       <button class="btn ghost sm" onclick="openO('oSetupPin');closeProfile()">🔢 PIN</button>
       <button class="btn ghost sm" onclick="doBackup()">💾 Backup</button>
@@ -2273,18 +2464,22 @@ tbody td{padding:11px 12px;border-bottom:1px solid var(--border2);}
 // JSONBin removed — Firebase Firestore handles all sync
 
 // ── Share / Referral ──────────────────────────────────
-function shareApp(){
-  const text='I use Trackinfin to track my money — income, savings, expenses and credit all in one place. Try it: https://trackinfin.pages.dev';
-  if(navigator.share){
-    navigator.share({title:'Trackinfin — Your Money, Your Control',text,url:'https://trackinfin.pages.dev'}).catch(()=>{});
-  }else{
-    // Fallback: copy to clipboard
-    navigator.clipboard?.writeText(text).then(()=>{
-      showWin('🔗 Link copied!','Share it with a friend via WhatsApp, SMS or social media.');
-    }).catch(()=>{
-      prompt('Copy this link to share:','https://trackinfin.pages.dev');
-    });
+function shareApp(mode){
+  const url='https://trackinfin.pages.dev';
+  const msg='I track my money with Trackinfin — income, expenses, savings and credits all in one place. Works offline too! Try it free: '+url;
+  if(mode==='whatsapp'){
+    window.open('https://wa.me/?text='+encodeURIComponent(msg),'_blank');return;
   }
+  if(mode==='copy'||mode===undefined&&!navigator.share){
+    const copy=t=>{const ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);};
+    if(navigator.clipboard){
+      navigator.clipboard.writeText(url).then(()=>showWin('🔗 Link Copied!','Paste it in a message and share with friends.')).catch(()=>{copy(url);showWin('🔗 Copied!','Link copied — share with friends.');});
+    }else{copy(url);showWin('🔗 Copied!','Link copied — share with friends.');}
+    return;
+  }
+  if(navigator.share){
+    navigator.share({title:'Trackinfin — Your Money, Your Control',text:msg,url}).catch(()=>shareApp('copy'));
+  }else{shareApp('copy');}
 }
 
 // ══════════════════════════════════════════════════════
@@ -6827,33 +7022,54 @@ function renderTxItem(t){
 
 </script>
 
-<!-- Install Banner -->
-<!-- PWA Install Banner -->
-<div id="installBanner" style="display:none;position:fixed;bottom:90px;left:12px;right:12px;z-index:9990;animation:slideInUp .4s ease;">
-  <div style="background:linear-gradient(135deg,#0EA5E9,#6366F1);border-radius:18px;padding:16px;box-shadow:0 8px 32px rgba(0,0,0,.5);display:flex;align-items:center;gap:12px;">
-    <div style="width:48px;height:48px;border-radius:12px;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:1.6rem;flex-shrink:0;">💰</div>
-    <div style="flex:1;min-width:0;">
-      <div style="font-weight:800;font-size:0.9rem;color:#fff;margin-bottom:2px;">Install Trackinfin</div>
-      <div style="font-size:0.72rem;color:rgba(255,255,255,.85);line-height:1.4;">Works offline · Opens like a real app · No App Store needed</div>
-    </div>
-    <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0;">
-      <button onclick="doInstall()" style="background:#fff;color:#0EA5E9;border:none;border-radius:10px;font-weight:800;font-size:0.78rem;padding:8px 14px;cursor:pointer;white-space:nowrap;">📲 Install</button>
-      <button onclick="dismissInstall()" style="background:rgba(255,255,255,.15);border:none;border-radius:10px;color:#fff;font-size:0.72rem;padding:5px 10px;cursor:pointer;">Later</button>
+<!-- ═══ PWA Install Banner — Premium ═══ -->
+<div id="installBanner" style="display:none;position:fixed;bottom:90px;left:12px;right:12px;z-index:9990;animation:slideInUp .4s cubic-bezier(.34,1.56,.64,1);">
+  <div style="background:linear-gradient(135deg,#070f1f,#0d1e38);border:1px solid rgba(14,165,233,.3);border-radius:22px;padding:16px;box-shadow:0 20px 60px rgba(0,0,0,.65),inset 0 1px 0 rgba(255,255,255,.08);overflow:hidden;position:relative;">
+    <div style="position:absolute;top:-40px;right:-20px;width:130px;height:130px;border-radius:50%;background:radial-gradient(circle,rgba(14,165,233,.25),transparent 70%);pointer-events:none;"></div>
+    <div style="display:flex;align-items:center;gap:13px;position:relative;">
+      <div style="position:relative;flex-shrink:0;">
+        <div style="width:54px;height:54px;border-radius:16px;background:linear-gradient(135deg,#0EA5E9,#6366F1);display:flex;align-items:center;justify-content:center;font-size:1.9rem;box-shadow:0 6px 20px rgba(14,165,233,.45);">💰</div>
+        <div style="position:absolute;inset:-6px;border-radius:22px;border:1.5px solid rgba(14,165,233,.2);"></div>
+      </div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-weight:900;font-size:0.95rem;color:#fff;margin-bottom:3px;font-family:'Sora',sans-serif;">Install Trackinfin</div>
+        <div style="font-size:0.7rem;color:rgba(255,255,255,.65);line-height:1.4;margin-bottom:4px;">⚡ Works offline &nbsp;·&nbsp; 📱 Like a real app &nbsp;·&nbsp; 🆓 Free</div>
+        <div style="display:flex;align-items:center;gap:3px;"><span style="color:#FFD700;font-size:0.65rem;">★★★★★</span><span style="font-size:0.64rem;color:rgba(255,255,255,.4);margin-left:3px;">Finance · Free</span></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:7px;flex-shrink:0;">
+        <button onclick="doInstall()" style="background:linear-gradient(135deg,#0EA5E9,#6366F1);color:#fff;border:none;border-radius:13px;font-weight:800;font-size:0.8rem;padding:10px 17px;cursor:pointer;white-space:nowrap;box-shadow:0 4px 18px rgba(14,165,233,.55);font-family:'Outfit',sans-serif;transition:transform .15s;" onmousedown="this.style.transform='scale(.95)'" onmouseup="this.style.transform=''">📲 Install</button>
+        <button onclick="dismissInstall()" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:10px;color:rgba(255,255,255,.55);font-size:0.7rem;padding:5px 10px;cursor:pointer;font-family:'Outfit',sans-serif;">Not now</button>
+      </div>
     </div>
   </div>
 </div>
 
-<!-- iOS Install Instructions (shown only on iOS Safari) -->
-<div id="iosInstallTip" style="display:none;position:fixed;bottom:90px;left:12px;right:12px;z-index:9990;animation:slideInUp .4s ease;">
-  <div style="background:linear-gradient(135deg,#0EA5E9,#6366F1);border-radius:18px;padding:16px;box-shadow:0 8px 32px rgba(0,0,0,.5);">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
-      <div style="font-weight:800;font-size:0.9rem;color:#fff;">📲 Add to Home Screen</div>
-      <button onclick="document.getElementById('iosInstallTip').style.display='none';localStorage.setItem('tfi_install_dismissed',Date.now()+259200000);" style="background:rgba(255,255,255,.2);border:none;border-radius:8px;color:#fff;font-size:0.78rem;padding:4px 9px;cursor:pointer;">✕</button>
+<!-- ═══ iOS Install Tip — Premium ═══ -->
+<div id="iosInstallTip" style="display:none;position:fixed;bottom:90px;left:12px;right:12px;z-index:9990;animation:slideInUp .4s cubic-bezier(.34,1.56,.64,1);">
+  <div style="background:linear-gradient(135deg,#070f1f,#0d1e38);border:1px solid rgba(14,165,233,.3);border-radius:22px;padding:18px;box-shadow:0 20px 60px rgba(0,0,0,.65),inset 0 1px 0 rgba(255,255,255,.08);">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div style="width:38px;height:38px;border-radius:11px;background:linear-gradient(135deg,#0EA5E9,#6366F1);display:flex;align-items:center;justify-content:center;font-size:1.1rem;">💰</div>
+        <div>
+          <div style="font-weight:900;font-size:0.9rem;color:#fff;font-family:'Sora',sans-serif;">Add to Home Screen</div>
+          <div style="font-size:0.68rem;color:rgba(255,255,255,.45);">3 easy steps on Safari</div>
+        </div>
+      </div>
+      <button onclick="document.getElementById('iosInstallTip').style.display='none';localStorage.setItem('tfi_install_dismissed','t'+(Date.now()+259200000));" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:9px;color:rgba(255,255,255,.6);font-size:0.82rem;padding:5px 10px;cursor:pointer;">✕</button>
     </div>
-    <div style="font-size:0.78rem;color:rgba(255,255,255,.9);line-height:1.8;">
-      1. Tap the <strong style="background:rgba(255,255,255,.2);padding:1px 6px;border-radius:4px;">Share</strong> button at the bottom of Safari<br>
-      2. Scroll down and tap <strong style="background:rgba(255,255,255,.2);padding:1px 6px;border-radius:4px;">Add to Home Screen</strong><br>
-      3. Tap <strong style="background:rgba(255,255,255,.2);padding:1px 6px;border-radius:4px;">Add</strong> — done! 🎉
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      <div style="display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.05);border-radius:11px;padding:10px 12px;">
+        <div style="width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,#0EA5E9,#38BDF8);display:flex;align-items:center;justify-content:center;font-size:0.72rem;font-weight:800;color:#fff;flex-shrink:0;">1</div>
+        <div style="font-size:0.79rem;color:rgba(255,255,255,.8);">Tap the <strong style="color:#38BDF8;">Share ↑</strong> button at the bottom of Safari</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.05);border-radius:11px;padding:10px 12px;">
+        <div style="width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,#6366F1,#8B5CF6);display:flex;align-items:center;justify-content:center;font-size:0.72rem;font-weight:800;color:#fff;flex-shrink:0;">2</div>
+        <div style="font-size:0.79rem;color:rgba(255,255,255,.8);">Scroll and tap <strong style="color:#A78BFA;">Add to Home Screen</strong></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.05);border-radius:11px;padding:10px 12px;">
+        <div style="width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,#06D6A0,#0EA5E9);display:flex;align-items:center;justify-content:center;font-size:0.72rem;font-weight:800;color:#fff;flex-shrink:0;">3</div>
+        <div style="font-size:0.79rem;color:rgba(255,255,255,.8);">Tap <strong style="color:#06D6A0;">Add</strong> — it's on your home screen! 🎉</div>
+      </div>
     </div>
   </div>
 </div>
