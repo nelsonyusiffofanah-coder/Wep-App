@@ -1904,12 +1904,24 @@ input:checked + .toggle-slider { box-shadow: 0 0 0 2px var(--brand-dim) !importa
   .mhero-cta { font-size:.9rem;padding:14px; }
   .mhero-qa-ico { width:44px;height:44px; }
 }
+
+/* ── Transaction 3-dot menu ──────────────────────── */
+.tx-menu-btn {
+  width: 28px; height: 28px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; font-size: 1.1rem; color: var(--txt3);
+  flex-shrink: 0; transition: all .15s; font-weight: 700;
+  line-height: 1;
+}
+.tx-menu-btn:hover { background: var(--bg3); color: var(--txt); }
+.tx-menu-btn:active { transform: scale(.88); }
+.tx-card { cursor: default !important; }
 </style>
 </head>
 <body>
 
 <!-- EARLY THEME -->
-<script>(function(){try{var t=localStorage.getItem('tfi_theme')||'midnight';document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+<script>(function(){try{var t=localStorage.getItem('tfi_theme')||'slate';document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
 
 <!-- ═══════════════════════════════════════════════════
      PREMIUM SPLASH SCREEN — World class entrance
@@ -3628,7 +3640,7 @@ function freshState(){
     goals:[], credits:[], bizEntries:[], obligations:[],
     recurringTxs:[], templates:[], nwItems:[],
     envelopes:{}, notes:{}, netWorthHistory:[],
-    currency:'₦', monthlyBudget:0, theme:'dark',
+    currency:'₦', monthlyBudget:0, theme:'slate',
     country:'', name:'',
     geminiKey:'', groqKey:'',
     lastSync:null, pushedAt:0,
@@ -3637,6 +3649,37 @@ function freshState(){
     onboardDone:false, userType:'other',
   };
 }
+// ══════════════════════════════════════════════════════
+// PREMIUM DIALOG SYSTEM — replaces browser confirm/alert
+// ══════════════════════════════════════════════════════
+function _dialog(opts){
+  // opts: { title, msg, icon, type:'confirm'|'alert', ok, cancel, okLabel, cancelLabel, danger }
+  const old=document.getElementById('_premDialog');if(old)old.remove();
+  return new Promise(resolve=>{
+    const d=document.createElement('div');
+    d.id='_premDialog';
+    d.style.cssText='position:fixed;inset:0;z-index:99998;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(0,0,0,.5);backdrop-filter:blur(4px);animation:fadeIn .15s ease;';
+    const okColor=opts.danger?'background:var(--red);':'background:var(--brand);';
+    d.innerHTML=`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:22px;padding:24px 22px;max-width:340px;width:100%;box-shadow:var(--shadow),inset 0 1px 0 rgba(255,255,255,.06);animation:popIn .2s cubic-bezier(.34,1.56,.64,1);">
+      ${opts.icon?`<div style="font-size:2.2rem;margin-bottom:10px;">${opts.icon}</div>`:''}
+      ${opts.title?`<div style="font-family:'Sora',sans-serif;font-size:1rem;font-weight:800;margin-bottom:6px;">${opts.title}</div>`:''}
+      ${opts.msg?`<div style="font-size:.84rem;color:var(--txt2);line-height:1.6;margin-bottom:18px;">${opts.msg}</div>`:''}
+      <div style="display:flex;gap:8px;${opts.type==='alert'?'justify-content:center;':''}">
+        ${opts.type!=='alert'?`<button id="_pd_cancel" style="flex:1;background:var(--bg3);border:1px solid var(--border2);border-radius:12px;color:var(--txt2);font-family:'Outfit',sans-serif;font-size:.86rem;font-weight:700;padding:12px;cursor:pointer;">${opts.cancelLabel||'Cancel'}</button>`:''}
+        <button id="_pd_ok" style="flex:1;${okColor}border:none;border-radius:12px;color:${opts.danger?'#fff':'#fff'};font-family:'Outfit',sans-serif;font-size:.86rem;font-weight:700;padding:12px;cursor:pointer;box-shadow:0 4px 12px ${opts.danger?'rgba(239,71,111,.35)':'var(--brand-glow)'};">${opts.okLabel||'OK'}</button>
+      </div>
+    </div>`;
+    document.body.appendChild(d);
+    d.querySelector('#_pd_ok').onclick=()=>{d.remove();resolve(true);if(opts.ok)opts.ok();};
+    const cancelBtn=d.querySelector('#_pd_cancel');
+    if(cancelBtn) cancelBtn.onclick=()=>{d.remove();resolve(false);if(opts.cancel)opts.cancel();};
+    d.addEventListener('click',e=>{if(e.target===d){d.remove();resolve(false);}});
+  });
+}
+function _confirm(msg,opts){return _dialog({type:'confirm',msg,...(opts||{})});}
+function _alert(msg,opts){return _dialog({type:'alert',msg,...(opts||{})});}
+
+
 
 // ══════════════════════════════════════════════════════
 // CRYPTO
@@ -4199,7 +4242,7 @@ document.addEventListener('visibilitychange',()=>{
   }
 });
 
-async function checkAdminDirectMessage(){
+async async function checkAdminDirectMessage(){
   if(!fbDb||!currentUser?.uid)return;
   try{
     const doc=await fbDb.collection('publicProfiles').doc(currentUser.uid).get();
@@ -4405,7 +4448,7 @@ function firebaseErrMsg(e){
 // SIGN OUT
 // ══════════════════════════════════════════════════════
 function doSignOut(){
-  if(!confirm('Sign out of Trackinfin?'))return;
+  /* sign out handled inline */
   stopRealtimeSync();
   if(fbAuth)fbAuth.signOut().catch(()=>{});
   localStorage.removeItem(SESSION_KEY);
@@ -4447,7 +4490,7 @@ function doSetupPin(){
   if(!/^\d{4}$/.test(p1)){err.textContent='Must be 4 digits.';return;}
   if(p1!==p2){err.textContent='PINs do not match.';return;}
   localStorage.setItem(PIN_KEY,hp(p1));set('pinStatusLbl','Active ✅');closeO('oSetupPin');
-  alert('✅ PIN set! Use it to open the app quickly.');
+  showWin('🔢 PIN Set!','Use your 4-digit PIN to open the app quickly.');
 }
 function skipPin(){closeO('oSetupPin');}
 function doChangePin(){
@@ -4455,7 +4498,7 @@ function doChangePin(){
   if(hp(old)!==localStorage.getItem(PIN_KEY)){err.textContent='Current PIN is wrong.';return;}
   if(!/^\d{4}$/.test(n1)){err.textContent='New PIN must be 4 digits.';return;}
   if(n1!==n2){err.textContent='PINs do not match.';return;}
-  localStorage.setItem(PIN_KEY,hp(n1));closeO('oChangePin');alert('✅ PIN updated!');
+  localStorage.setItem(PIN_KEY,hp(n1));closeO('oChangePin');showWin('🔒 PIN Updated','Your new PIN is active.');
 }
 
 // Auto-lock
@@ -4775,11 +4818,21 @@ function renderHome(){
     }
   }
 
-  /* balance */
+  /* balance — with pop animation on change */
   const hb=document.getElementById('heroBalance');
   if(hb){
-    hb.textContent=(!income&&!spending&&!savings)?'—':fmt(balance);
-    hb.className='mhero-bal'+(balance>0?' pos':balance<0?' neg':' zero');
+    const newText=(!income&&!spending&&!savings)?'—':fmt(balance);
+    const newClass='mhero-bal'+(balance>0?' pos':balance<0?' neg':' zero');
+    if(hb.textContent !== newText){
+      hb.style.transform='scale(.95)';hb.style.opacity='.6';
+      setTimeout(()=>{
+        hb.textContent=newText;hb.className=newClass;
+        hb.style.transform='';hb.style.opacity='';
+        hb.style.transition='transform .3s cubic-bezier(.34,1.56,.64,1),opacity .2s';
+      },80);
+    }else{
+      hb.className=newClass;
+    }
   }
 
   /* story sentence */
@@ -4873,16 +4926,17 @@ function renderHome(){
     const col=isIn?'var(--green)':isSave?'var(--brand)':'var(--red)';
     const sign=isIn?'+':isSave?'':'-';
     const lbl=isIn?'Income':isSave?'Savings':'Expense';
-    return `<div class="mhero-tx" onclick="showTab('money')">
-      <div class="mhero-tx-dot" style="background:${cat.color}22;color:${cat.color};">${cat.name.charAt(0).toUpperCase()}</div>
-      <div class="mhero-tx-info">
+    return `<div class="mhero-tx">
+      <div class="mhero-tx-dot" style="background:${cat.color}22;color:${cat.color};" onclick="showTab('money')">${cat.name.charAt(0).toUpperCase()}</div>
+      <div class="mhero-tx-info" onclick="showTab('money')" style="cursor:pointer;">
         <div class="mhero-tx-name">${t.desc||cat.name}</div>
         <div class="mhero-tx-meta">${cat.name}&nbsp;·&nbsp;${t.date}</div>
       </div>
-      <div class="mhero-tx-right">
+      <div class="mhero-tx-right" onclick="showTab('money')" style="cursor:pointer;">
         <div class="mhero-tx-amt" style="color:${col}">${sign}${fmt(t.amt)}</div>
         <div class="mhero-tx-lbl" style="color:${col}">${lbl}</div>
       </div>
+      <div class="tx-menu-btn" onclick="event.stopPropagation();openTxMenu(${t.id},this)">⋮</div>
     </div>`;
   }).join('');
 }
@@ -5041,7 +5095,52 @@ function setTxFilter(f){
   ['all','in','out','save'].forEach(x=>document.getElementById('fc-'+x)?.classList.toggle('active',x===f||(f===''&&x==='all')));
   renderMoney();
 }
-function deleteTx(id){if(!confirm('Delete this transaction?'))return;S.txs=S.txs.filter(t=>t.id!==id);autoSave();renderMoney();renderHome();}
+// ══════════════════════════════════════════════════════
+// TRANSACTION 3-DOT CONTEXT MENU
+// ══════════════════════════════════════════════════════
+function openTxMenu(id, btn){
+  const old=document.getElementById('_txMenu');if(old)old.remove();
+  const t=S.txs.find(x=>x.id===id);if(!t)return;
+  const rect=btn.getBoundingClientRect();
+  const menu=document.createElement('div');
+  menu.id='_txMenu';
+  menu.style.cssText=`position:fixed;z-index:9999;background:var(--bg2);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow);padding:6px;min-width:170px;animation:popIn .15s ease;`;
+  // Position below button, stay within viewport
+  const top=Math.min(rect.bottom+4, window.innerHeight-180);
+  const left=Math.min(rect.left-130, window.innerWidth-180);
+  menu.style.top=top+'px';
+  menu.style.left=Math.max(8,left)+'px';
+  menu.innerHTML=`
+    <div onclick="editTx(${id});document.getElementById('_txMenu').remove()" style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:9px;cursor:pointer;font-size:.84rem;font-weight:600;color:var(--txt);transition:background .12s;" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background=''">
+      <span style="font-size:1rem;">✏️</span> Edit
+    </div>
+    <div onclick="duplicateTx(${id});document.getElementById('_txMenu').remove()" style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:9px;cursor:pointer;font-size:.84rem;font-weight:600;color:var(--txt);transition:background .12s;" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background=''">
+      <span style="font-size:1rem;">📋</span> Duplicate
+    </div>
+    <div style="height:1px;background:var(--border2);margin:3px 6px;"></div>
+    <div onclick="deleteTx(${id});document.getElementById('_txMenu').remove()" style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:9px;cursor:pointer;font-size:.84rem;font-weight:600;color:var(--red);transition:background .12s;" onmouseover="this.style.background='var(--red-dim)'" onmouseout="this.style.background=''">
+      <span style="font-size:1rem;">🗑️</span> Delete
+    </div>`;
+  document.body.appendChild(menu);
+  // Close on outside click
+  setTimeout(()=>{
+    document.addEventListener('click',function _close(e){
+      if(!menu.contains(e.target)){menu.remove();document.removeEventListener('click',_close);}
+    });
+  },10);
+}
+
+function duplicateTx(id){
+  const t=S.txs.find(x=>x.id===id);if(!t)return;
+  const copy={...t,id:Date.now(),date:new Date().toISOString().split('T')[0],updatedAt:new Date().toISOString()};
+  copy.month=copy.date.slice(0,7);
+  S.txs.unshift(copy);
+  autoSave();renderMoney();renderHome();
+  showWin('📋 Duplicated','Transaction copied to today.');
+}
+
+
+function deleteTx(id){_confirm('Delete this transaction?',{title:'Delete Transaction',icon:'🗑️',okLabel:'Delete',danger:true}).then(ok=>{if(!ok)return;S.txs=S.txs.filter(t=>t.id!==id);autoSave();renderMoney();renderHome();});}
 
 let _editingTxId=null; // null = adding new, number = editing existing
 
@@ -5075,12 +5174,20 @@ function renderMoney(){
   set('moneyCount',count+' transaction'+(count!==1?'s':''));
   const list=document.getElementById('moneyList');if(!list)return;
   if(!txs.length){list.innerHTML=`<div style="text-align:center;color:var(--txt3);padding:28px;font-size:0.82rem;">${search?'No matches.':'No transactions this month. Tap + to add.'}</div>`;return;}
-  list.innerHTML=txs.map(t=>`<div class="tx-card" onclick="editTx(${t.id})" style="cursor:pointer;">
-    <div class="tx-dot" style="background:${catById(t.cat).color}">${catById(t.cat).name.charAt(0)}</div>
-    <div class="tx-info"><div class="tx-name">${t.desc||catById(t.cat).name}</div><div class="tx-meta">${catById(t.cat).name} · ${t.date}</div></div>
-    <div class="tx-amt" style="color:${t.type==='in'?'var(--green)':t.type==='save'?'var(--brand)':'var(--red)'}">${t.type==='in'?'+':t.type==='save'?'💰':'-'}${fmt(t.amt)}</div>
-    <button class="tx-del" onclick="event.stopPropagation();deleteTx(${t.id})">✕</button>
-  </div>`).join('');
+  list.innerHTML=txs.map(t=>{
+    const col=t.type==='in'?'var(--green)':t.type==='save'?'var(--brand)':'var(--red)';
+    const sign=t.type==='in'?'+':t.type==='save'?'':'−';
+    const cat=catById(t.cat);
+    return`<div class="tx-card">
+      <div class="tx-dot" style="background:${cat.color}">${cat.name.charAt(0).toUpperCase()}</div>
+      <div class="tx-info" onclick="editTx(${t.id})" style="cursor:pointer;flex:1;min-width:0;">
+        <div class="tx-name">${t.desc||cat.name}</div>
+        <div class="tx-meta">${cat.name} · ${t.date}</div>
+      </div>
+      <div class="tx-amt" style="color:${col};margin-right:4px;" onclick="editTx(${t.id})" style="cursor:pointer;">${sign}${fmt(t.amt)}</div>
+      <div class="tx-menu-btn" onclick="event.stopPropagation();openTxMenu(${t.id},this)" title="Options">⋮</div>
+    </div>`;
+  }).join('');
 }
 
 
@@ -5208,7 +5315,7 @@ function doSpendEnv(){
 function quickFillAll(){
   const m=curM('planMonth');const{income}=calcMonth(m);
   if(!income){alert('Add income for this month first.');return;}
-  if(!confirm('Fill all envelopes based on allocation percentages?\n\nThis distributes '+fmt(income)+' across your categories.'))return;
+  /* fill handled inline */
   S.cats.filter(c=>c.id!=='income').forEach(c=>{
     const s=income*(c.pct||0)/100;if(s>0){const env=getEnv(m,c.id);env.allocated=s;}
   });
@@ -5287,7 +5394,7 @@ function saveCredit(){
   S.credits.push({id:Date.now(),name,phone,amt,purpose,date,due,direction,status:'pending',paidAmt:0});
   autoSave();closeO('oAddCredit');renderCredits();renderHome();
 }
-function deleteCredit(id){if(!confirm('Delete this credit record?'))return;S.credits=S.credits.filter(c=>c.id!==id);autoSave();renderCredits();renderHome();}
+function deleteCredit(id){_confirm('This will permanently remove this credit record.',{title:'Delete Credit Record',icon:'🗑️',okLabel:'Delete',danger:true}).then(ok=>{if(!ok)return;S.credits=S.credits.filter(c=>c.id!==id);autoSave();renderCredits();renderHome();});}
 function openMarkPaid(id){
   const c=S.credits.find(x=>x.id===id);if(!c)return;
   set('markPaidSub','Payment from '+c.name+' — original '+fmt(c.amt));
@@ -5417,7 +5524,7 @@ function doAddGoal(){
   ['gName','gTarget','gDeadline','gLockUntil','gLockReason'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
   setGoalType('regular');
 }
-function deleteGoal(id){if(!confirm('Delete this goal?'))return;S.goals=S.goals.filter(g=>g.id!==id);autoSave();renderGoals();}
+function deleteGoal(id){_confirm('This goal and its saved progress will be removed.',{title:'Delete Goal',icon:'🎯',okLabel:'Delete',danger:true}).then(ok=>{if(!ok)return;S.goals=S.goals.filter(g=>g.id!==id);autoSave();renderGoals();});}
 function renderGoals(){
   destroyChart('goals');const gc=document.getElementById('goalsChart');
   if(gc&&S.goals.length>0){
@@ -5506,7 +5613,7 @@ function saveBizEntry(){
   if(type==='sale'){S.txs.unshift({id:Date.now()+1,desc:'[Business] '+desc,amt,type:'in',cat:'business',date,month});}
   autoSave();closeO('oAddBiz');renderBusiness();renderHome();
 }
-function deleteBizEntry(id){if(!confirm('Delete this entry?'))return;S.bizEntries=S.bizEntries.filter(b=>b.id!==id);autoSave();renderBusiness();}
+function deleteBizEntry(id){_confirm('Remove this business entry?',{title:'Delete Entry',icon:'🗑️',okLabel:'Delete',danger:true}).then(ok=>{if(!ok)return;S.bizEntries=S.bizEntries.filter(b=>b.id!==id);autoSave();renderBusiness();});}
 
 function renderBusiness(){
   buildMonthSel('bizMonth');const m=curM('bizMonth');
@@ -6062,11 +6169,7 @@ function payBill(idx){
 }
 
 function deleteBill(idx){
-  if(!confirm('Remove this bill?'))return;
-  S.bills.splice(idx,1);
-  autoSave();
-  document.getElementById('oBillsTracker').remove();
-  openBillsTracker();
+  _confirm('Remove this bill from your tracker?',{title:'Remove Bill',icon:'📆',okLabel:'Remove',danger:true}).then(ok=>{if(!ok)return;S.bills.splice(idx,1);autoSave();document.getElementById('oBillsTracker').remove();openBillsTracker();});
 }
 function applyTheme(t){
   S.theme=t;
@@ -6183,7 +6286,7 @@ function addCategory(){
   document.getElementById('newCatName').value='';err.textContent='';
   autoSave();renderCatManager();
 }
-function deleteCategory(id){if(!confirm('Delete this category?'))return;S.cats=S.cats.filter(c=>c.id!==id);autoSave();renderCatManager();}
+function deleteCategory(id){_confirm('Remove this category? Transactions using it will keep their data.',{title:'Delete Category',icon:'🏷️',okLabel:'Delete',danger:true}).then(ok=>{if(!ok)return;S.cats=S.cats.filter(c=>c.id!==id);autoSave();renderCatManager();});}
 
 // Recurring
 function renderRecurringList(){
@@ -6493,7 +6596,7 @@ function doRestore(e){
   const file=e.target.files[0];if(!file)return;
   const reader=new FileReader();
   reader.onload=ev=>{
-    try{const d=JSON.parse(ev.target.result);if(!d.txs)throw new Error('Invalid backup');S={...freshState(),...d};fixState();saveLocal();renderAll();alert('✅ Backup restored!');}
+    try{const d=JSON.parse(ev.target.result);if(!d.txs)throw new Error('Invalid backup');S={...freshState(),...d};fixState();saveLocal();renderAll();_alert('Your data has been fully restored.',{title:'Backup Restored',icon:'✅',okLabel:'Great'});}
     catch(err){alert('Could not restore: '+err.message);}
   };
   reader.readAsText(file);e.target.value='';
@@ -6545,7 +6648,7 @@ function exportWord(){
 function exportReportPDF(){exportPDF();}
 function exportReportWord(){exportWord();}
 function exportGDrive(){
-  alert('To save to Google Drive:\n1. Tap "Download Backup" below\n2. Open Google Drive\n3. Upload the downloaded file\n\nOr use the backup file with any cloud storage app.');
+  _alert('Download your backup file, then upload it to Google Drive or any cloud storage app.',{title:'Save to Google Drive',icon:'☁️',okLabel:'Got it'});
   doBackup();
 }
 
@@ -6990,7 +7093,7 @@ function renderActivityLog(users){
 async function adminRemove(u){
   if(typeof u === 'string'){ const users=window._adminUsers||[]; u=users.find(x=>x.email===u||x.uid===u); if(!u)return; }
   const name=u.name||u.email||'User';
-  if(!confirm('Permanently remove "'+name+'"?\n\nThey will be blocked from logging in.'))return;
+  if(!await _confirm('This will permanently block the account. This action cannot be undone.',{title:'Remove '+name+'?',icon:'⛔',okLabel:'Remove',danger:true}))return;
   if(!fbDb){showWin('⚠️ Error','Firebase not connected.');return;}
   const payload={removed:true,removedAt:new Date().toISOString(),removedBy:currentUser?.email||'admin'};
   try{
@@ -7007,7 +7110,7 @@ async function adminRemove(u){
 async function adminSuspend(u){
   if(typeof u === 'string'){ const users=window._adminUsers||[]; u=users.find(x=>x.email===u||x.uid===u); if(!u)return; }
   const name=u.name||u.email||'User';
-  if(!confirm('Suspend "'+name+'"?\n\nThey will be blocked from logging in.'))return;
+  if(!await _confirm('This user will be blocked from signing in. You can reverse this at any time.',{title:'Suspend '+name+'?',icon:'🔒',okLabel:'Suspend',danger:true}))return;
   if(!fbDb){showWin('⚠️ Error','Firebase not connected.');return;}
   const payload={suspended:true,suspendedAt:new Date().toISOString(),suspendedBy:currentUser?.email||'admin'};
   try{
@@ -7072,7 +7175,7 @@ async function adminSendDirectMessage(u){
 
 async function adminResetPassword(email){
   if(!fbAuth){showWin('⚠️ Error','Firebase Auth not connected.');return;}
-  if(!confirm('Send password reset email to '+email+'?'))return;
+  if(!await _confirm('A password reset link will be sent to '+email,{title:'Reset Password?',icon:'🔑',okLabel:'Send Email'}))return;
   try{
     await fbAuth.sendPasswordResetEmail(email);
     showWin('📧 Reset sent','Password reset email sent to '+email);
@@ -7684,7 +7787,7 @@ function setFbkStar(n){
   }
 }
 function setFeedbackRating(n){ setFbkStar(n); } // alias
-async function submitFeedback(){
+async async function submitFeedback(){
   // Rate limit: one submission per 10 minutes
   const lastFbk=parseInt(localStorage.getItem('tfi_last_fbk')||'0');
   if(Date.now()-lastFbk < 600000){
@@ -7773,8 +7876,9 @@ async function openAdminFeedback(){
   }catch(e){console.warn('feedback collection:',e.message);}
 
   // If we got results, show them immediately then load more in background
-  if(allItems.length>0){
-    renderFeedbackList(allItems,afList,icons,cols);
+  const afList0=document.getElementById('afList');
+  if(allItems.length>0&&afList0){
+    renderFeedbackList(allItems,afList0,icons,cols);
   }
 
   // Slower queries in background — add any extras not already in top-level
@@ -7799,6 +7903,11 @@ async function openAdminFeedback(){
   const afList=document.getElementById('afList');
   if(!afList)return;
   renderFeedbackList(allItems,afList,icons,cols);
+  // Mark feedback count badge
+  if(allItems.length){
+    const title=afList.closest('.modal')?.querySelector('.modal-title');
+    if(title) title.textContent='💬 User Feedback ('+allItems.length+')';
+  }
 }
 // ══════════════════════════════════════════════════════
 // HEADER BAR — dynamic rendering + customizer
@@ -7875,43 +7984,48 @@ function renderHeaderActions(){
   const bar=document.getElementById('hActionsBar');
   if(!bar)return;
   const prefs=getHeaderActionPrefs();
-  const darkThemes=['midnight','dark','carbon','forest','ember'];
-  const themeIcon=darkThemes.includes(S?.theme||'midnight')?'🌙':'☀️';
+  const darkThemes=['midnight','dark','carbon','forest','sapphire'];
+  const themeIcon=darkThemes.includes(S?.theme||'slate')?'🌙':'☀️';
+
+  // Max 2 custom icons visible inline — rest go to overflow
+  // This ensures notification + help + profile always fit
+  const MAX_INLINE = 2;
+  const allCustom = ALL_HEADER_ACTIONS.filter(a=>{
+    const p = prefs.find(x=>x.id===a.id);
+    return p ? p.visible : true;
+  });
+  const visibleActions = allCustom.slice(0, MAX_INLINE);
+  const hiddenActions  = [
+    ...allCustom.slice(MAX_INLINE),
+    ...ALL_HEADER_ACTIONS.filter(a=>{
+      const p=prefs.find(x=>x.id===a.id);
+      return p && !p.visible;
+    })
+  ];
 
   let html='';
-  // Render visible actions
-  const visibleActions=ALL_HEADER_ACTIONS.filter(a=>{
-    const p=prefs.find(x=>x.id===a.id);
-    return p?p.visible:true;
-  });
-  const hiddenActions=ALL_HEADER_ACTIONS.filter(a=>{
-    const p=prefs.find(x=>x.id===a.id);
-    return p&&!p.visible;
-  });
-
   visibleActions.forEach(a=>{
     const icon=a.id==='theme'?themeIcon:a.icon;
     const idAttr=a.idAttr?`id="${a.idAttr}"`:'';
     html+=`<div class="ico-btn" ${idAttr} onclick="${a.fn}" title="${a.label}">${icon}</div>`;
   });
 
-  // If any hidden, show ⋯ overflow button that opens a mini menu
-  if(hiddenActions.length){
-    html+=`<div class="ico-btn" onclick="toggleHeaderOverflow()" id="hOverflowBtn" title="More">⋯</div>
-    <div id="hOverflowMenu" style="display:none;position:absolute;top:56px;right:12px;background:var(--bg2);border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);z-index:500;padding:6px;min-width:140px;">
-      ${hiddenActions.map(a=>{
-        const icon=a.id==='theme'?themeIcon:a.icon;
-        return`<div onclick="${a.fn};closeHeaderOverflow()" style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;cursor:pointer;font-size:0.82rem;color:var(--txt);" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background=''">${icon} ${a.label}</div>`;
-      }).join('')}
-    </div>`;
-  }
+  // ⋯ overflow — always shown if anything is hidden
+  html+=`<div class="ico-btn" onclick="toggleHeaderOverflow()" id="hOverflowBtn" title="More actions">⋯</div>
+  <div id="hOverflowMenu" style="display:none;position:fixed;top:52px;right:8px;background:var(--bg2);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow);z-index:9000;padding:6px;min-width:160px;animation:slideDown .15s ease;">
+    ${hiddenActions.map(a=>{
+      const icon=a.id==='theme'?themeIcon:a.icon;
+      return`<div onclick="${a.fn};closeHeaderOverflow()" style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:10px;cursor:pointer;font-size:0.84rem;font-weight:600;color:var(--txt);transition:background .15s;" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background=''">${icon} <span>${a.label}</span></div>`;
+    }).join('')}
+    <div style="height:1px;background:var(--border2);margin:4px 6px;"></div>
+    <div onclick="openHelp();closeHeaderOverflow()" style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:10px;cursor:pointer;font-size:0.84rem;font-weight:600;color:var(--txt);transition:background .15s;" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background=''">❓ <span>Help</span></div>
+  </div>`;
 
-  // Always: notification bell + profile
+  // Always: notification bell + profile (never hidden, never overflow)
   html+=`<div class="ico-btn notif-bell" onclick="openNotifInbox()" title="Notifications">🔔<span id="notifBadge" style="display:none;"></span></div>`;
   html+=`<div class="user-av" id="userAv" onclick="openProfile()"></div>`;
 
   bar.innerHTML=html;
-  // Restore badge count
   updateNotifBadge();
 }
 
@@ -7990,7 +8104,7 @@ function logChallengeProgress(id){
   else showWin('✅ Progress logged!',fmt(amt)+' added — total: '+fmt(ch.totalSaved));
 }
 function deleteChallenge(id){
-  if(!confirm('Delete this challenge?'))return;
+  /* will use async below */
   S.challenges=(S.challenges||[]).filter(c=>c.id!==id);
   autoSave();renderGoals();
 }
@@ -8160,6 +8274,47 @@ function renderTxItem(t){
   </div>`;
 }
 
+
+
+
+// ══════════════════════════════════════════════════════
+// PULL TO REFRESH — silently syncs on pull-down
+// ══════════════════════════════════════════════════════
+(function(){
+  let startY=0, pulling=false, indicator=null;
+  const THRESHOLD=72;
+  document.addEventListener('touchstart',e=>{
+    if(window.scrollY===0&&e.touches[0]){startY=e.touches[0].clientY;pulling=true;}
+  },{passive:true});
+  document.addEventListener('touchmove',e=>{
+    if(!pulling)return;
+    const dy=e.touches[0].clientY-startY;
+    if(dy>16&&window.scrollY===0){
+      if(!indicator){
+        indicator=document.createElement('div');
+        indicator.id='_pullIndicator';
+        indicator.style.cssText='position:fixed;top:52px;left:50%;transform:translateX(-50%) translateY(-10px);z-index:9997;background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:6px 16px;font-size:.74rem;font-weight:700;color:var(--txt3);display:flex;align-items:center;gap:6px;box-shadow:var(--shadow);opacity:0;transition:all .2s;';
+        indicator.innerHTML='<span style="font-size:1rem;">↓</span> Pull to refresh';
+        document.body.appendChild(indicator);
+        setTimeout(()=>{if(indicator){indicator.style.opacity='1';indicator.style.transform='translateX(-50%) translateY(0)';}},10);
+      }
+      if(dy>THRESHOLD&&indicator){indicator.innerHTML='<span style="font-size:1rem;">↑</span> Release to sync';}
+    }
+  },{passive:true});
+  document.addEventListener('touchend',e=>{
+    if(!pulling)return;pulling=false;
+    const dy=(e.changedTouches[0]?.clientY||startY)-startY;
+    if(indicator){indicator.style.opacity='0';setTimeout(()=>{indicator?.remove();indicator=null;},200);}
+    if(dy>THRESHOLD&&fbDb&&currentUser?.uid){
+      const pill=document.getElementById('syncPill');
+      if(pill){pill.textContent='🔄 Syncing…';pill.style.display='flex';}
+      pullFirestore(currentUser.uid,currentPassword,true)
+        .then(()=>pushFirestore())
+        .then(()=>{if(pill){pill.textContent='✅ Synced';setTimeout(()=>{pill.textContent='☁️ Sync';},2200);}})
+        .catch(()=>{});
+    }
+  },{passive:true});
+})();
 
 </script>
 
