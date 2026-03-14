@@ -3353,86 +3353,244 @@ input:checked + .toggle-slider { box-shadow: 0 0 0 2px var(--brand-dim) !importa
 </div>
 
 <!-- Admin Panel -->
-<div id="adminPanel" style="display:none;position:fixed;inset:0;z-index:9995;background:var(--bg);overflow-y:auto;padding:20px;">
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px;">
-    <div><div style="font-family:'Sora',sans-serif;font-size:1.2rem;font-weight:800;">🔐 Admin Panel</div><div style="font-size:0.74rem;color:var(--txt3);">Admin: <span id="adminEmailShow" style="filter:blur(4px);cursor:pointer;" onclick="this.style.filter=this.style.filter?'':'blur(4px)'">•••</span></div></div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+<div id="adminPanel" style="display:none;position:fixed;inset:0;z-index:9995;background:var(--bg);overflow-y:auto;">
+
+  <!-- Admin Header -->
+  <div style="position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--border);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+    <div style="display:flex;align-items:center;gap:12px;">
+      <div style="width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,var(--brand),var(--brand3));display:flex;align-items:center;justify-content:center;font-size:1.1rem;">🔐</div>
+      <div>
+        <div style="font-family:'Sora',sans-serif;font-size:1rem;font-weight:800;">Admin Panel</div>
+        <div style="font-size:0.72rem;color:var(--txt3);">Signed in as: <span id="adminEmailShow" style="filter:blur(4px);cursor:pointer;" onclick="this.style.filter=this.style.filter?'':'blur(4px)'">•••</span></div>
+      </div>
+    </div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;">
       <button class="btn ghost sm" onclick="renderAdminStats()">🔄 Refresh</button>
-      <button class="btn ghost sm" onclick="adminExportUsers()">📥 Export CSV</button>
-      <button class="btn ghost sm" onclick="openO('oAdminBroadcast')">📢 Broadcast</button>
-      <button class="btn ghost sm" onclick="openAdminSettings()">⚙️ Settings</button>
-      <button class="btn ghost sm" onclick="openAdminFeedback()">💬 Feedback</button>
       <button class="btn ghost sm" onclick="closeAdminPanel()">✕ Close</button>
     </div>
   </div>
 
-  <!-- Firebase Status Banner -->
-  <div id="adminSetupBanner" style="background:var(--green-dim);border:1px solid rgba(6,214,160,.2);border-radius:12px;padding:12px 16px;margin-bottom:16px;display:flex;align-items:center;gap:10px;">
-    <span style="font-size:1.2rem;">🔥</span>
-    <div>
-      <div style="font-weight:700;font-size:0.84rem;color:var(--green);">Firebase Connected</div>
-      <div style="font-size:0.74rem;color:var(--txt2);">Users sync automatically. Manage users below or at <a href="https://console.firebase.google.com/project/trackinfin/authentication/users" target="_blank" style="color:var(--brand);">Firebase Console →</a></div>
-    </div>
+  <!-- Admin Tabs -->
+  <div style="display:flex;gap:0;overflow-x:auto;border-bottom:1px solid var(--border);background:var(--bg2);padding:0 20px;">
+    <div class="admin-tab active" id="atab-dashboard" onclick="switchAdminTab('dashboard')">📊 Dashboard</div>
+    <div class="admin-tab" id="atab-users" onclick="switchAdminTab('users')">👥 Users</div>
+    <div class="admin-tab" id="atab-features" onclick="switchAdminTab('features')">🎛️ Features</div>
+    <div class="admin-tab" id="atab-broadcast" onclick="switchAdminTab('broadcast')">📢 Broadcast</div>
+    <div class="admin-tab" id="atab-feedback" onclick="switchAdminTab('feedback')">💬 Feedback</div>
+    <div class="admin-tab" id="atab-logs" onclick="switchAdminTab('logs')">📋 Logs</div>
+    <div class="admin-tab" id="atab-settings" onclick="switchAdminTab('settings')">⚙️ Settings</div>
   </div>
 
-  <div style="background:var(--gold-dim);border:1px solid rgba(240,180,41,.2);border-radius:10px;padding:10px 14px;font-size:0.76rem;color:var(--gold);margin-bottom:16px;">🔒 All financial data is end-to-end encrypted. As admin you can see user activity but never their financial data.</div>
+  <div style="padding:20px;">
 
-  <!-- Stats -->
-  <div class="admin-stat-grid" id="adminStats"></div>
-
-  <!-- Users Table -->
-  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:16px;">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
-      <div style="font-weight:700;font-size:0.9rem;">👥 All Users</div>
-      <div style="display:flex;gap:8px;align-items:center;">
-        <select id="adminFilterStatus" onchange="renderAdminUsers()" style="background:var(--bg3);border:1px solid var(--border2);border-radius:8px;color:var(--txt);font-size:0.76rem;padding:6px 10px;">
-          <option value="all">All Users</option>
-          <option value="online">Online Now</option>
-          <option value="today">Active Today</option>
-          <option value="week">Active This Week</option>
-          <option value="inactive">Inactive</option>
-        </select>
-        <input class="tx-search" id="adminSearch" placeholder="Search name/email…" style="width:160px;border-radius:8px;padding:7px 12px;" oninput="renderAdminUsers()"/>
+    <!-- ══ DASHBOARD TAB ══ -->
+    <div id="atab-content-dashboard">
+      <div style="background:var(--gold-dim);border:1px solid rgba(240,180,41,.2);border-radius:10px;padding:10px 14px;font-size:0.76rem;color:var(--gold);margin-bottom:16px;">🔒 All financial data is end-to-end encrypted. You can see user activity but never their financial data.</div>
+      <div class="admin-stat-grid" id="adminStats"></div>
+      <!-- Activity Log -->
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:16px;margin-top:16px;">
+        <div style="font-weight:700;font-size:0.9rem;margin-bottom:12px;">📋 Recent Activity</div>
+        <div id="adminActivityLog" style="font-size:0.78rem;color:var(--txt2);line-height:2;">Loading…</div>
+      </div>
+      <!-- System Health -->
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:16px;margin-top:16px;">
+        <div style="font-weight:700;font-size:0.9rem;margin-bottom:14px;">🏥 System Health</div>
+        <div id="adminHealthGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;"></div>
       </div>
     </div>
-    <div style="overflow-x:auto;">
-      <table style="width:100%;border-collapse:collapse;">
-        <thead><tr style="background:var(--bg3);">
-          <th style="padding:10px 12px;text-align:left;font-size:0.74rem;color:var(--txt3);">User</th>
-          <th style="padding:10px 8px;text-align:left;font-size:0.74rem;color:var(--txt3);">Country</th>
-          <th style="padding:10px 8px;text-align:left;font-size:0.74rem;color:var(--txt3);">Type</th>
-          <th style="padding:10px 8px;text-align:left;font-size:0.74rem;color:var(--txt3);">Joined</th>
-          <th style="padding:10px 8px;text-align:left;font-size:0.74rem;color:var(--txt3);">Last Active</th>
-          <th style="padding:10px 8px;text-align:left;font-size:0.74rem;color:var(--txt3);">Status</th>
-          <th style="padding:10px 8px;text-align:right;font-size:0.74rem;color:var(--txt3);">Actions</th>
-        </tr></thead>
-        <tbody id="adminUsersBody"></tbody>
-      </table>
-    </div>
-    <div id="adminUserCount" style="font-size:0.72rem;color:var(--txt3);margin-top:10px;text-align:right;"></div>
-  </div>
 
-  <!-- Activity Log -->
-  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:16px;">
-    <div style="font-weight:700;font-size:0.9rem;margin-bottom:12px;">📋 Recent Activity</div>
-    <div id="adminActivityLog" style="font-size:0.78rem;color:var(--txt2);line-height:2;">Loading…</div>
-  </div>
+    <!-- ══ USERS TAB ══ -->
+    <div id="atab-content-users" style="display:none;">
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:16px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+          <div style="font-weight:700;font-size:0.9rem;">👥 All Users</div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <select id="adminFilterStatus" onchange="renderAdminUsers()" style="background:var(--bg3);border:1px solid var(--border2);border-radius:8px;color:var(--txt);font-size:0.76rem;padding:6px 10px;">
+              <option value="all">All Users</option>
+              <option value="online">Online Now</option>
+              <option value="today">Active Today</option>
+              <option value="week">Active This Week</option>
+              <option value="inactive">Inactive 7d+</option>
+              <option value="suspended">Suspended</option>
+            </select>
+            <input class="tx-search" id="adminSearch" placeholder="Search name/email…" style="width:150px;border-radius:8px;padding:7px 12px;" oninput="renderAdminUsers()"/>
+            <button class="btn ghost sm" onclick="adminExportUsers()">📥 Export CSV</button>
+          </div>
+        </div>
+        <div style="overflow-x:auto;">
+          <table style="width:100%;border-collapse:collapse;">
+            <thead><tr style="background:var(--bg3);">
+              <th style="padding:10px 12px;text-align:left;font-size:0.74rem;color:var(--txt3);">User</th>
+              <th style="padding:10px 8px;text-align:left;font-size:0.74rem;color:var(--txt3);">Country</th>
+              <th style="padding:10px 8px;text-align:left;font-size:0.74rem;color:var(--txt3);">Type</th>
+              <th style="padding:10px 8px;text-align:left;font-size:0.74rem;color:var(--txt3);">Joined</th>
+              <th style="padding:10px 8px;text-align:left;font-size:0.74rem;color:var(--txt3);">Last Active</th>
+              <th style="padding:10px 8px;text-align:left;font-size:0.74rem;color:var(--txt3);">Status</th>
+              <th style="padding:10px 8px;text-align:right;font-size:0.74rem;color:var(--txt3);">Actions</th>
+            </tr></thead>
+            <tbody id="adminUsersBody"></tbody>
+          </table>
+        </div>
+        <div id="adminUserCount" style="font-size:0.72rem;color:var(--txt3);margin-top:10px;text-align:right;"></div>
+      </div>
+    </div>
 
-  <!-- Admin Password + Cloud Setup -->
-  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:16px;">
-    <div style="font-weight:700;font-size:0.9rem;margin-bottom:12px;">🔧 Admin Settings</div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
-      <button class="btn ghost sm" onclick="toggleAdminChangePw()">🔑 Change Password</button>
-      <a href="https://console.firebase.google.com/project/trackinfin/authentication/users" target="_blank" class="btn ghost sm">👥 Firebase Console →</a>
+    <!-- ══ FEATURES TAB ══ -->
+    <div id="atab-content-features" style="display:none;">
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:16px;">
+        <div style="font-weight:700;font-size:0.9rem;margin-bottom:4px;">🎛️ Global Feature Toggles</div>
+        <div style="font-size:0.76rem;color:var(--txt3);margin-bottom:16px;">Turn features on or off for ALL users instantly. Changes push to Firestore.</div>
+        <div id="adminFeaturesGrid" style="display:grid;gap:10px;"></div>
+        <div style="margin-top:14px;display:flex;gap:8px;">
+          <button class="btn" onclick="saveGlobalFeatures()">💾 Save Feature Settings</button>
+          <button class="btn ghost" onclick="loadGlobalFeatures()">🔄 Reload from Cloud</button>
+        </div>
+        <div id="featuresSaveStatus" style="font-size:0.74rem;margin-top:8px;"></div>
+      </div>
+      <!-- Maintenance Mode -->
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:16px;">
+        <div style="font-weight:700;font-size:0.9rem;margin-bottom:4px;">🚧 Maintenance Mode</div>
+        <div style="font-size:0.76rem;color:var(--txt3);margin-bottom:14px;">When ON, all users see a maintenance notice and cannot use the app. Turn OFF when done.</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <div>
+            <div id="maintModeStatus" style="font-size:0.86rem;font-weight:700;color:var(--green);">● App is LIVE</div>
+            <div style="font-size:0.74rem;color:var(--txt3);margin-top:2px;">Last changed: <span id="maintModeTime">—</span></div>
+          </div>
+          <label class="toggle"><input type="checkbox" id="maintModeToggle" onchange="toggleMaintenanceMode(this.checked)"/><span class="toggle-slider"></span></label>
+        </div>
+        <textarea id="maintModeMsg" class="field" style="margin-top:12px;resize:none;min-height:60px;" placeholder="Maintenance message shown to users…">We are performing scheduled maintenance. We will be back shortly! 🔧</textarea>
+      </div>
+      <!-- App Version Control -->
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:16px;">
+        <div style="font-weight:700;font-size:0.9rem;margin-bottom:4px;">📱 App Version Control</div>
+        <div style="font-size:0.76rem;color:var(--txt3);margin-bottom:14px;">Set minimum and latest version. Users below minimum version will be prompted to update.</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+          <div>
+            <label class="field-label">Latest Version</label>
+            <input class="field" id="appVersionLatest" placeholder="e.g. 1.4.0"/>
+          </div>
+          <div>
+            <label class="field-label">Minimum Version</label>
+            <input class="field" id="appVersionMin" placeholder="e.g. 1.2.0"/>
+          </div>
+        </div>
+        <label class="field-label">Update Message</label>
+        <input class="field" id="appVersionMsg" placeholder="A new version of Trackinfin is available. Please refresh to update." style="margin-bottom:10px;"/>
+        <button class="btn" onclick="saveVersionControl()">💾 Save Version Settings</button>
+        <div id="versionSaveStatus" style="font-size:0.74rem;margin-top:8px;"></div>
+      </div>
     </div>
-    <div id="adminChangePwSection" style="display:none;margin-top:12px;">
-      <input class="field" id="adminOldPw" type="password" placeholder="Current password" style="margin-bottom:8px;"/>
-      <input class="field" id="adminNew1" type="password" placeholder="New password (min 8)" style="margin-bottom:8px;"/>
-      <input class="field" id="adminNew2" type="password" placeholder="Confirm new password" style="margin-bottom:8px;"/>
-      <div class="err" id="adminPwErr"></div>
-      <button class="btn sm" onclick="doAdminChangePw()">Update Password</button>
+
+    <!-- ══ BROADCAST TAB ══ -->
+    <div id="atab-content-broadcast" style="display:none;">
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:16px;">
+        <div style="font-weight:700;font-size:0.9rem;margin-bottom:4px;">📢 Send Broadcast</div>
+        <div style="font-size:0.76rem;color:var(--txt3);margin-bottom:14px;">Message goes into every user's notification inbox when they next open the app.</div>
+        <label class="field-label">Type</label>
+        <div style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;">
+          <div class="bcast-type active" id="bct-info" onclick="setBcastType('info')" style="background:var(--brand);border-color:var(--brand);color:#fff;">📢 Info</div>
+          <div class="bcast-type" id="bct-update" onclick="setBcastType('update')">🚀 Update</div>
+          <div class="bcast-type" id="bct-warning" onclick="setBcastType('warning')">⚠️ Warning</div>
+          <div class="bcast-type" id="bct-promo" onclick="setBcastType('promo')">🎉 Promo</div>
+        </div>
+        <input type="hidden" id="bcastType" value="info">
+        <label class="field-label">Title <span style="color:var(--txt3);font-weight:400;">(optional)</span></label>
+        <input class="field" id="bcastTitle" placeholder="e.g. New Feature Available" style="margin-bottom:10px;">
+        <label class="field-label">Message</label>
+        <textarea class="field" id="broadcastMsg" style="resize:none;min-height:100px;" placeholder="Write your message to all users…"></textarea>
+        <div style="margin-top:12px;">
+          <button class="btn" onclick="sendBroadcast()">📢 Send to All Users</button>
+        </div>
+      </div>
+      <!-- Broadcast History -->
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:16px;">
+        <div style="font-weight:700;font-size:0.9rem;margin-bottom:12px;">📜 Last Broadcast Sent</div>
+        <div id="adminBcastHistory" style="font-size:0.82rem;color:var(--txt2);">Loading…</div>
+      </div>
     </div>
-  </div>
+
+    <!-- ══ FEEDBACK TAB ══ -->
+    <div id="atab-content-feedback" style="display:none;">
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:16px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+          <div style="font-weight:700;font-size:0.9rem;">💬 User Feedback</div>
+        </div>
+        <div id="afStats" style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;"></div>
+        <input type="text" id="afSearch" placeholder="🔍 Search feedback…" oninput="_filterAfList()" style="width:100%;box-sizing:border-box;background:var(--input);border:1.5px solid var(--border);border-radius:10px;color:var(--txt);font-family:'Outfit',sans-serif;font-size:0.86rem;padding:9px 12px;outline:none;margin-bottom:10px;"/>
+        <div id="afList" style="max-height:500px;overflow-y:auto;-webkit-overflow-scrolling:touch;">
+          <div style="text-align:center;color:var(--txt3);padding:30px;">Tap 🔄 Refresh to load feedback</div>
+        </div>
+        <button class="btn ghost sm" style="margin-top:10px;" onclick="loadAdminFeedbackInline()">🔄 Load / Refresh Feedback</button>
+      </div>
+    </div>
+
+    <!-- ══ LOGS TAB ══ -->
+    <div id="atab-content-logs" style="display:none;">
+      <!-- System Logs -->
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:16px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+          <div style="font-weight:700;font-size:0.9rem;">🗂️ System Logs</div>
+          <div style="display:flex;gap:6px;">
+            <select id="logFilterType" onchange="renderSystemLogs()" style="background:var(--bg3);border:1px solid var(--border2);border-radius:8px;color:var(--txt);font-size:0.74rem;padding:5px 9px;">
+              <option value="all">All Events</option>
+              <option value="login">Logins</option>
+              <option value="signup">Sign-ups</option>
+              <option value="suspend">Suspensions</option>
+              <option value="broadcast">Broadcasts</option>
+            </select>
+            <button class="btn ghost sm" onclick="clearAdminLogs()">🗑️ Clear</button>
+          </div>
+        </div>
+        <div id="systemLogsContainer" style="max-height:400px;overflow-y:auto;font-family:var(--font-mono,monospace);font-size:0.74rem;line-height:1.8;color:var(--txt2);background:var(--bg3);border-radius:8px;padding:12px;">Loading logs…</div>
+      </div>
+      <!-- Sync Diagnostic Log -->
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:16px;">
+        <div style="font-weight:700;font-size:0.9rem;margin-bottom:12px;">🔄 Sync Diagnostics</div>
+        <pre id="syncDiagOut" style="margin-top:10px;font-size:.7rem;color:var(--txt2);background:var(--bg3);border-radius:10px;padding:12px;white-space:pre-wrap;word-break:break-all;line-height:1.6;max-height:280px;overflow-y:auto;">Tap ☁️ Sync in your profile to run diagnostics.</pre>
+      </div>
+    </div>
+
+    <!-- ══ SETTINGS TAB ══ -->
+    <div id="atab-content-settings" style="display:none;">
+      <!-- App Settings -->
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:16px;">
+        <div style="font-weight:700;font-size:0.9rem;margin-bottom:4px;">⚙️ App Settings</div>
+        <div style="font-size:0.76rem;color:var(--green);margin-bottom:14px;">✅ Settings push to Firestore — all users see them instantly.</div>
+        <label class="field-label">📱 App Name</label>
+        <input class="field" id="adminAppName" placeholder="Trackinfin" style="margin-bottom:10px;"/>
+        <label class="field-label">📞 Support Phone <span style="color:var(--txt3);font-weight:400;">(shown in Help)</span></label>
+        <input class="field" id="adminSupportPhone" placeholder="+232 76 000 000" style="margin-bottom:10px;"/>
+        <label class="field-label">👋 Welcome Message for New Users</label>
+        <textarea class="field" id="adminWelcomeMsg" style="resize:none;min-height:80px;" placeholder="Welcome to Trackinfin! Start recording your first income."></textarea>
+        <div id="adminSettingsSaveStatus" style="font-size:0.74rem;margin-top:8px;display:none;"></div>
+        <div style="margin-top:12px;">
+          <button class="btn" onclick="saveAdminSettings()">💾 Save & Push to All Users</button>
+        </div>
+      </div>
+      <!-- Admin Password -->
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:16px;">
+        <div style="font-weight:700;font-size:0.9rem;margin-bottom:12px;">🔑 Admin Password</div>
+        <button class="btn ghost sm" onclick="toggleAdminChangePw()">Change Password</button>
+        <div id="adminChangePwSection" style="display:none;margin-top:12px;">
+          <input class="field" id="adminOldPw" type="password" placeholder="Current password" style="margin-bottom:8px;"/>
+          <input class="field" id="adminNew1" type="password" placeholder="New password (min 8)" style="margin-bottom:8px;"/>
+          <input class="field" id="adminNew2" type="password" placeholder="Confirm new password" style="margin-bottom:8px;"/>
+          <div class="err" id="adminPwErr"></div>
+          <button class="btn sm" onclick="doAdminChangePw()">Update Password</button>
+        </div>
+      </div>
+      <!-- Firebase Links -->
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:16px;">
+        <div style="font-weight:700;font-size:0.9rem;margin-bottom:12px;">🔥 Firebase Console</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <a href="https://console.firebase.google.com/project/trackinfin/authentication/users" target="_blank" class="btn ghost sm">👥 Auth Users →</a>
+          <a href="https://console.firebase.google.com/project/trackinfin/firestore" target="_blank" class="btn ghost sm">🗄️ Firestore →</a>
+          <a href="https://console.firebase.google.com/project/trackinfin/analytics" target="_blank" class="btn ghost sm">📊 Analytics →</a>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /padding -->
 </div>
 
 <!-- Admin Firebase Info (replaces old JSONBin setup) -->
@@ -3457,46 +3615,9 @@ input:checked + .toggle-slider { box-shadow: 0 0 0 2px var(--brand-dim) !importa
   <button class="btn ghost full" onclick="closeO('oAdminCloudSetup')">Close</button>
 </div></div>
 
-<!-- Admin Broadcast -->
-<div class="overlay" id="oAdminBroadcast"><div class="modal">
-  <div class="modal-title">📢 Broadcast Message</div>
-  <div class="modal-sub">Message goes into every user's notification inbox when they open the app.</div>
-  <label class="field-label">Type</label>
-  <div style="display:flex;gap:6px;margin-bottom:14px;">
-    <div class="bcast-type active" id="bct-info" onclick="setBcastType('info')" style="background:var(--brand);border-color:var(--brand);color:#fff;">📢 Info</div>
-    <div class="bcast-type" id="bct-update" onclick="setBcastType('update')">🚀 Update</div>
-    <div class="bcast-type" id="bct-warning" onclick="setBcastType('warning')">⚠️ Warning</div>
-    <div class="bcast-type" id="bct-promo" onclick="setBcastType('promo')">🎉 Promo</div>
-  </div>
-  <input type="hidden" id="bcastType" value="info">
-  <label class="field-label">Title <span style="color:var(--txt3);font-weight:400;">(optional)</span></label>
-  <input class="field" id="bcastTitle" placeholder="e.g. New Feature Available" style="margin-bottom:10px;">
-  <label class="field-label">Message</label>
-  <textarea class="field" id="broadcastMsg" style="resize:none;min-height:90px;" placeholder="Write your message to all users…"></textarea>
-  <div class="btn-row">
-    <button class="btn" onclick="sendBroadcast()">📢 Send to All Users</button>
-    <button class="btn ghost" onclick="closeO('oAdminBroadcast')">Cancel</button>
-  </div>
-</div></div>
 
-<!-- Admin Settings -->
-<div class="overlay" id="oAdminSettings"><div class="modal">
-  <div class="modal-title">⚙️ App Settings</div>
-  <div style="background:var(--green-dim);border:1px solid rgba(6,214,160,.2);border-radius:10px;padding:10px 13px;margin-bottom:14px;font-size:0.76rem;color:var(--green);">
-    ✅ Settings push to Firestore — all users see them instantly.
-  </div>
-  <label class="field-label">📱 App Name</label>
-  <input class="field" id="adminAppName" placeholder="Trackinfin" style="margin-bottom:10px;"/>
-  <label class="field-label">📞 Support Phone <span style="color:var(--txt3);font-weight:400;">(shown in Help)</span></label>
-  <input class="field" id="adminSupportPhone" placeholder="+232 76 000 000" style="margin-bottom:10px;"/>
-  <label class="field-label">👋 Welcome Message for New Users</label>
-  <textarea class="field" id="adminWelcomeMsg" style="resize:none;min-height:80px;" placeholder="Welcome to Trackinfin! Start recording your first income."></textarea>
-  <div id="adminSettingsSaveStatus" style="font-size:0.74rem;margin-bottom:8px;display:none;"></div>
-  <div class="btn-row">
-    <button class="btn" onclick="saveAdminSettings()">💾 Save & Push to All Users</button>
-    <button class="btn ghost" onclick="closeO('oAdminSettings')">Cancel</button>
-  </div>
-</div></div>
+
+
 
 <!-- Add Sheet (Add Money) -->
 <div id="addSheet">
@@ -6577,7 +6698,16 @@ function exportPDF(){
   const{income,savings,spending,balance}=calcMonth(m);
   const txs=S.txs.filter(t=>t.month===m);
   const content=`
-    <html><head><style>body{font-family:Arial,sans-serif;padding:24px;color:#111;}h1{color:#0EA5E9;margin-bottom:4px;}h2{color:#333;margin-top:24px;margin-bottom:8px;font-size:1rem;}table{width:100%;border-collapse:collapse;font-size:0.85rem;}th{background:#f0f0f0;padding:8px;text-align:left;border-bottom:2px solid #ddd;}td{padding:8px;border-bottom:1px solid #eee;}.summary{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:16px 0;}.sum-box{background:#f8f8f8;padding:12px;border-radius:8px;}.sum-label{font-size:0.72rem;color:#666;text-transform:uppercase;}.sum-value{font-size:1.1rem;font-weight:700;margin-top:3px;}</style></head>
+    <html><head><style>body{font-family:Arial,sans-serif;padding:24px;color:#111;}h1{color:#0EA5E9;margin-bottom:4px;}h2{color:#333;margin-top:24px;margin-bottom:8px;font-size:1rem;}table{width:100%;border-collapse:collapse;font-size:0.85rem;}th{background:#f0f0f0;padding:8px;text-align:left;border-bottom:2px solid #ddd;}td{padding:8px;border-bottom:1px solid #eee;}.summary{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:16px 0;}.sum-box{background:#f8f8f8;padding:12px;border-radius:8px;}.sum-label{font-size:0.72rem;color:#666;text-transform:uppercase;}.sum-value{font-size:1.1rem;font-weight:700;margin-top:3px;}
+/* ── ADMIN PANEL TABS ── */
+.admin-tab{padding:12px 16px;font-size:0.78rem;font-weight:700;color:var(--txt3);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;transition:all .2s;}
+.admin-tab:hover{color:var(--txt);}
+.admin-tab.active{color:var(--brand);border-bottom-color:var(--brand);}
+.admin-stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+@media(max-width:420px){.admin-stat-grid{grid-template-columns:repeat(2,1fr);}}
+.admin-stat{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:16px;text-align:center;}
+.admin-stat-ico{font-size:1.4rem;margin-bottom:6px;}
+</style></head>
     <body>
     <h1>💰 Trackinfin — Financial Report</h1>
     <div style="color:#666;font-size:0.85rem;">${mLabel(m)} · Generated ${new Date().toLocaleDateString()}</div>
@@ -6811,7 +6941,6 @@ function doAdminLogin(){
   closeAdminLogin();openAdminPanel(email);
 }
 function openAdminPanel(email){
-  // Ensure token exists and is synced to Firestore
   _ensureAdminToken().catch(()=>{});
   const panel=document.getElementById('adminPanel');
   if(!panel){console.error('Admin panel element not found');return;}
@@ -6820,10 +6949,24 @@ function openAdminPanel(email){
   const ep=localStorage.getItem(ADMIN_EMAIL_P)||email;
   const es=document.getElementById('adminEmailShow');
   if(es){es.textContent=ep;es.style.filter='blur(4px)';}
-  // Admin setup banner — no longer needed (Firebase handles everything)
-  const banner=document.getElementById('adminSetupBanner');
-  if(banner)banner.style.display='none';
+  switchAdminTab('dashboard');
   renderAdminStats();
+  loadGlobalFeatures();
+  loadBroadcastHistory();
+  loadSystemLogs();
+  loadMaintenanceMode();
+  loadVersionControl();
+}
+
+function switchAdminTab(tab){
+  ['dashboard','users','features','broadcast','feedback','logs','settings'].forEach(t=>{
+    const btn=document.getElementById('atab-'+t);
+    const content=document.getElementById('atab-content-'+t);
+    if(btn)btn.classList.toggle('active',t===tab);
+    if(content)content.style.display=t===tab?'block':'none';
+  });
+  if(tab==='users')renderAdminUsers();
+  if(tab==='feedback')loadAdminFeedbackInline();
 }
 function closeAdminPanel(){document.getElementById('adminPanel').style.display='none';document.body.style.overflow='';}
 function toggleAdminChangePw(){const s=document.getElementById('adminChangePwSection');s.style.display=s.style.display==='none'?'block':'none';}
@@ -6925,6 +7068,7 @@ async function renderAdminStats(){
   window._adminUsers=users;
   renderAdminUsers(users);
   renderActivityLog(users);
+  renderAdminHealth();
   const logEl=document.getElementById('adminActivityLog');
   if(logEl){
     const recent=users.filter(u=>u.lastActive).sort((a,b)=>toMs(b.lastActive)-toMs(a.lastActive)).slice(0,10);
@@ -7067,6 +7211,8 @@ async function adminRemove(u){
       }
       window._adminUsers=(window._adminUsers||[]).filter(x=>x.uid!==u.uid);
       renderAdminUsers(window._adminUsers);
+      addAdminLog('remove','Removed user: '+name+' ('+u.email+')');
+      renderSystemLogs();
       showWin('✅ User removed',name+' has been removed from the platform.');
     }catch(e){
       if(e.code==='permission-denied'){
@@ -7094,6 +7240,8 @@ async function adminSuspend(u){
       }
       u.suspended=true;
       renderAdminUsers(window._adminUsers);
+      addAdminLog('suspend','Suspended user: '+name+' ('+u.email+')');
+      renderSystemLogs();
       showWin('🚫 User suspended',name+' is now blocked from logging in.');
     }catch(e){
       if(e.code==='permission-denied'){
@@ -7162,6 +7310,8 @@ async function adminSendDirectMessage(u){
       // Also mirror to publicProfiles so it's visible if rules allow
       fbDb.collection('publicProfiles').doc(uid).set({directMsg:dmData},{merge:true}).catch(()=>{});
       document.getElementById('_dmModal')?.remove();
+      addAdminLog('dm','Direct message sent to '+uname+': '+txt.slice(0,60));
+      renderSystemLogs();
       showWin('✅ Message sent',uname+' will see it in their notification inbox next time they open the app.');
     }catch(e){
       const errEl=document.getElementById('_dmErr');
@@ -7239,9 +7389,12 @@ async function sendBroadcast(){
     // Secondary write: broadcast/latest
     fbDb.collection('broadcast').doc('latest').set(payload).catch(()=>{});
     const users=window._adminUsers||[];
-    closeO('oAdminBroadcast');
+    // broadcast is inline — no modal to close
     document.getElementById('broadcastMsg').value='';
     const ti=document.getElementById('bcastTitle');if(ti)ti.value='';
+    addAdminLog('broadcast','Broadcast sent: '+title+' — '+msg.slice(0,60));
+    renderSystemLogs();
+    loadBroadcastHistory();
     showWin('📢 Broadcast sent!','Will reach '+users.length+' user'+(users.length!==1?'s':'')+' when they next open the app.');
   }catch(e){
     if(e.code==='permission-denied'){
@@ -7278,7 +7431,7 @@ function openAdminSettings(){
   const w=document.getElementById('adminWelcomeMsg');if(w)w.value=s.welcomeMsg||'';
   const a=document.getElementById('adminAppName');if(a)a.value=s.appName||'';
   const st=document.getElementById('adminSettingsSaveStatus');if(st)st.style.display='none';
-  openO('oAdminSettings');
+  switchAdminTab('settings');
 }
 async function saveAdminSettings(){
   const phone=document.getElementById('adminSupportPhone').value.trim();
@@ -7293,6 +7446,8 @@ async function saveAdminSettings(){
       await fbDb.collection('appConfig').doc('settings').set(settings);
       if(st){st.style.color='var(--green)';st.textContent='✅ Saved and pushed to all users!';}
       setTimeout(()=>closeO('oAdminSettings'),900);
+      addAdminLog('settings','App settings updated: appName='+appName+' phone='+phone);
+      renderSystemLogs();
       showWin('✅ Settings saved!','All users will see the updated support number and welcome message.');
     }catch(e){
       if(st){st.style.color='var(--orange)';st.textContent='⚠️ Local only (Firestore error): '+e.message;}
@@ -8327,6 +8482,253 @@ function renderTxItem(t){
   </div>`;
 }
 
+
+// ══════════════════════════════════════════════════════
+// ADMIN — SYSTEM HEALTH
+// ══════════════════════════════════════════════════════
+function renderAdminHealth(){
+  const el=document.getElementById('adminHealthGrid');if(!el)return;
+  const items=[
+    {label:'Firebase Auth',check:()=>!!fbAuth,icon:'🔐'},
+    {label:'Firestore',check:()=>!!fbDb,icon:'🗄️'},
+    {label:'Admin Logged In',check:()=>!!localStorage.getItem(ADMIN_KEY),icon:'👤'},
+    {label:'Token Ready',check:()=>!!localStorage.getItem('tfi_admin_tok'),icon:'🔑'},
+    {label:'Offline Cache',check:()=>!!localStorage.getItem('tfi_session'),icon:'💾'},
+    {label:'Network',check:()=>navigator.onLine,icon:'🌐'},
+  ];
+  el.innerHTML=items.map(it=>{
+    const ok=it.check();
+    return`<div style="background:var(--bg3);border-radius:10px;padding:12px;display:flex;align-items:center;gap:10px;">
+      <span style="font-size:1.2rem;">${it.icon}</span>
+      <div style="flex:1;">
+        <div style="font-size:0.8rem;font-weight:600;">${it.label}</div>
+        <div style="font-size:0.72rem;color:${ok?'var(--green)':'var(--red)'};">${ok?'✅ OK':'❌ Issue'}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════════════════
+// ADMIN — FEATURE TOGGLES
+// ══════════════════════════════════════════════════════
+const GLOBAL_FEATURES=[
+  {id:'business',label:'Business Tracker',icon:'🏪',desc:'P&L tracking for traders and business owners'},
+  {id:'credit',label:'Credit Tracker',icon:'🤝',desc:'Track money lent and owed'},
+  {id:'plans',label:'Envelope Budgeting',icon:'📊',desc:'Allocate income across spending envelopes'},
+  {id:'ai',label:'AI Advisor',icon:'🤖',desc:'AI-powered financial advice (requires API key)'},
+  {id:'receipt',label:'Receipt Scanner',icon:'🧾',desc:'Scan receipts to auto-record expenses'},
+  {id:'bills',label:'Bill Tracker',icon:'📆',desc:'Track recurring bills and subscriptions'},
+  {id:'networth',label:'Net Worth Tracker',icon:'📈',desc:'Track assets and liabilities'},
+  {id:'challenges',label:'Savings Challenges',icon:'🏆',desc:'52-week and custom savings challenges'},
+];
+
+async function loadGlobalFeatures(){
+  const el=document.getElementById('adminFeaturesGrid');if(!el)return;
+  let cloudFeatures={};
+  if(fbDb){
+    try{
+      const doc=await fbDb.collection('appConfig').doc('features').get();
+      if(doc.exists)cloudFeatures=doc.data();
+    }catch(e){console.warn('Load features:',e.message);}
+  }
+  el.innerHTML=GLOBAL_FEATURES.map(f=>{
+    const on=cloudFeatures[f.id]!==undefined?cloudFeatures[f.id]:true;
+    return`<div style="background:var(--bg3);border-radius:12px;padding:14px;display:flex;align-items:center;gap:12px;">
+      <span style="font-size:1.3rem;">${f.icon}</span>
+      <div style="flex:1;">
+        <div style="font-size:0.84rem;font-weight:700;">${f.label}</div>
+        <div style="font-size:0.7rem;color:var(--txt3);">${f.desc}</div>
+      </div>
+      <label class="toggle"><input type="checkbox" id="gf-${f.id}" ${on?'checked':''}/><span class="toggle-slider"></span></label>
+    </div>`;
+  }).join('');
+  const st=document.getElementById('featuresSaveStatus');
+  if(st)st.textContent='✅ Loaded from cloud';
+}
+
+async function saveGlobalFeatures(){
+  if(!fbDb){showWin('⚠️ Error','Firebase not connected.');return;}
+  const features={};
+  GLOBAL_FEATURES.forEach(f=>{
+    const cb=document.getElementById('gf-'+f.id);
+    features[f.id]=cb?cb.checked:true;
+  });
+  const st=document.getElementById('featuresSaveStatus');
+  if(st){st.style.color='var(--txt3)';st.textContent='⏳ Saving…';}
+  try{
+    await fbDb.collection('appConfig').doc('features').set(features);
+    if(st){st.style.color='var(--green)';st.textContent='✅ Saved — all users will see changes on next app load.';}
+    showWin('✅ Features saved','Feature settings pushed to all users.');
+  }catch(e){
+    if(st){st.style.color='var(--red)';st.textContent='❌ Error: '+e.message;}
+    showWin('⚠️ Error','Could not save features: '+e.message);
+  }
+}
+
+// ══════════════════════════════════════════════════════
+// ADMIN — MAINTENANCE MODE
+// ══════════════════════════════════════════════════════
+async function loadMaintenanceMode(){
+  if(!fbDb)return;
+  try{
+    const doc=await fbDb.collection('appConfig').doc('system').get();
+    if(!doc.exists)return;
+    const d=doc.data();
+    const toggle=document.getElementById('maintModeToggle');
+    const status=document.getElementById('maintModeStatus');
+    const timeEl=document.getElementById('maintModeTime');
+    const msgEl=document.getElementById('maintModeMsg');
+    if(toggle)toggle.checked=!!d.maintenanceMode;
+    if(status){status.textContent=d.maintenanceMode?'🔴 MAINTENANCE MODE ON':'● App is LIVE';status.style.color=d.maintenanceMode?'var(--red)':'var(--green)';}
+    if(timeEl&&d.maintenanceUpdatedAt)timeEl.textContent=new Date(d.maintenanceUpdatedAt).toLocaleString();
+    if(msgEl&&d.maintenanceMsg)msgEl.value=d.maintenanceMsg;
+  }catch(e){console.warn('loadMaintenanceMode:',e.message);}
+}
+
+async function toggleMaintenanceMode(on){
+  if(!fbDb){showWin('⚠️ Error','Firebase not connected.');return;}
+  const msg=document.getElementById('maintModeMsg')?.value||'We are performing maintenance. Back shortly!';
+  const status=document.getElementById('maintModeStatus');
+  try{
+    await fbDb.collection('appConfig').doc('system').set({
+      maintenanceMode:on,
+      maintenanceMsg:msg,
+      maintenanceUpdatedAt:new Date().toISOString()
+    },{merge:true});
+    if(status){status.textContent=on?'🔴 MAINTENANCE MODE ON':'● App is LIVE';status.style.color=on?'var(--red)':'var(--green)';}
+    showWin(on?'🚧 Maintenance ON':'✅ App is Live',on?'Users will see maintenance notice until you turn this off.':'App is back to normal for all users.');
+  }catch(e){showWin('⚠️ Error',e.message);}
+}
+
+// ══════════════════════════════════════════════════════
+// ADMIN — VERSION CONTROL
+// ══════════════════════════════════════════════════════
+async function loadVersionControl(){
+  if(!fbDb)return;
+  try{
+    const doc=await fbDb.collection('appConfig').doc('version').get();
+    if(!doc.exists)return;
+    const d=doc.data();
+    const lv=document.getElementById('appVersionLatest');
+    const mv=document.getElementById('appVersionMin');
+    const vm=document.getElementById('appVersionMsg');
+    if(lv&&d.latestVersion)lv.value=d.latestVersion;
+    if(mv&&d.minimumVersion)mv.value=d.minimumVersion;
+    if(vm&&d.updateMessage)vm.value=d.updateMessage;
+  }catch(e){console.warn('loadVersionControl:',e.message);}
+}
+
+async function saveVersionControl(){
+  if(!fbDb){showWin('⚠️ Error','Firebase not connected.');return;}
+  const latest=document.getElementById('appVersionLatest')?.value.trim();
+  const min=document.getElementById('appVersionMin')?.value.trim();
+  const msg=document.getElementById('appVersionMsg')?.value.trim();
+  const st=document.getElementById('versionSaveStatus');
+  if(!latest){showWin('⚠️ Missing','Enter the latest version number.');return;}
+  if(st){st.style.color='var(--txt3)';st.textContent='⏳ Saving…';}
+  try{
+    await fbDb.collection('appConfig').doc('version').set({
+      latestVersion:latest,
+      minimumVersion:min||latest,
+      updateMessage:msg||'A new version of Trackinfin is available. Please refresh to update.',
+      updatedAt:new Date().toISOString()
+    });
+    if(st){st.style.color='var(--green)';st.textContent='✅ Version settings saved.';}
+    showWin('✅ Version saved','App version control updated for all users.');
+  }catch(e){
+    if(st){st.style.color='var(--red)';st.textContent='❌ '+e.message;}
+    showWin('⚠️ Error',e.message);
+  }
+}
+
+// ══════════════════════════════════════════════════════
+// ADMIN — SYSTEM LOGS
+// ══════════════════════════════════════════════════════
+const ADMIN_LOG_KEY='tfi_admin_logs';
+
+function addAdminLog(type, msg){
+  try{
+    const logs=JSON.parse(localStorage.getItem(ADMIN_LOG_KEY)||'[]');
+    logs.unshift({type,msg,time:new Date().toISOString()});
+    localStorage.setItem(ADMIN_LOG_KEY,JSON.stringify(logs.slice(0,200)));
+  }catch{}
+}
+
+function loadSystemLogs(){
+  renderSystemLogs();
+}
+
+function renderSystemLogs(){
+  const el=document.getElementById('systemLogsContainer');if(!el)return;
+  const filter=document.getElementById('logFilterType')?.value||'all';
+  let logs=[];
+  try{logs=JSON.parse(localStorage.getItem(ADMIN_LOG_KEY)||'[]');}catch{}
+  if(!logs.length){el.textContent='No logs yet. Admin actions will appear here.';return;}
+  const filtered=filter==='all'?logs:logs.filter(l=>l.type===filter);
+  if(!filtered.length){el.textContent='No logs for this filter.';return;}
+  const colors={login:'var(--brand)',signup:'var(--green)',suspend:'var(--orange)',remove:'var(--red)',broadcast:'var(--gold)',dm:'var(--purple)',settings:'var(--txt2)',feature:'var(--green)'};
+  el.innerHTML=filtered.map(l=>{
+    const col=colors[l.type]||'var(--txt3)';
+    const time=new Date(l.time).toLocaleString('en',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit'});
+    return`<div style="padding:3px 0;border-bottom:1px solid var(--border2);"><span style="color:${col};font-weight:700;">[${(l.type||'info').toUpperCase()}]</span> <span style="color:var(--txt2);">${l.msg}</span> <span style="color:var(--txt3);font-size:0.68rem;float:right;">${time}</span></div>`;
+  }).join('');
+}
+
+function clearAdminLogs(){
+  _confirm('All system logs will be permanently cleared.',{title:'Clear Logs?',icon:'🗑️',okLabel:'Clear',danger:true}).then(ok=>{
+    if(!ok)return;
+    localStorage.removeItem(ADMIN_LOG_KEY);
+    renderSystemLogs();
+    showWin('✅ Logs cleared','System logs have been cleared.');
+  });
+}
+
+// ══════════════════════════════════════════════════════
+// ADMIN — BROADCAST HISTORY
+// ══════════════════════════════════════════════════════
+async function loadBroadcastHistory(){
+  const el=document.getElementById('adminBcastHistory');if(!el)return;
+  if(!fbDb){el.textContent='Firebase not connected.';return;}
+  try{
+    const doc=await fbDb.collection('adminActions').doc('broadcast').get();
+    if(!doc.exists){el.innerHTML='<div style="color:var(--txt3);font-size:0.82rem;">No broadcast sent yet.</div>';return;}
+    const d=doc.data();
+    const typeColors={info:'var(--brand)',update:'var(--green)',warning:'var(--orange)',promo:'var(--gold)'};
+    const col=typeColors[d.type]||'var(--brand)';
+    el.innerHTML=`<div style="background:var(--bg3);border-radius:10px;padding:12px;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+        <span style="font-size:0.72rem;font-weight:700;padding:2px 8px;border-radius:5px;background:${col}22;color:${col};">${(d.type||'info').toUpperCase()}</span>
+        <span style="font-size:0.72rem;color:var(--txt3);">${d.sentAt?new Date(d.sentAt).toLocaleString():''}</span>
+        <span style="font-size:0.72rem;color:var(--txt3);">by ${d.sentBy||'admin'}</span>
+      </div>
+      ${d.title?`<div style="font-weight:700;font-size:0.84rem;margin-bottom:4px;">${d.title}</div>`:''}
+      <div style="font-size:0.82rem;color:var(--txt2);">${d.text||''}</div>
+    </div>`;
+  }catch(e){el.textContent='Could not load: '+e.message;}
+}
+
+// ══════════════════════════════════════════════════════
+// ADMIN — INLINE FEEDBACK (replaces modal)
+// ══════════════════════════════════════════════════════
+async function loadAdminFeedbackInline(){
+  const listEl=document.getElementById('afList');
+  const statsEl=document.getElementById('afStats');
+  if(!listEl)return;
+  if(!fbDb){listEl.innerHTML='<div style="color:var(--red);padding:16px;">Firebase not connected.</div>';return;}
+  listEl.innerHTML='<div style="text-align:center;color:var(--txt3);padding:24px;">⏳ Loading feedback…</div>';
+  const icons={suggestion:'💡',bug:'🐛',praise:'⭐',other:'💬'};
+  const cols={suggestion:'var(--brand)',bug:'var(--red)',praise:'var(--gold)',other:'var(--green)'};
+  let allItems=[];
+  try{
+    const snap=await fbDb.collection('feedback').orderBy('sentAt','desc').limit(150).get();
+    snap.docs.forEach(d=>allItems.push({...d.data(),_docId:d.id}));
+  }catch(e){console.warn('feedback:',e.message);}
+  window._afAllItems=allItems;
+  window._afIcons=icons;
+  window._afCols=cols;
+  _renderAfList();
+  _renderAfStats();
+}
 
 </script>
 
