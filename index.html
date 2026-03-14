@@ -5129,47 +5129,7 @@ function setTxFilter(f){
 // ══════════════════════════════════════════════════════
 // TRANSACTION 3-DOT CONTEXT MENU
 // ══════════════════════════════════════════════════════
-function openTxMenu(id, btn){
-  const old=document.getElementById('_txMenu');if(old)old.remove();
-  const t=S.txs.find(x=>x.id===id);if(!t)return;
-  const rect=btn.getBoundingClientRect();
-  const menu=document.createElement('div');
-  menu.id='_txMenu';
-  menu.style.cssText=`position:fixed;z-index:9999;background:var(--bg2);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow);padding:6px;min-width:170px;animation:popIn .15s ease;`;
-  // Position below button, stay within viewport
-  const top=Math.min(rect.bottom+4, window.innerHeight-180);
-  const left=Math.min(rect.left-130, window.innerWidth-180);
-  menu.style.top=top+'px';
-  menu.style.left=Math.max(8,left)+'px';
-  menu.innerHTML=`
-    <div onclick="editTx(${id});document.getElementById('_txMenu').remove()" style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:9px;cursor:pointer;font-size:.84rem;font-weight:600;color:var(--txt);transition:background .12s;" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background=''">
-      <span style="font-size:1rem;">✏️</span> Edit
-    </div>
-    <div onclick="duplicateTx(${id});document.getElementById('_txMenu').remove()" style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:9px;cursor:pointer;font-size:.84rem;font-weight:600;color:var(--txt);transition:background .12s;" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background=''">
-      <span style="font-size:1rem;">📋</span> Duplicate
-    </div>
-    ${t.receipt?`<div onclick="viewTxReceipt(${id});document.getElementById('_txMenu').remove()" style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:9px;cursor:pointer;font-size:.84rem;font-weight:600;color:var(--txt);transition:background .12s;" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background=''"><span style="font-size:1rem;">📎</span> View Receipt</div>`:''}
-    <div style="height:1px;background:var(--border2);margin:3px 6px;"></div>
-    <div onclick="deleteTx(${id});document.getElementById('_txMenu').remove()" style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:9px;cursor:pointer;font-size:.84rem;font-weight:600;color:var(--red);transition:background .12s;" onmouseover="this.style.background='var(--red-dim)'" onmouseout="this.style.background=''">
-      <span style="font-size:1rem;">🗑️</span> Delete
-    </div>`;
-  document.body.appendChild(menu);
-  // Close on outside click
-  setTimeout(()=>{
-    document.addEventListener('click',function _close(e){
-      if(!menu.contains(e.target)){menu.remove();document.removeEventListener('click',_close);}
-    });
-  },10);
-}
 
-function duplicateTx(id){
-  const t=S.txs.find(x=>x.id===id);if(!t)return;
-  const copy={...t,id:Date.now(),date:new Date().toISOString().split('T')[0],updatedAt:new Date().toISOString()};
-  copy.month=copy.date.slice(0,7);
-  S.txs.unshift(copy);
-  autoSave();renderMoney();renderHome();
-  showWin('📋 Duplicated','Transaction copied to today.');
-}
 
 
 function deleteTx(id){_confirm('Delete this transaction?',{title:'Delete Transaction',icon:'🗑️',okLabel:'Delete',danger:true}).then(ok=>{if(!ok)return;S.txs=S.txs.filter(t=>t.id!==id);autoSave();renderMoney();renderHome();});}
