@@ -1,4 +1,4 @@
-const CACHE = 'trackinfin-v10';
+const CACHE = 'trackinfin-v11';
 const NEVER_CACHE = [
   'googleapis.com','firebaseio.com','firebaseapp.com',
   'identitytoolkit','securetoken','groq','generativelanguage',
@@ -29,7 +29,7 @@ self.addEventListener('fetch', e => {
   // Never intercept Firebase/API/CDN calls
   if (NEVER_CACHE.some(x => url.includes(x))) return;
 
-  // Navigation requests (the HTML page) — network first, cache fallback
+  // Navigation (HTML page) — always network first, never serve stale
   if (e.request.mode === 'navigate') {
     e.respondWith(
       fetch(e.request)
@@ -50,17 +50,17 @@ self.addEventListener('fetch', e => {
     return;
   }
 
-  // Everything else — cache first, then network
+  // Everything else — network first (not cache first)
+  // This ensures JS/CSS always loads fresh when online
   e.respondWith(
-    caches.match(e.request).then(cached => {
-      if (cached) return cached;
-      return fetch(e.request).then(r => {
+    fetch(e.request)
+      .then(r => {
         if (r && r.status === 200 && r.type !== 'opaque') {
           const clone = r.clone();
           caches.open(CACHE).then(c => c.put(e.request, clone));
         }
         return r;
-      }).catch(() => new Response('', { status: 503 }));
-    })
+      })
+      .catch(() => caches.match(e.request))
   );
 });

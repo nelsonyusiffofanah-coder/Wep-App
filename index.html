@@ -2,12 +2,12 @@
 <html lang="en" data-theme="dark">
 <head>
 <meta charset="UTF-8"/>
+  <meta name="app-version" content="1773490803"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
 <meta name="theme-color" content="#0EA5E9"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
 <meta name="apple-mobile-web-app-title" content="Trackinfin"/>
-<meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' https: data: blob:; worker-src 'self' blob:; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.firebaseapp.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://fonts.googleapis.com https://fonts.gstatic.com https://cdnjs.cloudflare.com https://api.groq.com https://generativelanguage.googleapis.com;"/>
 
 <!-- PWA Manifest — full with icons -->
 <link rel="manifest" href="/manifest.json"/>
@@ -42,6 +42,10 @@ window.addEventListener('error', e=>{
 // ── SERVICE WORKER REGISTRATION ───────────────────────
 if('serviceWorker' in navigator){
   window.addEventListener('load',()=>{
+    // Unregister ALL old service workers first, then re-register fresh
+    navigator.serviceWorker.getRegistrations().then(regs=>{
+      regs.forEach(r=>r.unregister());
+    });
     navigator.serviceWorker.register('/sw.js',{scope:'/'})
       .then(reg=>{
         reg.update();
@@ -3755,6 +3759,7 @@ async function doSignUp(){
   if(pw.length<6){err.textContent='Password must be at least 6 characters.';return;}
   if(pw!==pw2){err.textContent='Passwords do not match.';return;}
   err.textContent='';
+  if(!fbAuth){document.getElementById('suErr').textContent='Still connecting… please wait and try again.';return;}
   if(btn){btn.textContent='⏳ Creating account…';btn.disabled=true;}
   try{
     const cred=await fbAuth.createUserWithEmailAndPassword(email,pw);
@@ -3772,18 +3777,18 @@ async function doSignUp(){
 async function doSignIn(){
   const email=document.getElementById('siEmail').value.trim();
   const pw=document.getElementById('siPass').value;
-  const err=document.getElementById('siErr');
+  const errEl=document.getElementById('siErr');
   const btn=document.querySelector('#panelIn .btn.full');
-  if(!email||!pw){err.textContent='Enter your email and password.';return;}
-  err.textContent='';
+  if(!email||!pw){errEl.textContent='Enter your email and password.';return;}
+  if(!fbAuth){errEl.textContent='Still connecting… please wait a moment then try again.';return;}
+  errEl.textContent='';
   if(btn){btn.textContent='⏳ Signing in…';btn.disabled=true;}
   try{
-    // Just authenticate — onAuthStateChanged handles everything else
     await fbAuth.signInWithEmailAndPassword(email,pw);
     if(btn){btn.textContent='Sign In →';btn.disabled=false;}
   }catch(e){
     if(btn){btn.textContent='Sign In →';btn.disabled=false;}
-    err.textContent=firebaseErrMsg(e);
+    errEl.textContent=firebaseErrMsg(e)||'Sign in failed. Check your connection and try again.';
   }
 }
 
@@ -7348,39 +7353,55 @@ async function initApp(){
   document.getElementById('authScreen').style.display='flex';
 
   // ── INITIALIZE FIREBASE ──
-  if(typeof firebase === 'undefined'){
-    console.error('Firebase SDK not loaded — check internet connection');
-    // Show helpful message on auth screen
-    const authCard=document.querySelector('.auth-card');
-    if(authCard){
-      const notice=document.createElement('div');
-      notice.style.cssText='background:var(--red-dim);border:1px solid var(--red);border-radius:10px;padding:12px;margin-bottom:12px;font-size:0.78rem;color:var(--red);text-align:center;';
-      notice.textContent='⚠️ Could not connect to Firebase. Check your internet connection and refresh.';
-      authCard.prepend(notice);
-    }
-    fbDb=null;fbAuth=null;
-  } else {
+  // ── Firebase Init (robust) ──────────────────────────
+  function _tryInitFirebase(){
+    if(typeof firebase==='undefined') return false;
     try{
-      // Prevent duplicate initialization
-      if(!firebase.apps.length){
-        fbApp=firebase.initializeApp(firebaseConfig);
-      } else {
-        fbApp=firebase.app();
-      }
-      fbAuth=firebase.auth();
-      fbDb=firebase.firestore();
-      // Enable offline persistence (silently)
-      // Persistence disabled — we use our own encrypted localStorage cache
-    }catch(e){
-      console.error('Firebase init failed:',e);
-      fbDb=null;fbAuth=null;
+      fbApp = firebase.apps.length ? firebase.app() : firebase.initializeApp(firebaseConfig);
+      fbAuth = firebase.auth();
+      fbDb   = firebase.firestore();
+      return true;
+    }catch(e){ console.error('Firebase init error:',e); return false; }
+  }
+
+  if(!_tryInitFirebase()){
+    // Firebase SDK not loaded yet — show notice and retry
+    const _authCard=document.querySelector('.auth-card');
+    let _notice=null;
+    if(_authCard){
+      _notice=document.createElement('div');
+      _notice.style.cssText='background:var(--orange-dim);border:1px solid var(--orange);border-radius:10px;padding:11px 13px;margin-bottom:12px;font-size:0.8rem;color:var(--orange);text-align:center;line-height:1.5;';
+      _notice.innerHTML='⏳ Connecting… If this takes too long, check your internet and <strong style="cursor:pointer;text-decoration:underline;" onclick="location.reload()">tap to reload</strong>.';
+      _authCard.prepend(_notice);
     }
+    let _retries=0;
+    const _retryTimer=setInterval(()=>{
+      _retries++;
+      if(_tryInitFirebase()){
+        clearInterval(_retryTimer);
+        if(_notice)_notice.remove();
+        // Firebase now ready - set up auth listener
+        _setupAuthListener();
+      } else if(_retries>10){
+        clearInterval(_retryTimer);
+        if(_notice){
+          _notice.style.background='var(--red-dim)';
+          _notice.style.borderColor='var(--red)';
+          _notice.style.color='var(--red)';
+          _notice.innerHTML='❌ Could not connect. <strong style="cursor:pointer;text-decoration:underline;" onclick="location.reload()">Tap to reload</strong>.';
+        }
+      }
+    },500);
   }
 
   // ── FIREBASE AUTH STATE LISTENER ──
-  // This is the main entry point — Firebase tells us if user is logged in
-  if(fbAuth){
-    fbAuth.onAuthStateChanged(async (fbUser)=>{
+  if(fbAuth) _setupAuthListener();
+}
+
+// Extracted so it can be called after delayed Firebase init too
+function _setupAuthListener(){
+  if(!fbAuth) return;
+  fbAuth.onAuthStateChanged(async (fbUser)=>{
       if(fbUser){
         const uid=fbUser.uid;
         const localKey='tfi_'+sha(uid).slice(0,20);
@@ -7488,12 +7509,6 @@ async function initApp(){
         }
       }
     });
-  }else{
-    // Firebase unavailable — fall back to local mode
-    document.getElementById('authScreen').style.display='flex';
-    showAuthTab('up');
-    setTimeout(()=>document.getElementById('suName')?.focus(),400);
-  }
 }
 
 async function checkBroadcast(){
