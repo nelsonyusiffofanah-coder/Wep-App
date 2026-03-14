@@ -3378,6 +3378,7 @@ input:checked + .toggle-slider { box-shadow: 0 0 0 2px var(--brand-dim) !importa
     <div class="admin-tab" id="atab-broadcast" onclick="switchAdminTab('broadcast')">📢 Broadcast</div>
     <div class="admin-tab" id="atab-feedback" onclick="switchAdminTab('feedback')">💬 Feedback</div>
     <div class="admin-tab" id="atab-logs" onclick="switchAdminTab('logs')">📋 Logs</div>
+    <div class="admin-tab" id="atab-analytics" onclick="switchAdminTab('analytics')">📈 Analytics</div>
     <div class="admin-tab" id="atab-settings" onclick="switchAdminTab('settings')">⚙️ Settings</div>
   </div>
 
@@ -3547,6 +3548,71 @@ input:checked + .toggle-slider { box-shadow: 0 0 0 2px var(--brand-dim) !importa
       <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:16px;">
         <div style="font-weight:700;font-size:0.9rem;margin-bottom:12px;">🔄 Sync Diagnostics</div>
         <pre id="syncDiagOut" style="margin-top:10px;font-size:.7rem;color:var(--txt2);background:var(--bg3);border-radius:10px;padding:12px;white-space:pre-wrap;word-break:break-all;line-height:1.6;max-height:280px;overflow-y:auto;">Tap ☁️ Sync in your profile to run diagnostics.</pre>
+      </div>
+    </div>
+
+    <!-- ══ ANALYTICS TAB ══ -->
+    <div id="atab-content-analytics" style="display:none;">
+
+      <!-- Summary KPI Row -->
+      <div id="analyticsKpis" style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:16px;"></div>
+
+      <!-- User Growth Chart -->
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:16px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+          <div>
+            <div style="font-weight:700;font-size:0.9rem;">📈 User Growth</div>
+            <div style="font-size:0.72rem;color:var(--txt3);">New sign-ups per day (last 30 days)</div>
+          </div>
+          <div id="growthTrend" style="font-size:0.78rem;font-weight:700;"></div>
+        </div>
+        <canvas id="analyticsGrowthChart" height="120"></canvas>
+      </div>
+
+      <!-- Two column: User Types + Country breakdown -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:16px;">
+          <div style="font-weight:700;font-size:0.88rem;margin-bottom:12px;">👤 User Types</div>
+          <canvas id="analyticsTypesChart" height="160"></canvas>
+          <div id="analyticsTypesList" style="margin-top:10px;"></div>
+        </div>
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:16px;">
+          <div style="font-weight:700;font-size:0.88rem;margin-bottom:12px;">🌍 Top Countries</div>
+          <div id="analyticsCountriesList" style="font-size:0.8rem;"></div>
+        </div>
+      </div>
+
+      <!-- Retention + Engagement -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:16px;">
+          <div style="font-weight:700;font-size:0.88rem;margin-bottom:4px;">🔄 Retention</div>
+          <div style="font-size:0.72rem;color:var(--txt3);margin-bottom:14px;">% of users who came back</div>
+          <div id="analyticsRetention" style="font-size:0.82rem;"></div>
+        </div>
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:16px;">
+          <div style="font-weight:700;font-size:0.88rem;margin-bottom:4px;">⚡ Engagement</div>
+          <div style="font-size:0.72rem;color:var(--txt3);margin-bottom:14px;">Activity patterns</div>
+          <div id="analyticsEngagement" style="font-size:0.82rem;"></div>
+        </div>
+      </div>
+
+      <!-- Activity Heatmap (last 7 days hourly) -->
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:16px;">
+        <div style="font-weight:700;font-size:0.9rem;margin-bottom:4px;">🕐 When Users Are Active</div>
+        <div style="font-size:0.72rem;color:var(--txt3);margin-bottom:14px;">Login distribution across days of the week</div>
+        <div id="analyticsHeatmap" style="overflow-x:auto;"></div>
+      </div>
+
+      <!-- Feature Adoption -->
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:16px;">
+        <div style="font-weight:700;font-size:0.9rem;margin-bottom:4px;">🎛️ Feature Adoption</div>
+        <div style="font-size:0.72rem;color:var(--txt3);margin-bottom:14px;">Which user types use which features</div>
+        <div id="analyticsFeatures" style="font-size:0.82rem;"></div>
+      </div>
+
+      <div style="text-align:center;margin-top:4px;">
+        <button class="btn ghost sm" onclick="loadAnalytics()">🔄 Refresh Analytics</button>
+        <button class="btn ghost sm" onclick="exportAnalyticsCSV()" style="margin-left:8px;">📥 Export CSV</button>
       </div>
     </div>
 
@@ -6959,7 +7025,7 @@ function openAdminPanel(email){
 }
 
 function switchAdminTab(tab){
-  ['dashboard','users','features','broadcast','feedback','logs','settings'].forEach(t=>{
+  ['dashboard','users','features','broadcast','feedback','logs','analytics','settings'].forEach(t=>{
     const btn=document.getElementById('atab-'+t);
     const content=document.getElementById('atab-content-'+t);
     if(btn)btn.classList.toggle('active',t===tab);
@@ -6967,6 +7033,7 @@ function switchAdminTab(tab){
   });
   if(tab==='users')renderAdminUsers();
   if(tab==='feedback')loadAdminFeedbackInline();
+  if(tab==='analytics')loadAnalytics();
 }
 function closeAdminPanel(){document.getElementById('adminPanel').style.display='none';document.body.style.overflow='';}
 function toggleAdminChangePw(){const s=document.getElementById('adminChangePwSection');s.style.display=s.style.display==='none'?'block':'none';}
@@ -8728,6 +8795,331 @@ async function loadAdminFeedbackInline(){
   window._afCols=cols;
   _renderAfList();
   _renderAfStats();
+}
+
+// ══════════════════════════════════════════════════════
+// ADMIN — CUSTOM ANALYTICS DASHBOARD
+// ══════════════════════════════════════════════════════
+let _analyticsChart1=null,_analyticsChart2=null;
+
+async function loadAnalytics(){
+  const kpisEl=document.getElementById('analyticsKpis');
+  if(kpisEl)kpisEl.innerHTML='<div style="grid-column:1/-1;text-align:center;color:var(--txt3);padding:20px;">⏳ Loading analytics…</div>';
+  if(!fbDb){if(kpisEl)kpisEl.innerHTML='<div style="grid-column:1/-1;color:var(--red);padding:12px;">Firebase not connected.</div>';return;}
+
+  // Load users data
+  let users=window._adminUsers||[];
+  if(!users.length){
+    try{
+      const snap=await fbDb.collection('publicProfiles').get();
+      snap.forEach(doc=>users.push({...doc.data(),uid:doc.id}));
+      window._adminUsers=users;
+    }catch(e){if(kpisEl)kpisEl.innerHTML='<div style="grid-column:1/-1;color:var(--red);padding:12px;">Cannot load users: '+e.message+'</div>';return;}
+  }
+
+  const now=Date.now();
+  const toMs=v=>v?(typeof v==='number'?v:new Date(v).getTime()||0):0;
+
+  // ── KPI Calculations ──
+  const total=users.length;
+  const online=users.filter(u=>u.lastActive&&(now-toMs(u.lastActive))<300000).length;
+  const today=users.filter(u=>u.lastActive&&(now-toMs(u.lastActive))<86400000).length;
+  const week=users.filter(u=>u.lastActive&&(now-toMs(u.lastActive))<604800000).length;
+  const month=users.filter(u=>u.lastActive&&(now-toMs(u.lastActive))<2592000000).length;
+  const newToday=users.filter(u=>u.joinedAt&&(now-toMs(u.joinedAt))<86400000).length;
+  const newWeek=users.filter(u=>u.joinedAt&&(now-toMs(u.joinedAt))<604800000).length;
+  const newMonth=users.filter(u=>u.joinedAt&&(now-toMs(u.joinedAt))<2592000000).length;
+  const suspended=users.filter(u=>u.suspended).length;
+  const dau_mau=month>0?((today/month)*100).toFixed(1)+'%':'—';
+  const churnRisk=users.filter(u=>u.joinedAt&&u.lastActive&&
+    (now-toMs(u.joinedAt))>1209600000&&(now-toMs(u.lastActive))>604800000).length;
+
+  // ── KPI Cards ──
+  const kpis=[
+    {label:'Total Users',value:total,icon:'👥',color:'var(--brand)',sub:'all time'},
+    {label:'Online Now',value:online,icon:'🟢',color:'var(--green)',sub:'last 5 min'},
+    {label:'Active Today',value:today,icon:'📅',color:'var(--brand)',sub:'last 24h'},
+    {label:'Active This Week',value:week,icon:'📆',color:'var(--gold)',sub:'last 7 days'},
+    {label:'New Today',value:newToday,icon:'✨',color:'var(--green)',sub:'signed up today'},
+    {label:'New This Week',value:newWeek,icon:'🆕',color:'var(--green)',sub:'signed up this week'},
+    {label:'New This Month',value:newMonth,icon:'📈',color:'var(--brand)',sub:'signed up this month'},
+    {label:'DAU/MAU Ratio',value:dau_mau,icon:'📊',color:'var(--purple)',sub:'engagement rate'},
+    {label:'At Churn Risk',value:churnRisk,icon:'⚠️',color:'var(--orange)',sub:'joined 2wk+, inactive 7d+'},
+    {label:'Suspended',value:suspended,icon:'🚫',color:'var(--red)',sub:'blocked accounts'},
+  ];
+  if(kpisEl)kpisEl.innerHTML=kpis.map(k=>`
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px;display:flex;align-items:center;gap:12px;">
+      <div style="font-size:1.5rem;">${k.icon}</div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:0.72rem;color:var(--txt3);font-weight:600;text-transform:uppercase;letter-spacing:.5px;">${k.label}</div>
+        <div style="font-family:'Sora',sans-serif;font-size:1.5rem;font-weight:800;color:${k.color};line-height:1.1;">${k.value}</div>
+        <div style="font-size:0.68rem;color:var(--txt3);margin-top:2px;">${k.sub}</div>
+      </div>
+    </div>`).join('');
+
+  // ── User Growth Chart (last 30 days) ──
+  _renderGrowthChart(users, toMs);
+
+  // ── User Types Donut ──
+  _renderTypesChart(users);
+
+  // ── Countries List ──
+  _renderCountriesList(users);
+
+  // ── Retention & Engagement ──
+  _renderRetention(users, toMs, now);
+  _renderEngagement(users, toMs, now);
+
+  // ── Activity Heatmap ──
+  _renderHeatmap(users, toMs);
+
+  // ── Feature Adoption ──
+  _renderFeatureAdoption(users);
+}
+
+function _renderGrowthChart(users, toMs){
+  const canvas=document.getElementById('analyticsGrowthChart');
+  if(!canvas)return;
+  if(_analyticsChart1){_analyticsChart1.destroy();_analyticsChart1=null;}
+
+  // Build daily counts for last 30 days
+  const days=30;
+  const labels=[],data=[],data7=[];
+  const now=Date.now();
+  for(let i=days-1;i>=0;i--){
+    const dayStart=now-i*86400000;
+    const dayEnd=dayStart+86400000;
+    const d=new Date(dayStart);
+    labels.push(d.toLocaleDateString('en',{month:'short',day:'numeric'}));
+    data.push(users.filter(u=>u.joinedAt&&toMs(u.joinedAt)>=dayStart&&toMs(u.joinedAt)<dayEnd).length);
+  }
+
+  // 7-day rolling average
+  const rolling=data.map((_,i)=>{
+    if(i<6)return null;
+    return+(data.slice(i-6,i+1).reduce((a,b)=>a+b,0)/7).toFixed(1);
+  });
+
+  // Trend label
+  const recentAvg=data.slice(-7).reduce((a,b)=>a+b,0)/7;
+  const prevAvg=data.slice(-14,-7).reduce((a,b)=>a+b,0)/7;
+  const trendEl=document.getElementById('growthTrend');
+  if(trendEl){
+    const pct=prevAvg>0?(((recentAvg-prevAvg)/prevAvg)*100).toFixed(0):0;
+    const up=recentAvg>=prevAvg;
+    trendEl.textContent=(up?'▲':'▼')+' '+Math.abs(pct)+'% vs prev week';
+    trendEl.style.color=up?'var(--green)':'var(--red)';
+  }
+
+  const isDark=document.documentElement.getAttribute('data-theme')!=='pearl'&&
+               document.documentElement.getAttribute('data-theme')!=='ivory'&&
+               document.documentElement.getAttribute('data-theme')!=='slate';
+  const gridColor=isDark?'rgba(255,255,255,.06)':'rgba(0,0,0,.06)';
+  const textColor=isDark?'rgba(255,255,255,.4)':'rgba(0,0,0,.4)';
+
+  _analyticsChart1=new Chart(canvas,{
+    data:{
+      labels,
+      datasets:[
+        {type:'bar',label:'New Users',data,backgroundColor:'rgba(14,165,233,.35)',borderRadius:3},
+        {type:'line',label:'7-day avg',data:rolling,borderColor:'#F0B429',borderWidth:2,pointRadius:0,tension:.4,spanGaps:true}
+      ]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:true,
+      plugins:{legend:{display:true,labels:{color:textColor,font:{size:11}}},tooltip:{mode:'index',intersect:false}},
+      scales:{
+        x:{ticks:{color:textColor,font:{size:10},maxTicksLimit:8},grid:{color:gridColor}},
+        y:{ticks:{color:textColor,font:{size:10},precision:0},grid:{color:gridColor},beginAtZero:true}
+      }
+    }
+  });
+}
+
+function _renderTypesChart(users){
+  const canvas=document.getElementById('analyticsTypesChart');
+  const listEl=document.getElementById('analyticsTypesList');
+  if(!canvas)return;
+  if(_analyticsChart2){_analyticsChart2.destroy();_analyticsChart2=null;}
+
+  const typeMap={farmer:'🌾 Farmer',trader:'🛒 Trader',business:'🏪 Business',poultry:'🐔 Poultry',salary:'💼 Salaried',student:'🎓 Student',other:'👤 Other'};
+  const counts={};
+  users.forEach(u=>{const t=u.userType||'other';counts[t]=(counts[t]||0)+1;});
+  const sorted=Object.entries(counts).sort((a,b)=>b[1]-a[1]);
+  const colors=['#0EA5E9','#F0B429','#06D6A0','#EF476F','#8B5CF6','#FF9F1C','#38BDF8'];
+
+  if(sorted.length>0){
+    _analyticsChart2=new Chart(canvas,{
+      type:'doughnut',
+      data:{
+        labels:sorted.map(([k])=>typeMap[k]||k),
+        datasets:[{data:sorted.map(([,v])=>v),backgroundColor:colors.slice(0,sorted.length),borderWidth:0,hoverOffset:4}]
+      },
+      options:{responsive:true,maintainAspectRatio:true,cutout:'65%',plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>' '+ctx.label+': '+ctx.raw+' ('+((ctx.raw/users.length)*100).toFixed(0)+'%)'}}}}
+    });
+  }
+
+  if(listEl)listEl.innerHTML=sorted.map(([k,v],i)=>`
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 0;font-size:0.76rem;">
+      <div style="display:flex;align-items:center;gap:7px;">
+        <div style="width:10px;height:10px;border-radius:50%;background:${colors[i%colors.length]};flex-shrink:0;"></div>
+        <span>${typeMap[k]||k}</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span style="font-weight:700;">${v}</span>
+        <span style="color:var(--txt3);font-size:0.7rem;">${((v/users.length)*100).toFixed(0)}%</span>
+      </div>
+    </div>`).join('');
+}
+
+function _renderCountriesList(users){
+  const el=document.getElementById('analyticsCountriesList');if(!el)return;
+  const counts={};
+  users.forEach(u=>{if(u.country){const c=u.country.trim();if(c)counts[c]=(counts[c]||0)+1;}});
+  const sorted=Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  if(!sorted.length){el.textContent='No country data yet.';return;}
+  const max=sorted[0][1];
+  el.innerHTML=sorted.map(([country,count])=>{
+    const pct=Math.round(count/max*100);
+    return`<div style="margin-bottom:8px;">
+      <div style="display:flex;justify-content:space-between;font-size:0.78rem;margin-bottom:3px;">
+        <span style="font-weight:600;">${country}</span>
+        <span style="color:var(--txt3);">${count} · ${((count/users.length)*100).toFixed(0)}%</span>
+      </div>
+      <div style="height:5px;background:var(--border);border-radius:20px;overflow:hidden;">
+        <div style="height:100%;width:${pct}%;background:var(--brand);border-radius:20px;transition:width .5s;"></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function _renderRetention(users, toMs, now){
+  const el=document.getElementById('analyticsRetention');if(!el)return;
+  // D1: joined 1-2 days ago AND active in last 24h
+  const d1Base=users.filter(u=>u.joinedAt&&(now-toMs(u.joinedAt))>=86400000&&(now-toMs(u.joinedAt))<172800000);
+  const d1Ret=d1Base.filter(u=>u.lastActive&&(now-toMs(u.lastActive))<86400000);
+  // D7: joined 7-14 days ago AND active in last 7 days
+  const d7Base=users.filter(u=>u.joinedAt&&(now-toMs(u.joinedAt))>=604800000&&(now-toMs(u.joinedAt))<1209600000);
+  const d7Ret=d7Base.filter(u=>u.lastActive&&(now-toMs(u.lastActive))<604800000);
+  // D30: joined 30-60 days ago AND active in last 30 days
+  const d30Base=users.filter(u=>u.joinedAt&&(now-toMs(u.joinedAt))>=2592000000&&(now-toMs(u.joinedAt))<5184000000);
+  const d30Ret=d30Base.filter(u=>u.lastActive&&(now-toMs(u.lastActive))<2592000000);
+
+  const rates=[
+    {label:'Day 1',base:d1Base.length,ret:d1Ret.length,bench:40},
+    {label:'Day 7',base:d7Base.length,ret:d7Ret.length,bench:25},
+    {label:'Day 30',base:d30Base.length,ret:d30Ret.length,bench:15},
+  ];
+  el.innerHTML=rates.map(r=>{
+    const pct=r.base>0?Math.round(r.ret/r.base*100):0;
+    const good=pct>=r.bench;
+    return`<div style="margin-bottom:10px;">
+      <div style="display:flex;justify-content:space-between;font-size:0.78rem;margin-bottom:3px;">
+        <span style="font-weight:600;">${r.label} Retention</span>
+        <span style="color:${good?'var(--green)':'var(--orange)'};font-weight:700;">${pct}% <span style="color:var(--txt3);font-weight:400;">(benchmark: ${r.bench}%)</span></span>
+      </div>
+      <div style="height:6px;background:var(--border);border-radius:20px;overflow:hidden;">
+        <div style="height:100%;width:${Math.min(pct,100)}%;background:${good?'var(--green)':'var(--orange)'};border-radius:20px;transition:width .5s;"></div>
+      </div>
+      <div style="font-size:0.68rem;color:var(--txt3);margin-top:2px;">${r.ret} of ${r.base} users returned</div>
+    </div>`;
+  }).join('');
+}
+
+function _renderEngagement(users, toMs, now){
+  const el=document.getElementById('analyticsEngagement');if(!el)return;
+  const total=users.length||1;
+  const dau=users.filter(u=>u.lastActive&&(now-toMs(u.lastActive))<86400000).length;
+  const wau=users.filter(u=>u.lastActive&&(now-toMs(u.lastActive))<604800000).length;
+  const mau=users.filter(u=>u.lastActive&&(now-toMs(u.lastActive))<2592000000).length;
+  const avgDaysSinceActive=users.reduce((s,u)=>s+(u.lastActive?(now-toMs(u.lastActive))/86400000:999),0)/total;
+  const items=[
+    {label:'Daily Active (DAU)',val:dau,pct:((dau/total)*100).toFixed(0)+'%'},
+    {label:'Weekly Active (WAU)',val:wau,pct:((wau/total)*100).toFixed(0)+'%'},
+    {label:'Monthly Active (MAU)',val:mau,pct:((mau/total)*100).toFixed(0)+'%'},
+    {label:'Avg Days Since Active',val:avgDaysSinceActive.toFixed(1)+'d',pct:''},
+  ];
+  el.innerHTML=items.map(it=>`
+    <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border2);font-size:0.78rem;">
+      <span style="color:var(--txt2);">${it.label}</span>
+      <span style="font-weight:700;">${it.val} <span style="color:var(--txt3);font-weight:400;">${it.pct}</span></span>
+    </div>`).join('');
+}
+
+function _renderHeatmap(users, toMs){
+  const el=document.getElementById('analyticsHeatmap');if(!el)return;
+  const days=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  // Count signups/activity by day of week using joinedAt
+  const dayCounts=Array(7).fill(0);
+  users.forEach(u=>{
+    if(u.joinedAt){const d=new Date(toMs(u.joinedAt));dayCounts[d.getDay()]++;}
+  });
+  const max=Math.max(...dayCounts,1);
+  el.innerHTML=`<div style="display:flex;gap:6px;align-items:flex-end;">
+    ${days.map((d,i)=>{
+      const pct=Math.round(dayCounts[i]/max*100);
+      const h=Math.max(pct*0.8,4);
+      return`<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;">
+        <div style="font-size:0.68rem;color:var(--txt3);font-weight:700;">${dayCounts[i]}</div>
+        <div style="width:100%;height:${h}px;background:var(--brand);border-radius:4px;opacity:${0.3+pct/100*0.7};min-height:4px;transition:height .5s;"></div>
+        <div style="font-size:0.68rem;color:var(--txt3);">${d}</div>
+      </div>`;
+    }).join('')}
+  </div>
+  <div style="font-size:0.68rem;color:var(--txt3);margin-top:8px;text-align:center;">Based on ${users.length} user sign-up dates</div>`;
+}
+
+function _renderFeatureAdoption(users){
+  const el=document.getElementById('analyticsFeatures');if(!el)return;
+  const typeMap={farmer:'🌾 Farmer',trader:'🛒 Trader',business:'🏪 Business',poultry:'🐔 Poultry',salary:'💼 Salaried',student:'🎓 Student',other:'👤 Other'};
+  const typeCounts={};
+  users.forEach(u=>{const t=u.userType||'other';typeCounts[t]=(typeCounts[t]||0)+1;});
+  const sorted=Object.entries(typeCounts).sort((a,b)=>b[1]-a[1]);
+  const featureHints={
+    business:['Business Tracker','Envelope Budget','AI Advisor'],
+    trader:['Business Tracker','Credit Tracker','Envelope Budget'],
+    farmer:['Business Tracker','Net Worth','Goals'],
+    salary:['Envelope Budget','Savings Goals','Bill Tracker'],
+    student:['Envelope Budget','Savings Goals','Credit Tracker'],
+    other:['Envelope Budget','Credit Tracker','Goals'],
+    poultry:['Business Tracker','Net Worth','Goals'],
+  };
+  el.innerHTML=`<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:0.78rem;">
+    <thead><tr style="background:var(--bg3);">
+      <th style="padding:8px 10px;text-align:left;">User Type</th>
+      <th style="padding:8px;text-align:center;">Count</th>
+      <th style="padding:8px;text-align:center;">Share</th>
+      <th style="padding:8px;text-align:left;">Likely Uses</th>
+    </tr></thead>
+    <tbody>
+    ${sorted.map(([type,count])=>`<tr style="border-bottom:1px solid var(--border2);">
+      <td style="padding:9px 10px;font-weight:600;">${typeMap[type]||type}</td>
+      <td style="padding:9px 8px;text-align:center;color:var(--brand);font-weight:700;">${count}</td>
+      <td style="padding:9px 8px;text-align:center;color:var(--txt3);">${((count/users.length)*100).toFixed(0)}%</td>
+      <td style="padding:9px 8px;color:var(--txt2);">${(featureHints[type]||featureHints.other).join(' · ')}</td>
+    </tr>`).join('')}
+    </tbody>
+  </table></div>`;
+}
+
+function exportAnalyticsCSV(){
+  const users=window._adminUsers||[];
+  if(!users.length){showWin('⚠️ No data','Load analytics first.');return;}
+  const toMs=v=>v?(typeof v==='number'?v:new Date(v).getTime()||0):0;
+  const now=Date.now();
+  const headers=['Name','Email','Country','User Type','Joined','Last Active','Days Since Active','Status'];
+  const rows=users.map(u=>[
+    u.name||'',u.email||'',u.country||'',u.userType||'',
+    u.joinedAt?new Date(toMs(u.joinedAt)).toLocaleDateString():'',
+    u.lastActive?new Date(toMs(u.lastActive)).toLocaleDateString():'',
+    u.lastActive?Math.floor((now-toMs(u.lastActive))/86400000)+'d':'',
+    u.suspended?'Suspended':u.removed?'Removed':'Active'
+  ]);
+  const csv=[headers,...rows].map(r=>r.map(v=>'"'+(String(v).replace(/"/g,'""'))+'"').join(',')).join('\n');
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+  a.download='trackinfin-analytics-'+new Date().toISOString().split('T')[0]+'.csv';
+  a.click();URL.revokeObjectURL(a.href);
 }
 
 </script>
