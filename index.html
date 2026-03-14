@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
 <meta name="apple-mobile-web-app-title" content="Trackinfin"/>
-<meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' https: data: blob:; worker-src 'self' blob:; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.firebaseapp.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://fonts.googleapis.com https://fonts.gstatic.com https://cdnjs.cloudflare.com https://api.groq.com https://generativelanguage.googleapis.com;"/>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' https: data: blob:; worker-src 'self' blob:; connect-src 'self' https: wss: data:;"/>
 
 <!-- PWA Manifest — full with icons -->
 <link rel="manifest" href="/manifest.json"/>
@@ -3727,6 +3727,7 @@ async function doSignIn(){
   const err=document.getElementById('siErr');
   const btn=document.querySelector('#panelIn .btn.full');
   if(!email||!pw){err.textContent='Enter your email and password.';return;}
+  if(!fbAuth){err.textContent='Still connecting… please wait a moment and try again.';return;}
   err.textContent='';
   if(btn){btn.textContent='⏳ Signing in…';btn.disabled=true;}
   try{
@@ -4421,7 +4422,7 @@ function firebaseErrMsg(e){
 // SIGN OUT
 // ══════════════════════════════════════════════════════
 function doSignOut(){
-  if(!confirm('Sign out of Trackinfin?'))return;
+  _confirm('You will need to sign in again to access your data.',{title:'Sign Out?',icon:'👋',okLabel:'Sign Out',danger:true}).then(ok=>{if(!ok)return;
   stopRealtimeSync();
   if(fbAuth)fbAuth.signOut().catch(()=>{});
   localStorage.removeItem(SESSION_KEY);
@@ -4429,6 +4430,7 @@ function doSignOut(){
   localStorage.removeItem('tfi_la');
   currentUser=null;currentPassword=null;S=freshState();
   closeProfile();showAuth();
+  });
 }
 
 // Session management
@@ -5042,7 +5044,7 @@ function saveAddSheet(){
     }
   }
   if(addType==='in'){
-    setTimeout(()=>{if(confirm(fmt(amt)+' income recorded ✅\n\nAllocate to your envelopes now?'))showTab('plan');},300);
+    setTimeout(()=>{_confirm('Allocate your income across your envelopes now?',{title:fmt(amt)+' income recorded ✅',icon:'💚',okLabel:'Go to Envelopes',cancelLabel:'Later'}).then(ok=>{if(ok)showTab('plan');});},300);
   }
   if(addType==='save'){
     showWin('💰 Saved!',fmt(amt)+' set aside. Your savings are growing.');
@@ -5266,11 +5268,12 @@ function doSpendEnv(){
 function quickFillAll(){
   const m=curM('planMonth');const{income}=calcMonth(m);
   if(!income){showWin('💚 No Income Yet','Add your income for this month first, then fill your envelopes.');return;}
-  if(!confirm('Fill all envelopes based on allocation percentages?\n\nThis distributes '+fmt(income)+' across your categories.'))return;
+  _confirm('This distributes '+fmt(income)+' across your categories based on their allocation percentages.',{title:'Fill All Envelopes?',icon:'📊',okLabel:'Fill All'}).then(ok=>{if(!ok)return;
   S.cats.filter(c=>c.id!=='income').forEach(c=>{
     const s=income*(c.pct||0)/100;if(s>0){const env=getEnv(m,c.id);env.allocated=s;}
   });
   autoSave();renderPlan();showWin('⚡ All envelopes filled!','Every naira has a purpose.');
+  });
 }
 function openTransferModal(){
   const m=curM('planMonth');
@@ -5345,7 +5348,7 @@ function saveCredit(){
   S.credits.push({id:Date.now(),name,phone,amt,purpose,date,due,direction,status:'pending',paidAmt:0});
   autoSave();closeO('oAddCredit');renderCredits();renderHome();
 }
-function deleteCredit(id){if(!confirm('Delete this credit record?'))return;S.credits=S.credits.filter(c=>c.id!==id);autoSave();renderCredits();renderHome();}
+function deleteCredit(id){_confirm('This credit record will be permanently deleted.',{title:'Delete Credit?',icon:'🗑️',okLabel:'Delete',danger:true}).then(ok=>{if(!ok)return;S.credits=S.credits.filter(c=>c.id!==id);autoSave();renderCredits();renderHome();});}
 function openMarkPaid(id){
   const c=S.credits.find(x=>x.id===id);if(!c)return;
   set('markPaidSub','Payment from '+c.name+' — original '+fmt(c.amt));
@@ -5475,7 +5478,7 @@ function doAddGoal(){
   ['gName','gTarget','gDeadline','gLockUntil','gLockReason'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
   setGoalType('regular');
 }
-function deleteGoal(id){if(!confirm('Delete this goal?'))return;S.goals=S.goals.filter(g=>g.id!==id);autoSave();renderGoals();}
+function deleteGoal(id){_confirm('This goal will be permanently deleted.',{title:'Delete Goal?',icon:'🗑️',okLabel:'Delete',danger:true}).then(ok=>{if(!ok)return;S.goals=S.goals.filter(g=>g.id!==id);autoSave();renderGoals();});}
 function renderGoals(){
   destroyChart('goals');const gc=document.getElementById('goalsChart');
   if(gc&&S.goals.length>0){
@@ -5564,7 +5567,7 @@ function saveBizEntry(){
   if(type==='sale'){S.txs.unshift({id:Date.now()+1,desc:'[Business] '+desc,amt,type:'in',cat:'business',date,month});}
   autoSave();closeO('oAddBiz');renderBusiness();renderHome();
 }
-function deleteBizEntry(id){if(!confirm('Delete this entry?'))return;S.bizEntries=S.bizEntries.filter(b=>b.id!==id);autoSave();renderBusiness();}
+function deleteBizEntry(id){_confirm('This business entry will be permanently deleted.',{title:'Delete Entry?',icon:'🗑️',okLabel:'Delete',danger:true}).then(ok=>{if(!ok)return;S.bizEntries=S.bizEntries.filter(b=>b.id!==id);autoSave();renderBusiness();});}
 
 function renderBusiness(){
   buildMonthSel('bizMonth');const m=curM('bizMonth');
@@ -6120,11 +6123,13 @@ function payBill(idx){
 }
 
 function deleteBill(idx){
-  if(!confirm('Remove this bill?'))return;
-  S.bills.splice(idx,1);
-  autoSave();
-  document.getElementById('oBillsTracker').remove();
-  openBillsTracker();
+  _confirm('This bill reminder will be removed.',{title:'Remove Bill?',icon:'🗑️',okLabel:'Remove',danger:true}).then(ok=>{
+    if(!ok)return;
+    S.bills.splice(idx,1);
+    autoSave();
+    const ot=document.getElementById('oBillsTracker');if(ot)ot.remove();
+    openBillsTracker();
+  });
 }
 function applyTheme(t){
   S.theme=t;
@@ -6241,7 +6246,7 @@ function addCategory(){
   document.getElementById('newCatName').value='';err.textContent='';
   autoSave();renderCatManager();
 }
-function deleteCategory(id){if(!confirm('Delete this category?'))return;S.cats=S.cats.filter(c=>c.id!==id);autoSave();renderCatManager();}
+function deleteCategory(id){_confirm('This category will be permanently deleted.',{title:'Delete Category?',icon:'🗑️',okLabel:'Delete',danger:true}).then(ok=>{if(!ok)return;S.cats=S.cats.filter(c=>c.id!==id);autoSave();renderCatManager();});}
 
 // Recurring
 function renderRecurringList(){
@@ -7048,51 +7053,80 @@ function renderActivityLog(users){
 async function adminRemove(u){
   if(typeof u === 'string'){ const users=window._adminUsers||[]; u=users.find(x=>x.email===u||x.uid===u); if(!u)return; }
   const name=u.name||u.email||'User';
-  if(!confirm('Permanently remove "'+name+'"?\n\nThey will be blocked from logging in.'))return;
   if(!fbDb){showWin('⚠️ Error','Firebase not connected.');return;}
-  const payload={removed:true,removedAt:new Date().toISOString(),removedBy:currentUser?.email||'admin'};
-  try{
-    if(u.uid){
-      await fbDb.collection('adminActions').doc(u.uid).set(payload,{merge:true});
-      fbDb.collection('publicProfiles').doc(u.uid).set(payload,{merge:true}).catch(()=>{});
+  _confirm('They will be permanently blocked from logging in.',{title:'Remove "'+name+'"?',icon:'❌',okLabel:'Remove',danger:true}).then(async ok=>{
+    if(!ok)return;
+    const token=await _getAdminToken();
+    const payload={removed:true,removedAt:new Date().toISOString(),removedBy:currentUser?.email||'admin',_adminToken:token};
+    try{
+      if(u.uid){
+        await fbDb.collection('adminActions').doc(u.uid).set(payload,{merge:true});
+        // Also write to publicProfiles so user sees it on next load
+        const pubPayload={removed:true,removedAt:payload.removedAt,removedBy:payload.removedBy};
+        fbDb.collection('publicProfiles').doc(u.uid).set(pubPayload,{merge:true}).catch(()=>{});
+      }
+      window._adminUsers=(window._adminUsers||[]).filter(x=>x.uid!==u.uid);
+      renderAdminUsers(window._adminUsers);
+      showWin('✅ User removed',name+' has been removed from the platform.');
+    }catch(e){
+      if(e.code==='permission-denied'){
+        showWin('⛔ Permission Denied','Firestore rules are blocking this write. Make sure adminActions allows authenticated writes, or add the _adminToken to your rules.');
+      }else{
+        showWin('⚠️ Error','Could not remove user: '+e.message);
+      }
     }
-    window._adminUsers=(window._adminUsers||[]).filter(x=>x.uid!==u.uid);
-    renderAdminUsers(window._adminUsers);
-    showWin('✅ User removed',name+' has been removed from the platform.');
-  }catch(e){showWin('⚠️ Error','Could not remove user: '+e.message);}
+  });
 }
 
 async function adminSuspend(u){
   if(typeof u === 'string'){ const users=window._adminUsers||[]; u=users.find(x=>x.email===u||x.uid===u); if(!u)return; }
   const name=u.name||u.email||'User';
-  if(!confirm('Suspend "'+name+'"?\n\nThey will be blocked from logging in.'))return;
   if(!fbDb){showWin('⚠️ Error','Firebase not connected.');return;}
-  const payload={suspended:true,suspendedAt:new Date().toISOString(),suspendedBy:currentUser?.email||'admin'};
-  try{
-    if(u.uid){
-      await fbDb.collection('adminActions').doc(u.uid).set(payload,{merge:true});
-      fbDb.collection('publicProfiles').doc(u.uid).set(payload,{merge:true}).catch(()=>{});
+  _confirm('They will be blocked from logging in until unsuspended.',{title:'Suspend "'+name+'"?',icon:'🚫',okLabel:'Suspend',danger:true}).then(async ok=>{
+    if(!ok)return;
+    const token=await _getAdminToken();
+    const payload={suspended:true,suspendedAt:new Date().toISOString(),suspendedBy:currentUser?.email||'admin',_adminToken:token};
+    try{
+      if(u.uid){
+        await fbDb.collection('adminActions').doc(u.uid).set(payload,{merge:true});
+        const pubPayload={suspended:true,suspendedAt:payload.suspendedAt,suspendedBy:payload.suspendedBy};
+        fbDb.collection('publicProfiles').doc(u.uid).set(pubPayload,{merge:true}).catch(()=>{});
+      }
+      u.suspended=true;
+      renderAdminUsers(window._adminUsers);
+      showWin('🚫 User suspended',name+' is now blocked from logging in.');
+    }catch(e){
+      if(e.code==='permission-denied'){
+        showWin('⛔ Permission Denied','Firestore rules are blocking this. Check that adminActions allows authenticated writes.');
+      }else{
+        showWin('⚠️ Error','Could not suspend: '+e.message);
+      }
     }
-    u.suspended=true;
-    renderAdminUsers(window._adminUsers);
-    showWin('🚫 User suspended',name+' is now blocked from logging in.');
-  }catch(e){showWin('⚠️ Error','Could not suspend: '+e.message);}
+  });
 }
 
 async function adminUnsuspend(u){
   if(typeof u === 'string'){ const users=window._adminUsers||[]; u=users.find(x=>x.email===u||x.uid===u); if(!u)return; }
   const name=u.name||u.email||'User';
   if(!fbDb){showWin('⚠️ Error','Firebase not connected.');return;}
-  const payload={suspended:false,unsuspendedAt:new Date().toISOString()};
+  const token=await _getAdminToken();
+  const payload={suspended:false,unsuspendedAt:new Date().toISOString(),_adminToken:token};
   try{
     if(u.uid){
       await fbDb.collection('adminActions').doc(u.uid).set(payload,{merge:true});
-      fbDb.collection('publicProfiles').doc(u.uid).set(payload,{merge:true}).catch(()=>{});
+      const pubPayload={suspended:false,unsuspendedAt:payload.unsuspendedAt};
+      fbDb.collection('publicProfiles').doc(u.uid).set(pubPayload,{merge:true}).catch(()=>{});
     }
     u.suspended=false;
     renderAdminUsers(window._adminUsers);
     showWin('✅ Unsuspended',name+' can now log in again.');
-  }catch(e){showWin('⚠️ Error','Could not unsuspend: '+e.message);}
+  }catch(e){
+    if(e.code==='permission-denied'){
+      showWin('⛔ Permission Denied','Firestore rules are blocking this. Check adminActions write permissions.');
+    }else{
+      showWin('⚠️ Error','Could not unsuspend: '+e.message);
+    }
+  }
 }
 
 async function adminSendDirectMessage(u){
@@ -7118,23 +7152,47 @@ async function adminSendDirectMessage(u){
   window._sendDM=async function(uid,uname){
     const txt=document.getElementById('_dmText')?.value?.trim();
     if(!txt){document.getElementById('_dmErr').textContent='Please write a message.';return;}
-    const payload={directMsg:{text:txt,sentAt:new Date().toISOString(),sentBy:currentUser?.email||'admin',read:false}};
+    const btn=document.querySelector('#_dmModal .btn:not(.ghost)');
+    if(btn){btn.textContent='⏳ Sending…';btn.disabled=true;}
     try{
-      await fbDb.collection('adminActions').doc(uid).set(payload,{merge:true});
-      fbDb.collection('publicProfiles').doc(uid).set(payload,{merge:true}).catch(()=>{});
+      const token=await _getAdminToken();
+      const dmData={text:txt,sentAt:new Date().toISOString(),sentBy:currentUser?.email||'admin',read:false};
+      // Write to adminActions with token (passes Firestore rules)
+      await fbDb.collection('adminActions').doc(uid).set({directMsg:dmData,_adminToken:token},{merge:true});
+      // Also mirror to publicProfiles so it's visible if rules allow
+      fbDb.collection('publicProfiles').doc(uid).set({directMsg:dmData},{merge:true}).catch(()=>{});
       document.getElementById('_dmModal')?.remove();
-      showWin('✅ Message sent',uname+' will see it in their notification inbox.');
-    }catch(e){document.getElementById('_dmErr').textContent='Error: '+e.message;}
+      showWin('✅ Message sent',uname+' will see it in their notification inbox next time they open the app.');
+    }catch(e){
+      const errEl=document.getElementById('_dmErr');
+      if(errEl){
+        errEl.textContent=e.code==='permission-denied'
+          ?'Permission denied — check Firestore rules for adminActions.'
+          :'Error: '+e.message;
+      }
+      const btn2=document.querySelector('#_dmModal .btn:not(.ghost)');
+      if(btn2){btn2.textContent='📩 Send Message';btn2.disabled=false;}
+    }
   };
 }
 
 async function adminResetPassword(email){
   if(!fbAuth){showWin('⚠️ Error','Firebase Auth not connected.');return;}
-  if(!confirm('Send password reset email to '+email+'?'))return;
-  try{
-    await fbAuth.sendPasswordResetEmail(email);
-    showWin('📧 Reset sent','Password reset email sent to '+email);
-  }catch(e){showWin('⚠️ Error',e.message);}
+  if(!email){showWin('⚠️ No Email','This user has no email address on record.');return;}
+  _confirm('A password reset link will be sent to '+email+'. They can use it to set a new password.',{title:'Send Reset Email?',icon:'🔑',okLabel:'Send Reset Email'}).then(async ok=>{
+    if(!ok)return;
+    try{
+      await fbAuth.sendPasswordResetEmail(email);
+      showWin('📧 Reset Email Sent','Password reset link sent to '+email+'. They should check their inbox.');
+    }catch(e){
+      const map={
+        'auth/user-not-found':'No Firebase account found for this email.',
+        'auth/invalid-email':'This email address is invalid.',
+        'auth/too-many-requests':'Too many requests. Please wait a few minutes.',
+      };
+      showWin('⚠️ Error',map[e.code]||e.message);
+    }
+  });
 }
 
 async function adminViewUserData(u){
@@ -7173,11 +7231,12 @@ async function sendBroadcast(){
   const type=document.getElementById('bcastType')?.value||'info';
   if(!msg){showWin('⚠️ Missing','Enter a message first.');return;}
   if(!fbDb){showWin('⚠️ Error','Firebase not connected.');return;}
-  const payload={text:msg,title,type,sentAt:new Date().toISOString(),sentBy:currentUser?.email||'admin'};
+  const token=await _getAdminToken();
+  const payload={text:msg,title,type,sentAt:new Date().toISOString(),sentBy:currentUser?.email||'admin',_adminToken:token};
   try{
-    // Primary write: adminActions/broadcast — open write for authenticated users
+    // Primary write: adminActions/broadcast
     await fbDb.collection('adminActions').doc('broadcast').set(payload);
-    // Secondary write: broadcast/latest — may fail if rules are strict, that's ok
+    // Secondary write: broadcast/latest
     fbDb.collection('broadcast').doc('latest').set(payload).catch(()=>{});
     const users=window._adminUsers||[];
     closeO('oAdminBroadcast');
@@ -8096,9 +8155,11 @@ function logChallengeProgress(id){
   else showWin('✅ Progress logged!',fmt(amt)+' added — total: '+fmt(ch.totalSaved));
 }
 function deleteChallenge(id){
-  if(!confirm('Delete this challenge?'))return;
-  S.challenges=(S.challenges||[]).filter(c=>c.id!==id);
-  autoSave();renderGoals();
+  _confirm('This savings challenge will be deleted.',{title:'Delete Challenge?',icon:'🗑️',okLabel:'Delete',danger:true}).then(ok=>{
+    if(!ok)return;
+    S.challenges=(S.challenges||[]).filter(c=>c.id!==id);
+    autoSave();renderGoals();
+  });
 }
 function renderChallenges(){
   const el=document.getElementById('challengeList');if(!el)return;
