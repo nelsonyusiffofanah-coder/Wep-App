@@ -4143,10 +4143,42 @@ function mergeState(local, remote){
     });
     merged[k] = [...map.values()];
   });
-  // For objects: merge keys
-  ['envelopes','notes','modules'].forEach(k=>{
-    merged[k] = {...(remote[k]||{}), ...(local[k]||{})};
+  // For objects: deep merge — each sub-key picks the newer device's value
+  // For envelopes: structure is {month: {catId: {allocated, spent}}}
+  // We pick the version from whichever device has the higher pushedAt per month
+  const mergeEnvelopes = (loc, rem) => {
+    const result = {};
+    const allMonths = new Set([...Object.keys(loc||{}), ...Object.keys(rem||{})]);
+    allMonths.forEach(month => {
+      const lm = (loc||{})[month] || {};
+      const rm = (rem||{})[month] || {};
+      // merge cats within each month — take all keys from both
+      const allCats = new Set([...Object.keys(lm), ...Object.keys(rm)]);
+      result[month] = {};
+      allCats.forEach(cat => {
+        const lc = lm[cat] || {allocated:0, spent:0};
+        const rc = rm[cat] || {allocated:0, spent:0};
+        // Whichever has higher total (allocated+spent) is probably newer
+        const lScore = (lc.allocated||0) + (lc.spent||0);
+        const rScore = (rc.allocated||0) + (rc.spent||0);
+        // If local pushedAt is newer, prefer local; else prefer remote
+        result[month][cat] = localNewer ? lc : rc;
+        // But if one side is zero and the other isn't, take the non-zero one
+        if(lScore === 0 && rScore > 0) result[month][cat] = rc;
+        if(rScore === 0 && lScore > 0) result[month][cat] = lc;
+      });
+    });
+    return result;
+  };
+  merged.envelopes = mergeEnvelopes(local.envelopes, remote.envelopes);
+  // Notes: concat unique, local wins on same key
+  const allNoteKeys = new Set([...Object.keys(local.notes||{}), ...Object.keys(remote.notes||{})]);
+  merged.notes = {};
+  allNoteKeys.forEach(k => {
+    merged.notes[k] = (local.notes||{})[k] || (remote.notes||{})[k] || '';
   });
+  // Modules: local wins (user's own settings)
+  merged.modules = {...(remote.modules||{}), ...(local.modules||{})};
   // For scalars: whichever device pushed more recently wins
   const localNewer = (local.pushedAt||0) >= (remote.pushedAt||0);
   const newer  = localNewer ? local : remote;
@@ -4454,11 +4486,12 @@ async function manualSync(){
   const pill=document.getElementById('syncPill');
   const resetPill=()=>{if(pill){pill.textContent='☁️ Sync';pill.style.background='var(--brand-dim)';}};
   if(pill){pill.textContent='⏳';pill.style.background='var(--gold-dim)';}
+  clearTimeout(window._fsTimer); window._fsTimer=null; // flush any pending timer
   try{
-    // Pull first — get latest from cloud
-    await pullFirestore(currentUser.uid,currentPassword,false);
-    // Push — send local changes up
+    // Push FIRST — send local changes up (critical for phone)
     await pushFirestore();
+    // Then pull — get any changes from other devices
+    await pullFirestore(currentUser.uid,currentPassword,false);
     // Re-render with merged data
     renderAll();
     if(pill){pill.textContent='✅';pill.style.background='var(--green-dim)';setTimeout(resetPill,2500);}
@@ -4507,14 +4540,21 @@ function saveLocal(){
   }
   // Push to Firestore debounced (2s after last change)
   clearTimeout(window._fsTimer);
-  window._fsTimer=setTimeout(pushFirestore,2000);
+  window._fsTimer=setTimeout(pushFirestore,800); // shorter for mobile responsiveness
 }
 
 // ── AUTO-SYNC: pull latest from Firestore when user returns to app ──
 document.addEventListener('visibilitychange',()=>{
   if(document.visibilityState==='visible'&&fbDb&&currentUser?.uid){
-    localStorage.setItem('tfi_last_pull', Date.now());
-    pullFirestore(currentUser.uid,currentPassword,true).catch(()=>{});
+    // Push any local changes FIRST so phone data is not lost
+    pushFirestore().then(()=>{
+      // Then pull to get changes from other devices
+      localStorage.setItem('tfi_last_pull', Date.now());
+      pullFirestore(currentUser.uid,currentPassword,true).catch(()=>{});
+    }).catch(()=>{
+      // Even if push fails, still pull
+      pullFirestore(currentUser.uid,currentPassword,true).catch(()=>{});
+    });
     // Check for direct messages from admin
     checkAdminDirectMessage();
     // Refresh app settings (support phone etc)
@@ -4562,33 +4602,29 @@ function startRealtimeSync(uid, key){
 
       if(!doc.exists){ _addSyncLog('→ skip: no doc'); return; }
 
-      // No fromCache guard — persistence disabled, all snapshots are from server
+      // Skip our own writes echoing back — this is the ONE safe skip
+      if(doc.metadata.hasPendingWrites){
+        _addSyncLog('→ skip: our own pending write');
+        return;
+      }
 
       const encData = doc.data()?.data;
       if(!encData){ _addSyncLog('→ skip: no data field'); return; }
 
       const cloudPushedAt = doc.data().pushedAt || 0;
       const ourPushedAt   = S.pushedAt || 0;
-      _addSyncLog('cloudPushedAt='+cloudPushedAt+' ourPushedAt='+ourPushedAt);
+      _addSyncLog('snapshot: cloudPushedAt='+cloudPushedAt+' ourPushedAt='+ourPushedAt);
 
-      // Decrypt first — we need actual data to decide whether to merge
+      // Decrypt
       const decData = dec(encData, key);
       if(!decData){ _addSyncLog('→ DECRYPT FAILED — key mismatch?'); return; }
 
       const cloudTxCount = decData.txs?.length || 0;
       const localTxCount = S.txs?.length || 0;
+      _addSyncLog('→ cloud txs='+cloudTxCount+' local txs='+localTxCount);
 
-      // Only skip if cloud is strictly older AND has no more transactions
-      const cloudIsOlder = cloudPushedAt > 0 && cloudPushedAt < ourPushedAt;
-      const cloudHasNewData = cloudTxCount > localTxCount || cloudPushedAt > ourPushedAt;
-
-      if(cloudIsOlder && !cloudHasNewData){
-        _addSyncLog('→ skip: cloud older ('+cloudPushedAt+') our='+ourPushedAt+' txs same');
-        return;
-      }
-
-      _addSyncLog('→ merging: cloud txs='+cloudTxCount+' local txs='+localTxCount);
-
+      // ALWAYS merge when this is a genuine remote change
+      // mergeState handles deduplication and picks newer values
       const merged = mergeState(S, decData);
       S = {...freshState(), ...merged};
       S.lastSync = new Date().toISOString();
@@ -4601,7 +4637,7 @@ function startRealtimeSync(uid, key){
 
       renderAll();
       updateCloudUI();
-      _addSyncLog('✅ Rendered — txs now='+( S.txs?.length||0));
+      _addSyncLog('✅ Synced from remote — txs='+( S.txs?.length||0));
 
       const pill = document.getElementById('syncPill');
       if(pill){ pill.textContent='✅ Synced'; pill.style.background='var(--green-dim)';
@@ -4626,13 +4662,35 @@ function stopRealtimeSync(){
   if(_syncUnsub){ _syncUnsub(); _syncUnsub=null; }
 }
 
+// Flush on page close/hide (critical for mobile — fires when user swipes app away)
+window.addEventListener('pagehide', ()=>{
+  if(fbDb&&currentUser?.uid&&currentPassword){
+    clearTimeout(window._fsTimer);
+    // Use sendBeacon-style sync — fire and don't wait
+    pushFirestore().catch(()=>{});
+  }
+});
+window.addEventListener('beforeunload', ()=>{
+  if(fbDb&&currentUser?.uid&&currentPassword){
+    clearTimeout(window._fsTimer);
+    pushFirestore().catch(()=>{});
+  }
+});
+
 // 30s interval — fallback sync in case onSnapshot misses an update
 // (common on mobile browsers when app is backgrounded)
-setInterval(()=>{
+setInterval(async ()=>{
   if(document.visibilityState!=='visible'||!fbDb||!currentUser?.uid) return;
   const now=Date.now();
+  // Push any pending local changes first
+  if(window._fsTimer){
+    clearTimeout(window._fsTimer);
+    window._fsTimer=null;
+    await pushFirestore().catch(()=>{});
+  }
+  // Then pull to get any remote changes
   const lastPull=parseInt(localStorage.getItem('tfi_last_pull')||'0');
-  if(now-lastPull < 25000) return; // skip if pulled within 25s
+  if(now-lastPull < 25000) return;
   localStorage.setItem('tfi_last_pull', now);
   pullFirestore(currentUser.uid,currentPassword,true).catch(()=>{});
 },30000);
