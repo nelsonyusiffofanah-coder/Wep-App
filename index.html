@@ -7162,6 +7162,79 @@ function celebrate(){
 }
 
 // ══════════════════════════════════════════════════════
+// _confirm — in-app confirmation dialog (replaces browser confirm())
+// ══════════════════════════════════════════════════════
+function _confirm(msg, opts){
+  opts = opts || {};
+  return new Promise(function(resolve){
+    // Remove any existing confirm modal
+    const old = document.getElementById('_confirmMod');
+    if(old) old.remove();
+
+    const mod = document.createElement('div');
+    mod.className = 'overlay';
+    mod.id = '_confirmMod';
+    mod.style.cssText = 'display:flex;z-index:9990;';
+
+    const icon  = opts.icon    || '❓';
+    const title = opts.title   || 'Are you sure?';
+    const ok    = opts.okLabel || 'OK';
+    const cancel= opts.cancelLabel || 'Cancel';
+    const danger= opts.danger  || false;
+
+    mod.innerHTML = `<div class="modal" style="max-width:340px;text-align:center;">
+      <div style="font-size:2.2rem;margin-bottom:10px;">${icon}</div>
+      <div class="modal-title" style="margin-bottom:8px;">${title}</div>
+      <div style="font-size:0.82rem;color:var(--txt2);margin-bottom:20px;line-height:1.6;">${msg}</div>
+      <div class="btn-row" style="justify-content:center;">
+        <button id="_confirmOk" class="btn${danger?' danger':''}" style="${danger?'background:var(--red);border-color:var(--red);':''}">${ok}</button>
+        <button id="_confirmCancel" class="btn ghost">${cancel}</button>
+      </div>
+    </div>`;
+
+    document.body.appendChild(mod);
+
+    document.getElementById('_confirmOk').onclick = function(){
+      mod.remove(); resolve(true);
+    };
+    document.getElementById('_confirmCancel').onclick = function(){
+      mod.remove(); resolve(false);
+    };
+    mod.addEventListener('click', function(e){
+      if(e.target === mod){ mod.remove(); resolve(false); }
+    });
+  });
+}
+
+// ── _alert — in-app info dialog (replaces browser alert()) ────────
+function _alert(msg, opts){
+  opts = opts || {};
+  return new Promise(function(resolve){
+    const old = document.getElementById('_alertMod');
+    if(old) old.remove();
+    const mod = document.createElement('div');
+    mod.className = 'overlay';
+    mod.id = '_alertMod';
+    mod.style.cssText = 'display:flex;z-index:9990;';
+    const icon  = opts.icon    || 'ℹ️';
+    const title = opts.title   || 'Notice';
+    const ok    = opts.okLabel || 'OK';
+    mod.innerHTML = `<div class="modal" style="max-width:340px;text-align:center;">
+      <div style="font-size:2.2rem;margin-bottom:10px;">${icon}</div>
+      <div class="modal-title" style="margin-bottom:8px;">${title}</div>
+      <div style="font-size:0.82rem;color:var(--txt2);margin-bottom:20px;line-height:1.6;">${msg}</div>
+      <button class="btn full" onclick="document.getElementById('_alertMod').remove()">${ok}</button>
+    </div>`;
+    document.body.appendChild(mod);
+    mod.addEventListener('click', function(e){
+      if(e.target === mod){ mod.remove(); resolve(); }
+    });
+  });
+}
+
+
+
+// ══════════════════════════════════════════════════════
 // ADMIN
 // ══════════════════════════════════════════════════════
 function handleLogoTap(){
