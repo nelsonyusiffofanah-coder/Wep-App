@@ -848,8 +848,8 @@ main{padding:18px 16px 100px;max-width:680px;margin:0 auto;}
 .bico{font-size:1.15rem;line-height:1;transition:transform .2s;}
 .blbl{font-size:0.52rem;font-weight:700;letter-spacing:.3px;}
 
-.tab-panel{display:none;}
-.tab-panel.active{display:block;animation:fadeUp .25s ease;}
+.tab-panel{position:absolute;top:0;left:0;width:100%;opacity:0;pointer-events:none;visibility:hidden;}
+.tab-panel.active{position:relative;opacity:1;pointer-events:auto;visibility:visible;}
 @keyframes fadeUp{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
 @keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
 @keyframes slideInRight{from{transform:translateX(100%);opacity:0;}to{transform:translateX(0);opacity:1;}}
@@ -1014,10 +1014,17 @@ main{padding:18px 16px 100px;max-width:680px;margin:0 auto;}
 .env-actions{display:flex;gap:6px;}
 .env-btn{flex:1;padding:7px;border-radius:8px;font-size:0.72rem;font-weight:700;cursor:pointer;text-align:center;transition:all .2s;border:1.5px solid var(--border2);color:var(--txt3);background:transparent;}
 .env-btn:hover{border-color:var(--brand);color:var(--brand);}
+.env-btn:active{transform:scale(.95);}
 .env-btn.fill{border-color:var(--gold);color:var(--gold);}
 .env-btn.fill:hover{background:var(--gold-dim);}
 .env-btn.spend{border-color:var(--brand);color:var(--brand);}
 .env-btn.spend:hover{background:var(--brand-dim);}
+.env-btn.reset-btn{border-color:rgba(6,214,160,.4);color:var(--green);background:var(--green-dim);}
+.env-btn.reset-btn:hover{background:rgba(6,214,160,.2);}
+.env-edit-btn{background:var(--brand-dim);border:1px solid rgba(14,165,233,.3);border-radius:6px;color:var(--brand);font-size:0.68rem;font-weight:700;padding:2px 7px;cursor:pointer;white-space:nowrap;}
+.env-edit-btn:active{transform:scale(.95);}
+.env-del-btn{background:var(--red-dim);border:1px solid rgba(239,71,111,.3);border-radius:6px;color:var(--red);font-size:0.74rem;padding:2px 6px;cursor:pointer;}
+.env-del-btn:active{transform:scale(.95);}
 
 .monthly-note{background:var(--bg2);border:1px solid var(--border2);border-radius:14px;padding:14px;margin-bottom:16px;}
 .note-label{font-size:0.7rem;color:var(--txt3);font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;}
@@ -1589,7 +1596,7 @@ input:checked + .toggle-slider { box-shadow: 0 0 0 2px var(--brand-dim) !importa
 .status-badge { animation: popIn .3s var(--spring) both; }
 
 /* ── Tab panels ─────────────────────────────────────────────────── */
-.tab-panel.active { animation: fadeUp .28s var(--ease-out) both !important; }
+.tab-panel.active { animation: none !important; }
 
 /* ── Header actions bar ─────────────────────────────────────────── */
 #hActionsBar { animation: slideDown .3s var(--ease-out) both; }
@@ -2243,7 +2250,7 @@ input:checked + .toggle-slider { box-shadow: 0 0 0 2px var(--brand-dim) !importa
     </div>
   </header>
 
-  <main>
+  <main style="position:relative;overflow-x:hidden;min-height:100vh;">
     <!-- HOME -->
     <div class="tab-panel active" id="tab-home">
 
@@ -2785,6 +2792,104 @@ input:checked + .toggle-slider { box-shadow: 0 0 0 2px var(--brand-dim) !importa
       </div>
 
     </div>
+
+    <!-- ══ GAME TAB ══ -->
+    <div class="tab-panel" id="tab-game">
+      <div style="padding:16px 16px 120px;">
+
+        <!-- Header -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
+          <div>
+            <div style="font-family:'Sora',sans-serif;font-size:1.1rem;font-weight:800;">🎮 MoneyMaster</div>
+            <div style="font-size:0.72rem;color:var(--txt3);">Learn. Play. Win. Build real money skills.</div>
+          </div>
+          <div id="gmXpBadge" style="background:linear-gradient(135deg,var(--brand),var(--brand3));border-radius:20px;padding:5px 12px;font-size:0.72rem;font-weight:800;color:#fff;cursor:pointer;" onclick="showGameProfile()">⭐ XP: 0</div>
+        </div>
+
+        <!-- Player HUD -->
+        <div id="gmHud" style="background:linear-gradient(135deg,var(--bg2),var(--bg3));border:1px solid var(--border);border-radius:16px;padding:14px 16px;margin-bottom:18px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+            <div style="display:flex;align-items:center;gap:10px;">
+              <div id="gmAvatar" style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--brand),var(--brand3));display:flex;align-items:center;justify-content:center;font-size:1.3rem;border:3px solid rgba(255,255,255,.15);">👤</div>
+              <div>
+                <div id="gmPlayerName" style="font-weight:800;font-size:0.9rem;">—</div>
+                <div id="gmLevelBadge" style="font-size:0.68rem;color:var(--gold);font-weight:700;">⚡ Level 1 — Rookie</div>
+              </div>
+            </div>
+            <div style="text-align:right;">
+              <div style="font-size:0.7rem;color:var(--txt3);">Coins</div>
+              <div id="gmCoins" style="font-family:'Sora',sans-serif;font-size:1.1rem;font-weight:800;color:var(--gold);">🪙 0</div>
+            </div>
+          </div>
+          <!-- XP Bar -->
+          <div style="display:flex;align-items:center;gap:8px;">
+            <div style="font-size:0.64rem;color:var(--txt3);white-space:nowrap;" id="gmXpLabel">0 / 100 XP</div>
+            <div style="flex:1;height:6px;background:var(--border);border-radius:20px;overflow:hidden;">
+              <div id="gmXpBar" style="height:100%;width:0%;background:linear-gradient(90deg,var(--brand),var(--brand3));border-radius:20px;transition:width .5s cubic-bezier(.34,1.56,.64,1);"></div>
+            </div>
+          </div>
+          <!-- Weekly streak -->
+          <div style="display:flex;gap:6px;margin-top:10px;" id="gmWeekDots"></div>
+        </div>
+
+        <!-- Game Mode Selector -->
+        <div style="display:flex;gap:8px;margin-bottom:16px;overflow-x:auto;padding-bottom:4px;">
+          <div class="gm-mode-btn active" id="gmode-quiz" onclick="setGameMode('quiz')">🧠 Quiz</div>
+          <div class="gm-mode-btn" id="gmode-sim" onclick="setGameMode('sim')">💼 Simulator</div>
+          <div class="gm-mode-btn" id="gmode-challenge" onclick="setGameMode('challenge')">⚔️ Challenge</div>
+          <div class="gm-mode-btn" id="gmode-board" onclick="setGameMode('board')">🏆 Leaderboard</div>
+        </div>
+
+        <!-- QUIZ MODE -->
+        <div id="gm-quiz">
+          <div id="gmQuizCard" style="background:var(--bg2);border:1px solid var(--border);border-radius:18px;padding:20px;margin-bottom:14px;min-height:200px;">
+            <div id="gmQuizContent">
+              <div style="text-align:center;padding:24px 0;">
+                <div style="font-size:2.5rem;margin-bottom:12px;">🧠</div>
+                <div style="font-weight:700;margin-bottom:6px;">Financial Quiz</div>
+                <div style="font-size:0.8rem;color:var(--txt3);margin-bottom:18px;">Test your money knowledge. Earn XP and coins for every correct answer.</div>
+                <button class="btn" onclick="startQuiz()">▶ Start Quiz</button>
+              </div>
+            </div>
+          </div>
+          <!-- Badges row -->
+          <div style="font-size:0.78rem;font-weight:700;color:var(--txt3);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px;">Your Badges</div>
+          <div id="gmBadges" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
+        </div>
+
+        <!-- SIMULATOR MODE -->
+        <div id="gm-sim" style="display:none;">
+          <div id="gmSimCard" style="background:var(--bg2);border:1px solid var(--border);border-radius:18px;padding:20px;margin-bottom:14px;">
+            <div id="gmSimContent">
+              <div style="text-align:center;padding:16px 0;">
+                <div style="font-size:2rem;margin-bottom:10px;">💼</div>
+                <div style="font-weight:700;margin-bottom:6px;">Life Simulator</div>
+                <div style="font-size:0.8rem;color:var(--txt3);margin-bottom:18px;">Make financial decisions. See the consequences. Learn without losing real money.</div>
+                <button class="btn" onclick="startSimulator()">▶ Start Scenario</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- CHALLENGE MODE -->
+        <div id="gm-challenge" style="display:none;">
+          <div style="background:var(--bg2);border:1px solid var(--border);border-radius:18px;padding:20px;margin-bottom:14px;">
+            <div style="font-weight:700;font-size:0.9rem;margin-bottom:14px;">⚔️ Daily Challenges</div>
+            <div id="gmChallengeList"></div>
+          </div>
+        </div>
+
+        <!-- LEADERBOARD -->
+        <div id="gm-board" style="display:none;">
+          <div style="background:var(--bg2);border:1px solid var(--border);border-radius:18px;padding:20px;">
+            <div style="font-weight:700;font-size:0.9rem;margin-bottom:14px;">🏆 Leaderboard</div>
+            <div id="gmLeaderboard"></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
   </main>
 
   <!-- BOTTOM NAV -->
@@ -2795,6 +2900,7 @@ input:checked + .toggle-slider { box-shadow: 0 0 0 2px var(--brand-dim) !importa
     <div class="sdot" id="sdot-2"></div>
     <div class="sdot" id="sdot-3"></div>
     <div class="sdot" id="sdot-4"></div>
+    <div class="sdot" id="sdot-5"></div>
   </div>
   <nav id="bottomNav">
     <div class="bnav-item active" id="bn-home" onclick="showTab('home')"><span class="bico">🏠</span><span class="blbl">Home</span></div>
@@ -2802,6 +2908,7 @@ input:checked + .toggle-slider { box-shadow: 0 0 0 2px var(--brand-dim) !importa
     <div class="bnav-item" id="bn-plan" onclick="showTab('plan')"><span class="bico">📋</span><span class="blbl">Plan</span></div>
     <div class="bnav-item" id="bn-details" onclick="showTab('details')"><span class="bico">📊</span><span class="blbl">Details</span></div>
     <div class="bnav-item" id="bn-settings" onclick="showTab('settings')"><span class="bico">⚙️</span><span class="blbl">Settings</span></div>
+    <div class="bnav-item" id="bn-game" onclick="showTab('game')"><span class="bico">🎮</span><span class="blbl">Play</span></div>
   </nav>
 </div>
 
@@ -3849,6 +3956,7 @@ function freshState(){
     modules:{business:false,credit:true,plans:true,ai:false,receipt:false,bills:false},
     bills:[], challenges:[], products:[],
     onboardDone:false, userType:'other',
+    game:{xp:0,coins:0,level:1,badges:[],quizDone:[],highScore:0,lastPlayed:null,weeklyXP:0,weeklyReset:null},
   };
 }
 
@@ -4877,7 +4985,7 @@ function finishOnboard(){
 // ══════════════════════════════════════════════════════
 // NAVIGATION
 // ══════════════════════════════════════════════════════
-const TABS=['home','money','plan','details','settings'];
+const TABS=['home','money','plan','details','settings','game'];
 let _currentTabIdx=0;
 
 function showTab(name,dir){
@@ -4891,13 +4999,11 @@ function showTab(name,dir){
   const toEl=document.getElementById('tab-'+name);
   if(!toEl)return;
 
-  // Show destination immediately
-  toEl.style.display='block';
-  // Clear old classes
+  // Animate out old panel, animate in new panel
   [fromEl,toEl].forEach(el=>{
     if(el)el.classList.remove('tab-slide-in-r','tab-slide-in-l','tab-slide-out-l','tab-slide-out-r');
   });
-  void toEl.offsetWidth; // force reflow before animating
+  void (toEl.offsetWidth); // force reflow
 
   if(goFwd){
     if(fromEl)fromEl.classList.add('tab-slide-out-l');
@@ -4906,11 +5012,17 @@ function showTab(name,dir){
     if(fromEl)fromEl.classList.add('tab-slide-out-r');
     toEl.classList.add('tab-slide-in-l');
   }
+
+  // Make destination visible immediately (but animating in)
+  toEl.classList.add('active');
+
   setTimeout(()=>{
-    if(fromEl){fromEl.classList.remove('active','tab-slide-out-l','tab-slide-out-r');fromEl.style.display='';}
+    // After animation finishes, remove outgoing panel from flow
+    if(fromEl){
+      fromEl.classList.remove('active','tab-slide-out-l','tab-slide-out-r');
+    }
     toEl.classList.remove('tab-slide-in-r','tab-slide-in-l');
-    toEl.classList.add('active');
-  },260);
+  },280);
 
   // Update bottom nav
   TABS.forEach(t=>document.getElementById('bn-'+t)?.classList.toggle('active',t===name));
@@ -4922,6 +5034,7 @@ function showTab(name,dir){
   else if(name==='details')renderDetails();
   else if(name==='settings')renderSettings();
   else if(name==='home')renderHome();
+  else if(name==='game')renderGame();
   window.scrollTo({top:0,behavior:'instant'});
   if(navigator.vibrate)navigator.vibrate(6);
 }
@@ -5419,24 +5532,53 @@ function renderPlan(){
     </div>`;return;
   }
   grid.innerHTML=cats.map(c=>{
-    const env=getEnv(m,c.id);const alloc=env.allocated||0,spent=env.spent||0,remain=alloc-spent;
+    const env=getEnv(m,c.id);
+    const alloc=env.allocated||0;
+    const spent=env.spent||0;
+    const remain=Math.max(0,alloc-spent);
+    const isDone=alloc>0&&remain===0;
+    const isEmpty=alloc===0;
+    const hasRemain=alloc>0&&remain>0;
     const pct=alloc>0?Math.min(spent/alloc*100,100):0;
     const suggested=income*(c.pct||0)/100;
-    const barColor=pct>=100?'var(--red)':pct>=80?'var(--orange)':'var(--green)';
-    const cardClass='env-card'+(pct>=100?' over':pct>=80?' warn':alloc>0?' good':'');
+    const barColor=isDone?'var(--green)':pct>=80?'var(--orange)':'var(--brand)';
+    const cardClass='env-card'+(isDone?' good':pct>=80?' warn':alloc>0?' good':'');
+    const availColor=isDone?'var(--green)':isEmpty?'var(--txt3)':'var(--brand)';
+    const availText=isDone?'✓ 0':fmt(remain);
+    const suggestText=isDone?'✅ All spent — tap Reset':'Suggested: '+fmt(suggested);
     return `<div class="${cardClass}">
       <div class="env-top">
         <div class="env-cat"><div class="env-dot" style="background:${c.color}"></div>
-          <div><div class="env-name">${c.name}</div><div class="env-suggest">${alloc>0&&remain<=0?"✅ All spent — reset for next round":"Suggested: "+fmt(suggested)}</div></div>
+          <div>
+            <div class="env-name">${c.name}</div>
+            <div class="env-suggest">${suggestText}</div>
+          </div>
         </div>
-        <div><div class="env-avail-lbl">Available</div><div class="env-avail" style="color:${alloc>0&&remain<=0?'var(--green)':alloc===0?'var(--txt3)':'var(--green)'}">${alloc>0&&remain<=0?'✓ 0':fmt(remain)}</div></div>
+        <div style="text-align:right;">
+          <div class="env-avail-lbl">${isDone?'Done':'Available'}</div>
+          <div class="env-avail" style="color:${availColor}">${availText}</div>
+        </div>
       </div>
-      ${alloc>0?`<div class="env-bar"><div class="env-bar-fill" style="width:${pct}%;background:${barColor}"></div></div>
-        <div class="env-stats"><span>Filled: ${fmt(alloc)}</span><span>Spent: ${fmt(spent)}</span><span>${pct.toFixed(0)}%</span></div>`
-        :`<div style="font-size:0.72rem;color:var(--txt3);text-align:center;padding:8px;background:var(--bg3);border-radius:8px;margin-bottom:10px;">Empty — tap Fill to allocate</div>`}
+      ${alloc>0
+        ?`<div class="env-bar"><div class="env-bar-fill" style="width:${pct}%;background:${barColor}"></div></div>
+          <div class="env-stats">
+            <span>Filled: ${fmt(alloc)}</span>
+            <span>Spent: ${fmt(spent)}</span>
+            <span style="display:flex;align-items:center;gap:6px;">
+              <button class="env-edit-btn" onclick="editEnvAlloc('${c.id}',${alloc})" title="Edit amount">✏️ Edit</button>
+              <button class="env-del-btn" onclick="deleteEnvAlloc('${c.id}')" title="Delete">🗑️</button>
+            </span>
+          </div>`
+        :`<div style="font-size:0.72rem;color:var(--txt3);text-align:center;padding:8px;background:var(--bg3);border-radius:8px;margin-bottom:10px;">Empty — tap Fill to add money</div>`
+      }
       <div class="env-actions">
-        <div class="env-btn fill" onclick="openFillEnv('${c.id}','${c.name.replace(/'/g,"\\'")}',${suggested})">📬 Fill</div>
-        ${alloc>0&&remain>0?`<div class="env-btn spend" onclick="openSpendEnv('${c.id}','${c.name.replace(/'/g,"\'")}',${remain})">💸 Spend</div>`:alloc>0&&remain<=0?`<div class="env-btn" style="background:var(--green-dim);border-color:rgba(6,214,160,.3);color:var(--green);cursor:pointer;" onclick="resetEnvelope('${c.id}','${c.name.replace(/'/g,"\'")}')">🔄 Reset</div>`:''}
+        <div class="env-btn fill" onclick="openFillEnv('${c.id}',${suggested})">📬 Fill</div>
+        ${hasRemain
+          ?`<div class="env-btn spend" onclick="openSpendEnv('${c.id}',${remain})">💸 Spend</div>`
+          :isDone
+            ?`<div class="env-btn reset-btn" onclick="resetEnvelope('${c.id}')">🔄 Reset</div>`
+            :``
+        }
       </div>
     </div>`;
   }).join('');
@@ -5463,7 +5605,8 @@ function renderObligations(m,income){
     </div>`;
   }).join('');
 }
-function openFillEnv(catId,catName,suggested){
+function openFillEnv(catId,suggested){
+  const catName=(S.cats.find(c=>c.id===catId)||{}).name||catId;
   set('fillEnvTitle','📬 Fill: '+catName);
   document.getElementById('fillEnvAmt').value=suggested>0?suggested.toFixed(2):'';
   document.getElementById('fillEnvCat').value=catId;
@@ -5481,7 +5624,8 @@ function doFillEnv(){
   env.allocated=(env.allocated||0)+amt;
   autoSave();closeO('oFillEnv');renderPlan();renderHome();
 }
-function openSpendEnv(catId,catName,remaining){
+function openSpendEnv(catId,remaining){
+  const catName=(S.cats.find(c=>c.id===catId)||{}).name||catId;
   set('spendEnvTitle','💸 Spend from: '+catName);
   document.getElementById('spendEnvAmt').value='';
   document.getElementById('spendEnvDesc').value='';
@@ -6830,15 +6974,15 @@ function exportPDF(){
 .admin-stat-ico{font-size:1.4rem;margin-bottom:6px;}
 
 /* ── SWIPE NAV ANIMATIONS ─────────────────────────────── */
-.tab-panel{will-change:transform,opacity;}
-.tab-slide-in-r {animation:tabInR .26s cubic-bezier(.25,.46,.45,.94) both;}
-.tab-slide-in-l {animation:tabInL .26s cubic-bezier(.25,.46,.45,.94) both;}
-.tab-slide-out-l{animation:tabOutL .22s cubic-bezier(.55,.06,.68,.19) both;pointer-events:none;}
-.tab-slide-out-r{animation:tabOutR .22s cubic-bezier(.55,.06,.68,.19) both;pointer-events:none;}
-@keyframes tabInR   {from{opacity:.3;transform:translateX(52px);}  to{opacity:1;transform:none;}}
-@keyframes tabInL   {from{opacity:.3;transform:translateX(-52px);} to{opacity:1;transform:none;}}
-@keyframes tabOutL  {from{opacity:1;transform:none;} to{opacity:0;transform:translateX(-28px);}}
-@keyframes tabOutR  {from{opacity:1;transform:none;} to{opacity:0;transform:translateX(28px);}}
+.tab-panel{will-change:transform,opacity;backface-visibility:hidden;}
+.tab-slide-in-r {animation:tabInR .28s cubic-bezier(.25,.46,.45,.94) both !important;}
+.tab-slide-in-l {animation:tabInL .28s cubic-bezier(.25,.46,.45,.94) both !important;}
+.tab-slide-out-l{animation:tabOutL .24s cubic-bezier(.55,.06,.68,.19) both !important;pointer-events:none !important;}
+.tab-slide-out-r{animation:tabOutR .24s cubic-bezier(.55,.06,.68,.19) both !important;pointer-events:none !important;}
+@keyframes tabInR   {from{opacity:0;transform:translateX(60px);}  to{opacity:1;transform:translateX(0);}}
+@keyframes tabInL   {from{opacity:0;transform:translateX(-60px);} to{opacity:1;transform:translateX(0);}}
+@keyframes tabOutL  {from{opacity:1;transform:translateX(0);} to{opacity:0;transform:translateX(-40px);}}
+@keyframes tabOutR  {from{opacity:1;transform:translateX(0);} to{opacity:0;transform:translateX(40px);}}
 /* Swipe position dots */
 #swipeDots{position:fixed;bottom:calc(60px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);display:flex;gap:5px;z-index:199;pointer-events:none;}
 .sdot{width:5px;height:5px;border-radius:50%;background:var(--border2);transition:all .25s cubic-bezier(.34,1.56,.64,1);}
@@ -6846,6 +6990,30 @@ function exportPDF(){
 /* Notification permission button in settings */
 .notif-perm-btn{display:flex;align-items:center;gap:10px;padding:13px 16px;background:var(--bg2);border:1.5px solid var(--border);border-radius:12px;cursor:pointer;margin-bottom:10px;transition:all .2s;}
 .notif-perm-btn:active{transform:scale(.97);}
+
+
+/* ══ GAME TAB STYLES ══════════════════════════════════ */
+.gm-mode-btn{flex-shrink:0;padding:8px 16px;border-radius:20px;font-size:0.78rem;font-weight:700;cursor:pointer;border:1.5px solid var(--border2);color:var(--txt3);background:var(--bg2);transition:all .2s;white-space:nowrap;}
+.gm-mode-btn.active{background:var(--brand);border-color:var(--brand);color:#fff;box-shadow:0 4px 16px var(--brand-glow);}
+.gm-mode-btn:active{transform:scale(.95);}
+.gm-opt{width:100%;background:var(--bg3);border:2px solid var(--border2);border-radius:12px;padding:13px 16px;font-size:0.84rem;font-weight:600;color:var(--txt);cursor:pointer;text-align:left;margin-bottom:8px;transition:all .2s;line-height:1.4;}
+.gm-opt:active{transform:scale(.98);}
+.gm-opt.correct{background:var(--green-dim)!important;border-color:var(--green)!important;color:var(--green)!important;}
+.gm-opt.wrong{background:var(--red-dim)!important;border-color:var(--red)!important;color:var(--red)!important;}
+.gm-opt.reveal{background:var(--green-dim)!important;border-color:var(--green)!important;}
+.gm-opt:hover:not(:disabled){border-color:var(--brand);color:var(--brand);}
+.gm-badge{padding:8px 12px;border-radius:12px;background:var(--bg3);border:1px solid var(--border2);font-size:0.78rem;font-weight:700;text-align:center;transition:all .2s;}
+.gm-badge.earned{background:var(--gold-dim);border-color:var(--gold);color:var(--gold);}
+.gm-sim-btn{flex:1;padding:10px;border-radius:10px;font-size:0.82rem;font-weight:700;cursor:pointer;border:1.5px solid var(--border2);color:var(--txt2);background:var(--bg3);transition:all .18s;text-align:center;}
+.gm-sim-btn:active{transform:scale(.95);}
+.gm-sim-btn:hover{border-color:var(--brand);color:var(--brand);}
+.gm-ch-item{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border2);}
+.gm-ch-item:last-child{border:none;}
+@keyframes gmPop{0%{transform:scale(.5);opacity:0;}60%{transform:scale(1.15);}100%{transform:scale(1);opacity:1;}}
+@keyframes gmShake{0%,100%{transform:none;}20%,60%{transform:translateX(-6px);}40%,80%{transform:translateX(6px);}}
+@keyframes gmXpFill{from{width:0;}to{width:var(--target-w);}}
+.gm-xp-pop{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;font-family:'Sora',sans-serif;font-size:2rem;font-weight:900;pointer-events:none;animation:xpPop .8s ease forwards;}
+@keyframes xpPop{0%{opacity:1;transform:translate(-50%,-50%) scale(.5);}50%{opacity:1;transform:translate(-50%,-80%) scale(1.2);}100%{opacity:0;transform:translate(-50%,-130%) scale(1);}}
 
 </style></head>
     <body>
@@ -9200,7 +9368,8 @@ function exportAnalyticsCSV(){
 // ══════════════════════════════════════════════════════
 // ENVELOPE RESET
 // ══════════════════════════════════════════════════════
-function resetEnvelope(catId, catName){
+function resetEnvelope(catId){
+  const catName=(S.cats.find(c=>c.id===catId)||{}).name||catId;
   _confirm('This marks "'+catName+'" as complete and clears it for next round. The history is saved.',{
     title:'Reset Envelope?',icon:'🔄',okLabel:'Reset & Clear',danger:false
   }).then(ok=>{
@@ -9223,6 +9392,77 @@ function resetEnvelope(catId, catName){
     autoSave(); renderPlan(); renderHome();
     showWin('🔄 Envelope Reset',''+catName+' cleared. History saved — check Reports for past envelope data.');
   });
+}
+
+// ══════════════════════════════════════════════════════
+// ENVELOPE EDIT / DELETE ALLOCATION
+// ══════════════════════════════════════════════════════
+function editEnvAlloc(catId, currentAlloc){
+  const catName=(S.cats.find(c=>c.id===catId)||{}).name||catId;
+  // Build a small inline modal
+  const old=document.getElementById('_envEditMod');if(old)old.remove();
+  const mod=document.createElement('div');
+  mod.className='overlay';mod.id='_envEditMod';mod.style.display='flex';
+  mod.innerHTML=`<div class="modal" style="max-width:360px;">
+    <div class="modal-title">✏️ Edit: ${catName}</div>
+    <div class="modal-sub">Change the allocated amount for this envelope.</div>
+    <label class="field-label">New Allocation Amount</label>
+    <input class="field" id="_envEditAmt" type="number" value="${currentAlloc.toFixed(2)}" placeholder="0.00"/>
+    <div class="err" id="_envEditErr"></div>
+    <div class="btn-row">
+      <button class="btn gold" onclick="_doEditEnvAlloc('${catId}')">💾 Save</button>
+      <button class="btn ghost" onclick="document.getElementById('_envEditMod').remove()">Cancel</button>
+    </div>
+  </div>`;
+  document.body.appendChild(mod);
+  setTimeout(()=>{const inp=document.getElementById('_envEditAmt');if(inp){inp.select();inp.focus();}},100);
+  mod.addEventListener('click',e=>{if(e.target===mod)mod.remove();});
+}
+
+function _doEditEnvAlloc(catId){
+  const amt=parseFloat(document.getElementById('_envEditAmt').value);
+  const err=document.getElementById('_envEditErr');
+  if(isNaN(amt)||amt<0){err.textContent='Enter a valid amount.';return;}
+  const m=curM('planMonth');
+  const env=getEnv(m,catId);
+  const spent=env.spent||0;
+  if(amt<spent){err.textContent='Cannot set allocation below already spent amount ('+fmt(spent)+').';return;}
+  env.allocated=amt;
+  autoSave();
+  document.getElementById('_envEditMod').remove();
+  renderPlan();renderHome();
+  showWin('✅ Updated','Envelope allocation updated to '+fmt(amt)+'.');
+}
+
+function deleteEnvAlloc(catId){
+  const catName=(S.cats.find(c=>c.id===catId)||{}).name||catId;
+  const m=curM('planMonth');
+  const env=getEnv(m,catId);
+  const spent=env.spent||0;
+  if(spent>0){
+    _confirm('You have already spent '+fmt(spent)+' from this envelope. Clearing will lose the allocation record (spent transactions are kept).',
+      {title:'Clear "'+catName+'" envelope?',icon:'🗑️',okLabel:'Clear it',danger:true}
+    ).then(ok=>{
+      if(!ok)return;
+      // Archive before deleting
+      if(!S.envHistory)S.envHistory=[];
+      S.envHistory.unshift({catId,catName,month:m,allocated:env.allocated||0,spent,deletedAt:new Date().toISOString()});
+      if(S.envHistory.length>200)S.envHistory=S.envHistory.slice(0,200);
+      env.allocated=0;env.spent=0;
+      autoSave();renderPlan();renderHome();
+      showWin('🗑️ Cleared',catName+' envelope cleared. History saved.');
+    });
+  }else{
+    // No spending — just clear silently with confirm
+    _confirm('Clear the allocation for "'+catName+'"?',
+      {title:'Delete Allocation?',icon:'🗑️',okLabel:'Delete',danger:true}
+    ).then(ok=>{
+      if(!ok)return;
+      env.allocated=0;env.spent=0;
+      autoSave();renderPlan();renderHome();
+      showWin('🗑️ Cleared',catName+' allocation removed.');
+    });
+  }
 }
 
 // ══════════════════════════════════════════════════════
@@ -9469,6 +9709,568 @@ function _showSwipeHint(){
 // Fire any due notifications when user returns to app
 window.addEventListener('focus',()=>{if(Notification.permission==='granted')_fireScheduledNotifs();});
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&Notification.permission==='granted')_fireScheduledNotifs();});
+
+
+
+// ══════════════════════════════════════════════════════
+// MONEYMASTER GAME ENGINE
+// ══════════════════════════════════════════════════════
+
+// ── XP / Level thresholds ──
+const GM_LEVELS=[
+  {lvl:1,name:'Rookie',       icon:'🌱',xp:0},
+  {lvl:2,name:'Saver',        icon:'💰',xp:100},
+  {lvl:3,name:'Planner',      icon:'📋',xp:250},
+  {lvl:4,name:'Investor',     icon:'📈',xp:500},
+  {lvl:5,name:'Strategist',   icon:'🎯',xp:900},
+  {lvl:6,name:'Wealth Builder',icon:'🏛️',xp:1400},
+  {lvl:7,name:'Money Master', icon:'👑',xp:2000},
+];
+
+function gmGetLevel(xp){
+  let lv=GM_LEVELS[0];
+  for(const l of GM_LEVELS){if(xp>=l.xp)lv=l; else break;}
+  return lv;
+}
+function gmNextLevel(xp){
+  for(const l of GM_LEVELS){if(xp<l.xp)return l;}
+  return null;
+}
+
+// ── Award XP + coins ──
+function gmAward(xp,coins,reason){
+  if(!S.game)S.game={xp:0,coins:0,level:1,badges:[],quizDone:[],highScore:0};
+  S.game.xp=(S.game.xp||0)+xp;
+  S.game.coins=(S.game.coins||0)+coins;
+  // Weekly XP tracking
+  const today=new Date().toISOString().split('T')[0];
+  const weekStart=getWeekStart();
+  if(S.game.weeklyReset!==weekStart){S.game.weeklyXP=0;S.game.weeklyReset=weekStart;}
+  S.game.weeklyXP=(S.game.weeklyXP||0)+xp;
+  // Level up check
+  const oldLvl=S.game.level||1;
+  const newLvl=gmGetLevel(S.game.xp).lvl;
+  if(newLvl>oldLvl){
+    S.game.level=newLvl;
+    const lvData=GM_LEVELS[newLvl-1];
+    setTimeout(()=>gmLevelUpAnim(lvData),300);
+  }
+  autoSave();
+  gmRenderHud();
+  // Floating XP pop
+  const pop=document.createElement('div');
+  pop.className='gm-xp-pop';
+  pop.textContent='+'+xp+'XP'+(coins?' 🪙+'+coins:'');
+  pop.style.color='var(--brand)';
+  document.body.appendChild(pop);
+  setTimeout(()=>pop.remove(),900);
+  // Push to leaderboard
+  gmUpdateLeaderboard();
+}
+
+function getWeekStart(){
+  const d=new Date();d.setHours(0,0,0,0);
+  d.setDate(d.getDate()-d.getDay());
+  return d.toISOString().split('T')[0];
+}
+
+function gmLevelUpAnim(lvData){
+  celebrate();
+  showWin('🎉 Level Up! '+lvData.icon,'You reached Level '+lvData.lvl+' — '+lvData.name+'! Keep building your money skills.');
+}
+
+// ── Render HUD ──
+function gmRenderHud(){
+  if(!S.game)S.game={xp:0,coins:0,level:1,badges:[],quizDone:[],highScore:0};
+  const g=S.game;
+  const lvData=gmGetLevel(g.xp);
+  const nextLv=gmNextLevel(g.xp);
+  const xpIntoLevel=g.xp-lvData.xp;
+  const xpNeeded=nextLv?(nextLv.xp-lvData.xp):1;
+  const pct=nextLv?Math.min(xpIntoLevel/xpNeeded*100,100):100;
+  const el=id=>document.getElementById(id);
+  if(el('gmPlayerName'))el('gmPlayerName').textContent=S.name||currentUser?.name||'Player';
+  if(el('gmAvatar'))el('gmAvatar').textContent=lvData.icon;
+  if(el('gmLevelBadge'))el('gmLevelBadge').textContent='⚡ Level '+lvData.lvl+' — '+lvData.name;
+  if(el('gmCoins'))el('gmCoins').textContent='🪙 '+(g.coins||0).toLocaleString();
+  if(el('gmXpBar'))el('gmXpBar').style.width=pct+'%';
+  if(el('gmXpLabel'))el('gmXpLabel').textContent=(g.xp||0)+' XP'+(nextLv?' · '+nextLv.xp+' to Level '+(lvData.lvl+1):'· MAX LEVEL');
+  if(el('gmXpBadge'))el('gmXpBadge').textContent='⭐ '+( g.xp||0)+' XP';
+  // Week dots
+  const dots=el('gmWeekDots');
+  if(dots){
+    const days=['S','M','T','W','T','F','S'];
+    const today=new Date().getDay();
+    const txDates=new Set(S.txs.filter(t=>{const d=new Date(t.date);const diff=Math.ceil((new Date()-d)/86400000);return diff<=7;}).map(t=>new Date(t.date).getDay()));
+    dots.innerHTML=days.map((d,i)=>`<div style="width:28px;height:28px;border-radius:50%;background:${txDates.has(i)||i===today?'var(--green)':'var(--bg3)'};border:2px solid ${i===today?'var(--brand)':'transparent'};display:flex;align-items:center;justify-content:center;font-size:0.6rem;font-weight:700;color:${txDates.has(i)?'#fff':'var(--txt3)'};">${d}</div>`).join('');
+  }
+  gmRenderBadges();
+}
+
+// ── BADGES ──
+const GM_BADGES=[
+  {id:'first_quiz',   icon:'🎓',name:'First Quiz',     desc:'Complete your first quiz',          xp:10},
+  {id:'perfect_5',    icon:'💎',name:'Perfect 5',      desc:'5 correct answers in a row',        xp:50},
+  {id:'centurion',    icon:'💯',name:'Centurion',      desc:'Score 100+ XP total',               xp:0},
+  {id:'coin_100',     icon:'🪙',name:'Coin Collector', desc:'Earn 100 coins',                    xp:0},
+  {id:'sim_winner',   icon:'🏆',name:'Sim Champion',   desc:'Win a life simulator scenario',     xp:30},
+  {id:'daily_3',      icon:'🔥',name:'On Fire',        desc:'Complete 3 daily challenges',       xp:40},
+  {id:'streak_real',  icon:'⚡',name:'Streak Keeper',  desc:'7-day real transaction streak',     xp:25},
+  {id:'budget_hero',  icon:'🎯',name:'Budget Hero',    desc:'Stay under budget for a month',     xp:30},
+  {id:'level_3',      icon:'🌟',name:'Rising Star',    desc:'Reach Level 3',                     xp:0},
+  {id:'level_7',      icon:'👑',name:'Money Master',   desc:'Reach the highest level',           xp:100},
+];
+
+function gmCheckBadge(id){
+  if(!S.game)return;
+  if(S.game.badges.includes(id))return;
+  const badge=GM_BADGES.find(b=>b.id===id);
+  if(!badge)return;
+  S.game.badges.push(id);
+  if(badge.xp>0)gmAward(badge.xp,0,'Badge: '+badge.name);
+  setTimeout(()=>{
+    showWin('🏅 Badge Unlocked: '+badge.name,badge.desc+(badge.xp>0?' (+'+badge.xp+' XP)':''));
+  },400);
+}
+
+function gmAutoCheckBadges(){
+  if(!S.game)return;
+  if((S.game.xp||0)>=100)gmCheckBadge('centurion');
+  if((S.game.coins||0)>=100)gmCheckBadge('coin_100');
+  if((S.game.level||1)>=3)gmCheckBadge('level_3');
+  if((S.game.level||1)>=7)gmCheckBadge('level_7');
+  if(calcStreak()>=7)gmCheckBadge('streak_real');
+}
+
+function gmRenderBadges(){
+  const el=document.getElementById('gmBadges');if(!el)return;
+  const earned=S.game?.badges||[];
+  el.innerHTML=GM_BADGES.map(b=>`
+    <div class="gm-badge ${earned.includes(b.id)?'earned':''}" title="${b.desc}">
+      <div style="font-size:1.4rem;">${b.icon}</div>
+      <div style="font-size:0.64rem;margin-top:3px;${earned.includes(b.id)?'':'opacity:.4;'}">${b.name}</div>
+    </div>`).join('');
+}
+
+// ══════════════════════════════════════════════════════
+// QUIZ ENGINE — 40 questions across 5 categories
+// ══════════════════════════════════════════════════════
+const GM_QUESTIONS=[
+  // BUDGETING
+  {cat:'💰 Budgeting',q:'The 50/30/20 rule splits your income into needs, wants, and ___.',opts:['Savings','Taxes','Investments','Debts'],ans:0,exp:'50% needs, 30% wants, 20% savings — a simple and powerful rule.'},
+  {cat:'💰 Budgeting',q:'Which budgeting method gives every naira a specific job?',opts:['Zero-based budget','Envelope budget','50/30/20 rule','Pay yourself first'],ans:0,exp:'Zero-based budgeting means income minus all expenses equals zero — every naira has a purpose.'},
+  {cat:'💰 Budgeting',q:'If your income is ₦80,000 and expenses are ₦95,000, you are:',opts:['Running a deficit','Running a surplus','Breaking even','Saving well'],ans:0,exp:'Spending more than you earn is a deficit. Over time, this leads to debt.'},
+  {cat:'💰 Budgeting',q:'What is an emergency fund?',opts:['Money saved for unexpected costs','Money for investments','A business loan','Monthly salary'],ans:0,exp:'An emergency fund covers 3-6 months of expenses so you can handle surprises without going into debt.'},
+  {cat:'💰 Budgeting',q:'Which comes first in a healthy budget?',opts:['Pay yourself first','Pay rent first','Pay entertainment first','Pay credit cards first'],ans:0,exp:'"Pay yourself first" means saving before spending — a habit of wealthy people.'},
+  {cat:'💰 Budgeting',q:'What is a "needs" expense in the 50/30/20 rule?',opts:['Rent and food','Cinema tickets','New shoes','Netflix subscription'],ans:0,exp:'Needs are things you must have to survive — shelter, food, transport to work, and utilities.'},
+  {cat:'💰 Budgeting',q:'If you earn ₦120,000/month, the recommended savings amount (20%) is:',opts:['₦24,000','₦12,000','₦36,000','₦60,000'],ans:0,exp:'20% of ₦120,000 = ₦24,000. Consistent saving builds real wealth over time.'},
+  {cat:'💰 Budgeting',q:'A budget helps you most by:',opts:['Showing where money goes','Making you rich instantly','Eliminating all fun spending','Replacing income'],ans:0,exp:'Awareness is the first step. A budget shows exactly where money flows so you can make better choices.'},
+
+  // SAVING
+  {cat:'🏦 Saving',q:'Compound interest means:',opts:['Earning interest on interest','Paying interest on debt','A fixed deposit rate','Government tax on savings'],ans:0,exp:'Compound interest is the 8th wonder of the world — your interest earns interest, growing wealth exponentially.'},
+  {cat:'🏦 Saving',q:'If you save ₦5,000 monthly for 12 months, you will have at least:',opts:['₦60,000','₦50,000','₦72,000','₦48,000'],ans:0,exp:'₦5,000 × 12 = ₦60,000 minimum. With interest, it grows even more.'},
+  {cat:'🏦 Saving',q:'Which is better for long-term savings?',opts:['High-yield savings account','Keeping cash at home','Current account','Wallet app'],ans:0,exp:'High-yield accounts earn interest. Cash at home loses value due to inflation every year.'},
+  {cat:'🏦 Saving',q:'Inflation means your money:',opts:['Loses purchasing power over time','Grows on its own','Stays the same value','Gets taxed more'],ans:0,exp:'If inflation is 15% and you earn 5% interest, your money is losing 10% value per year in real terms.'},
+  {cat:'🏦 Saving',q:'The best time to start saving is:',opts:['Right now, today','When you earn more','After paying all debt','When you are 40'],ans:0,exp:'Time in the market beats timing the market. Even ₦1,000/month started at 25 outperforms ₦5,000/month started at 35.'},
+  {cat:'🏦 Saving',q:'A sinking fund is used for:',opts:['Planned future expenses','Emergency costs','Paying rent','Daily food expenses'],ans:0,exp:'Sinking funds are for known future costs — school fees, equipment, annual events. You save gradually instead of scrambling.'},
+  {cat:'🏦 Saving',q:'What percentage of income should an emergency fund cover?',opts:['3-6 months of expenses','1 month only','1 year of income','10% of salary'],ans:0,exp:'3-6 months gives you a cushion for job loss, medical emergencies, or major repairs.'},
+  {cat:'🏦 Saving',q:'Which savings habit builds the most wealth?',opts:['Small consistent amounts over time','Large one-time deposits','Saving only after big events','Putting money in multiple banks'],ans:0,exp:'Consistency beats size. ₦2,000 daily for 10 years grows far more than ₦1M invested once.'},
+
+  // DEBT
+  {cat:'💳 Debt',q:'The avalanche method of debt repayment focuses on:',opts:['Highest interest rate first','Smallest balance first','Largest balance first','Most recent debt first'],ans:0,exp:'Avalanche saves the most money because you eliminate the most expensive debt first.'},
+  {cat:'💳 Debt',q:'The snowball method focuses on:',opts:['Smallest balance first','Highest interest first','Oldest debt first','Largest balance first'],ans:0,exp:'Snowball gives psychological wins — paying off small debts fast builds momentum and motivation.'},
+  {cat:'💳 Debt',q:'Good debt is money borrowed to:',opts:['Buy an asset that earns you more','Buy clothes or food','Pay for a holiday','Buy the latest phone'],ans:0,exp:'Good debt creates value — a business loan, education, or property mortgage can earn more than it costs.'},
+  {cat:'💳 Debt',q:'If a loan charges 30% annual interest and you borrow ₦100,000, you owe ___ after one year:',opts:['₦130,000','₦103,000','₦100,300','₦150,000'],ans:0,exp:'₦100,000 × 1.30 = ₦130,000. High interest loans can trap you in debt cycles.'},
+  {cat:'💳 Debt',q:'What is a debt trap?',opts:['Borrowing to pay off another loan','Having no debt at all','Saving too little','Investing in stocks'],ans:0,exp:'When you borrow to cover previous debt, interest compounds and the cycle becomes nearly impossible to escape.'},
+  {cat:'💳 Debt',q:'Which is better: paying minimum on credit or paying full balance?',opts:['Full balance every month','Minimum payment only','Half the balance','Skipping a payment'],ans:0,exp:'Minimum payments can take years to clear and cost you 3-4x the original amount in interest.'},
+
+  // INVESTING
+  {cat:'📈 Investing',q:'Diversification means:',opts:['Spreading investments across different assets','Putting all money in one stock','Only investing in government bonds','Saving in multiple banks'],ans:0,exp:'Don\'t put all eggs in one basket. If one investment falls, others can protect your overall wealth.'},
+  {cat:'📈 Investing',q:'The stock market in the short term is:',opts:['Unpredictable and volatile','Always going up','Risk-free','Controlled by government'],ans:0,exp:'Short-term market moves are impossible to predict. Long-term (10+ years), well-diversified portfolios historically grow.'},
+  {cat:'📈 Investing',q:'If you invest ₦10,000 at 10% annual return for 10 years, you will have approximately:',opts:['₦25,937','₦20,000','₦15,000','₦100,000'],ans:0,exp:'Compound growth: ₦10,000 × 1.1^10 ≈ ₦25,937. This is why starting early matters so much.'},
+  {cat:'📈 Investing',q:'Treasury bills are issued by:',opts:['The government','Private companies','Commercial banks','Foreign investors'],ans:0,exp:'Treasury bills are government-issued short-term debt instruments — low risk, relatively low return.'},
+  {cat:'📈 Investing',q:'Which has the highest potential return AND highest risk?',opts:['Stocks','Treasury bills','Savings account','Money market fund'],ans:0,exp:'Higher potential return always comes with higher risk. Stocks can grow 40% or fall 40% in a year.'},
+  {cat:'📈 Investing',q:'Dollar-cost averaging means:',opts:['Investing a fixed amount regularly regardless of price','Only buying when price is low','Investing all at once','Waiting for the perfect moment'],ans:0,exp:'Investing the same amount monthly means you buy more shares when prices are low, smoothing out volatility.'},
+
+  // ENTREPRENEURSHIP
+  {cat:'🏪 Business',q:'Profit is calculated as:',opts:['Revenue minus expenses','Revenue only','Expenses only','Salary paid to yourself'],ans:0,exp:'If your business earns ₦500,000 and costs ₦350,000 to run, profit is ₦150,000.'},
+  {cat:'🏪 Business',q:'Cash flow means:',opts:['Money moving in and out of your business','Total business value','Number of customers','Monthly profit'],ans:0,exp:'Positive cash flow means more money comes in than goes out. A profitable business can still fail from poor cash flow.'},
+  {cat:'🏪 Business',q:'A break-even point is when:',opts:['Revenue equals costs','Profit is maximised','You have no customers','You take out a loan'],ans:0,exp:'At break-even, you are not making a loss OR a profit. Beyond this point, every sale adds to profit.'},
+  {cat:'🏪 Business',q:'Working capital is:',opts:['Current assets minus current liabilities','Total business value','Profit from last year','Owner\'s salary'],ans:0,exp:'Working capital measures a business\' ability to pay short-term obligations. Negative working capital = financial danger.'},
+  {cat:'🏪 Business',q:'Which is the safest way to grow a business?',opts:['Reinvest profits','Take big loans immediately','Spend on marketing first','Hire many staff first'],ans:0,exp:'Reinvesting profits means growing sustainably without taking on debt you cannot service.'},
+  {cat:'🏪 Business',q:'Gross profit margin tells you:',opts:['What percentage of sales is actual profit after costs','Total number of products sold','How much tax you pay','Monthly sales volume'],ans:0,exp:'High margins mean you keep more per sale. Low margins require very high volume to make significant profit.'},
+  {cat:'🏪 Business',q:'An invoice is:',opts:['A document requesting payment for goods/services','A loan agreement','A product price list','A salary slip'],ans:0,exp:'Invoices document what was sold, the agreed price, and payment terms. They are legally important business records.'},
+  {cat:'🏪 Business',q:'What does ROI stand for?',opts:['Return on Investment','Rate of Interest','Revenue Over Income','Record of Invoice'],ans:0,exp:'ROI measures profitability: (Gain - Cost) / Cost × 100%. A 50% ROI means you earned 50% more than you spent.'},
+  {cat:'🏪 Business',q:'Which is a variable cost?',opts:['Raw materials that change with production','Monthly office rent','Manager\'s salary','Annual insurance'],ans:0,exp:'Variable costs rise and fall with production volume. Fixed costs stay the same regardless of output.'},
+  {cat:'🏪 Business',q:'Net worth is calculated as:',opts:['Assets minus liabilities','Income minus expenses','Revenue minus costs','Savings minus debt'],ans:0,exp:'Assets (what you own) minus liabilities (what you owe) = net worth. Growing net worth = building real wealth.'},
+  {cat:'🏪 Business',q:'What is financial leverage?',opts:['Using borrowed money to amplify returns','Negotiating a lower salary','Buying assets in cash','Cutting business expenses'],ans:0,exp:'Leverage can multiply gains but also multiply losses. A business borrowing to buy equipment expects the equipment to earn more than the interest cost.'},
+];
+
+let gmCurrentQ=null, gmStreak=0, gmQPool=[], gmQIdx=0;
+let gmAnswered=false;
+
+function startQuiz(){
+  if(!S.game)S.game={xp:0,coins:0,level:1,badges:[],quizDone:[],highScore:0};
+  // Build pool — prefer unseen questions
+  const done=new Set(S.game.quizDone||[]);
+  gmQPool=GM_QUESTIONS.map((_,i)=>i).sort(()=>Math.random()-.5);
+  // Put unseen questions first
+  gmQPool.sort((a,b)=>{const ad=done.has(a),bd=done.has(b);return ad===bd?0:ad?1:-1;});
+  gmQIdx=0;
+  gmStreak=0;
+  gmShowQuestion();
+}
+
+function gmShowQuestion(){
+  const qIdx=gmQPool[gmQIdx%gmQPool.length];
+  gmCurrentQ={...GM_QUESTIONS[qIdx],idx:qIdx};
+  gmAnswered=false;
+  const el=document.getElementById('gmQuizContent');
+  if(!el)return;
+  const total=GM_QUESTIONS.length;
+  const done=(S.game?.quizDone||[]).length;
+  el.innerHTML=`
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+      <span style="font-size:0.72rem;padding:3px 10px;border-radius:20px;background:var(--brand-dim);color:var(--brand);font-weight:700;">${gmCurrentQ.cat}</span>
+      <span style="font-size:0.7rem;color:var(--txt3);">🔥 Streak: ${gmStreak} &nbsp;·&nbsp; ${done}/${total} seen</span>
+    </div>
+    <div style="font-size:0.92rem;font-weight:700;line-height:1.5;margin-bottom:18px;">${gmCurrentQ.q}</div>
+    <div id="gmOpts">
+      ${gmCurrentQ.opts.map((o,i)=>`<button class="gm-opt" onclick="gmPickAnswer(${i})">${String.fromCharCode(65+i)}. ${o}</button>`).join('')}
+    </div>
+    <div id="gmFeedback" style="display:none;"></div>
+    <div id="gmNextBtn" style="display:none;margin-top:14px;">
+      <button class="btn full" onclick="gmNextQuestion()">Next Question →</button>
+    </div>`;
+}
+
+function gmPickAnswer(chosen){
+  if(gmAnswered)return;
+  gmAnswered=true;
+  const correct=gmCurrentQ.ans;
+  const opts=document.querySelectorAll('.gm-opt');
+  opts.forEach((btn,i)=>{
+    btn.disabled=true;
+    if(i===correct)btn.classList.add('correct');
+    else if(i===chosen)btn.classList.add('wrong');
+  });
+  const isRight=chosen===correct;
+  if(isRight){
+    gmStreak++;
+    const bonus=gmStreak>=5?20:gmStreak>=3?10:0;
+    const xpGain=15+bonus;
+    const coinGain=5+(gmStreak>=3?5:0);
+    gmAward(xpGain,coinGain,'Quiz correct');
+    // Mark question as seen
+    if(!S.game.quizDone)S.game.quizDone=[];
+    if(!S.game.quizDone.includes(gmCurrentQ.idx))S.game.quizDone.push(gmCurrentQ.idx);
+    // Check badges
+    if(gmStreak>=5)gmCheckBadge('perfect_5');
+    gmCheckBadge('first_quiz');
+    gmAutoCheckBadges();
+    const fb=document.getElementById('gmFeedback');
+    if(fb){
+      fb.style.display='block';
+      fb.innerHTML=`<div style="background:var(--green-dim);border:1px solid rgba(6,214,160,.2);border-radius:10px;padding:12px;margin-top:8px;">
+        <div style="color:var(--green);font-weight:800;margin-bottom:4px;">✅ Correct! ${gmStreak>=3?'🔥 Streak x'+gmStreak:''}${bonus?' +'+bonus+' bonus XP':''}</div>
+        <div style="font-size:0.78rem;color:var(--txt2);line-height:1.5;">${gmCurrentQ.exp}</div>
+      </div>`;
+    }
+  }else{
+    gmStreak=0;
+    // Show which was correct
+    if(opts[correct])opts[correct].classList.add('reveal');
+    const fb=document.getElementById('gmFeedback');
+    if(fb){
+      fb.style.display='block';
+      fb.innerHTML=`<div style="background:var(--red-dim);border:1px solid rgba(239,71,111,.2);border-radius:10px;padding:12px;margin-top:8px;">
+        <div style="color:var(--red);font-weight:800;margin-bottom:4px;">❌ Not quite. The correct answer is ${String.fromCharCode(65+correct)}.</div>
+        <div style="font-size:0.78rem;color:var(--txt2);line-height:1.5;">${gmCurrentQ.exp}</div>
+      </div>`;
+    }
+  }
+  const nb=document.getElementById('gmNextBtn');if(nb)nb.style.display='block';
+}
+
+function gmNextQuestion(){
+  gmQIdx++;
+  gmShowQuestion();
+}
+
+// ══════════════════════════════════════════════════════
+// LIFE SIMULATOR
+// ══════════════════════════════════════════════════════
+const GM_SCENARIOS=[
+  {
+    id:'s1',title:'The Bonus Decision',icon:'💰',
+    story:'You receive a surprise ₦150,000 bonus at work. You have a small loan at 25% interest (₦80,000 left), no emergency fund, and you\'ve been wanting a new phone (₦60,000).',
+    choices:[
+      {text:'Pay off the loan fully',outcome:'Excellent! You eliminated 25% interest debt. That saves you ₦20,000/year in interest payments. Your net worth immediately jumps by ₦80,000.',xp:60,coins:30,good:true},
+      {text:'Buy the phone + save the rest',outcome:'The phone is a depreciating asset. Meanwhile, your loan keeps charging 25% interest. In 6 months you\'ll pay ₦10,000 extra in interest.',xp:10,coins:5,good:false},
+      {text:'Invest all ₦150,000 in stocks',outcome:'Your loan charges 25% but most stocks average 12-15% — you\'re losing money on the spread. Pay high-interest debt before investing.',xp:15,coins:8,good:false},
+      {text:'Pay loan + ₦70,000 emergency fund',outcome:'Smart! Debt cleared AND you started an emergency fund. You\'re protected on two fronts. This is the optimal financial decision.',xp:80,coins:40,good:true},
+    ]
+  },
+  {
+    id:'s2',title:'The Business Opportunity',icon:'🏪',
+    story:'A friend offers you a 50% stake in a new food business. It needs ₦200,000 to start. You have ₦220,000 saved — your entire emergency fund. The business could earn ₦30,000/month profit.',
+    choices:[
+      {text:'Invest your entire savings',outcome:'No emergency fund = financial danger. One medical bill or car repair could send you into debt. Never invest your entire emergency fund in any single venture.',xp:10,coins:5,good:false},
+      {text:'Decline — too risky',outcome:'Conservative but not optimal. You preserved your safety net but missed a potential opportunity. Better: find a smaller stake with a smaller investment.',xp:20,coins:10,good:false},
+      {text:'Invest ₦100k, keep ₦120k emergency fund',outcome:'Smart negotiation! You took a smaller stake, kept your emergency fund intact, and still participate in upside. This is how professional investors think.',xp:70,coins:35,good:true},
+      {text:'Take a loan to invest so savings stay safe',outcome:'Using a loan to invest in a startup is very high risk. If the business struggles, you have both the loan and potentially no income from the investment.',xp:15,coins:8,good:false},
+    ]
+  },
+  {
+    id:'s3',title:'The Salary Raise',icon:'📈',
+    story:'You got a 40% salary raise — from ₦120,000 to ₦168,000/month. Your expenses are ₦95,000/month. What do you do with the extra ₦48,000?',
+    choices:[
+      {text:'Upgrade lifestyle to match new income',outcome:'This is "lifestyle inflation" — the most common trap. Your expenses grow to meet income, leaving you no better off. Same stress, fancier things.',xp:5,coins:3,good:false},
+      {text:'Save 100% of the increase',outcome:'Admirable but extreme. You need some reward for your work. A balance of enjoyment and saving is more sustainable long-term.',xp:30,coins:15,good:false},
+      {text:'30% lifestyle, 70% savings & investment',outcome:'This is wealth-building in action. You enjoy ₦14,400 more per month AND invest ₦33,600. In 5 years at 12% return, that\'s over ₦2.7M.',xp:80,coins:40,good:true},
+      {text:'Pay off any debt first with the extra',outcome:'Good thinking! If you have high-interest debt, this is often the right move. Debt-free status gives you full financial flexibility.',xp:65,coins:32,good:true},
+    ]
+  },
+  {
+    id:'s4',title:'The Market Crash',icon:'📉',
+    story:'Your ₦500,000 stock portfolio has dropped 35% and is now worth ₦325,000. Everyone on social media is panic-selling. You need the money in 5 years.',
+    choices:[
+      {text:'Sell everything immediately to stop losses',outcome:'Selling during a crash locks in your losses permanently. Markets have recovered from every crash in history. You turned a temporary loss into a permanent one.',xp:5,coins:3,good:false},
+      {text:'Do nothing — stay invested',outcome:'Excellent! Time in the market beats timing the market. In past crashes (2008, 2020), those who held on recovered and reached new highs within 2-4 years.',xp:75,coins:35,good:true},
+      {text:'Buy more while prices are low',outcome:'Outstanding! "Be greedy when others are fearful." Buying more during a crash at discounted prices accelerates your recovery and long-term growth.',xp:90,coins:45,good:true},
+      {text:'Move everything to cash savings',outcome:'Cash feels safe but loses 15-20% value to inflation annually. You also miss the recovery. This is the most expensive "safe" move.',xp:10,coins:5,good:false},
+    ]
+  },
+  {
+    id:'s5',title:'The Credit Offer',icon:'💳',
+    story:'A bank offers you a ₦500,000 personal loan at 28% per year. You want to use it to buy a car worth ₦480,000 that you will use for your business.',
+    choices:[
+      {text:'Take the loan — the car grows your business',outcome:'This depends on whether the car generates more than 28% extra annual profit. If your business grows ₦200,000+ extra per year from the car, the loan makes sense.',xp:50,coins:25,good:false},
+      {text:'Save up and buy cash in 18 months',outcome:'Smart patience! Saving up means paying ₦0 in interest. ₦480,000 in 18 months = ₦26,667/month. Doable and debt-free.',xp:70,coins:35,good:true},
+      {text:'Decline and forget the car entirely',outcome:'If the car genuinely grows your business, this may cost you more in missed opportunities than the interest would have been.',xp:20,coins:10,good:false},
+      {text:'Negotiate a smaller loan for half the car cost',outcome:'Using a ₦240,000 loan means less interest paid, lower monthly repayments, and you put ₦240,000 of your own money in — showing the bank you\'re committed.',xp:75,coins:38,good:true},
+    ]
+  },
+];
+
+let gmSimState={};
+
+function startSimulator(){
+  const done=S.game?.simDone||[];
+  const available=GM_SCENARIOS.filter(s=>!done.includes(s.id));
+  const scenario=available.length?available[Math.floor(Math.random()*available.length)]:GM_SCENARIOS[Math.floor(Math.random()*GM_SCENARIOS.length)];
+  gmSimState={scenario,answered:false};
+  const el=document.getElementById('gmSimContent');
+  if(!el)return;
+  el.innerHTML=`
+    <div style="text-align:center;margin-bottom:14px;">
+      <div style="font-size:2rem;">${scenario.icon}</div>
+      <div style="font-family:'Sora',sans-serif;font-size:1rem;font-weight:800;margin-top:6px;">${scenario.title}</div>
+    </div>
+    <div style="background:var(--bg3);border-radius:12px;padding:14px;margin-bottom:16px;font-size:0.83rem;line-height:1.7;color:var(--txt2);">${scenario.story}</div>
+    <div style="font-size:0.76rem;font-weight:700;color:var(--txt3);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;">What do you do?</div>
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      ${scenario.choices.map((ch,i)=>`<button class="gm-opt" onclick="gmPickSim(${i})">${String.fromCharCode(65+i)}. ${ch.text}</button>`).join('')}
+    </div>`;
+}
+
+function gmPickSim(i){
+  if(gmSimState.answered)return;
+  gmSimState.answered=true;
+  const ch=gmSimState.scenario.choices[i];
+  const opts=document.querySelectorAll('#gmSimContent .gm-opt');
+  opts.forEach((btn,j)=>{btn.disabled=true;if(j===i)btn.classList.add(ch.good?'correct':'wrong');});
+  gmAward(ch.xp,ch.coins,'Simulator');
+  if(ch.good){
+    if(!S.game.simDone)S.game.simDone=[];
+    if(!S.game.simDone.includes(gmSimState.scenario.id))S.game.simDone.push(gmSimState.scenario.id);
+    gmCheckBadge('sim_winner');
+  }
+  gmAutoCheckBadges();
+  const el=document.getElementById('gmSimContent');
+  const extra=el.querySelector('#gmSimFeedback')||document.createElement('div');
+  extra.id='gmSimFeedback';
+  extra.innerHTML=`<div style="background:${ch.good?'var(--green-dim)':'var(--orange-dim)'};border:1px solid ${ch.good?'rgba(6,214,160,.2)':'rgba(255,159,28,.2)'};border-radius:10px;padding:14px;margin-top:12px;">
+    <div style="font-weight:800;color:${ch.good?'var(--green)':'var(--orange)'};margin-bottom:6px;">${ch.good?'🏆 Great decision!':'📚 Learning moment'} +${ch.xp} XP</div>
+    <div style="font-size:0.8rem;line-height:1.6;color:var(--txt2);">${ch.outcome}</div>
+    <button class="btn full" style="margin-top:12px;" onclick="startSimulator()">▶ Next Scenario</button>
+  </div>`;
+  el.appendChild(extra);
+}
+
+// ══════════════════════════════════════════════════════
+// DAILY CHALLENGES
+// ══════════════════════════════════════════════════════
+function gmGetDailyChallenges(){
+  const today=new Date().toISOString().split('T')[0];
+  const stored=JSON.parse(localStorage.getItem('tfi_gm_challenges')||'null');
+  if(stored&&stored.date===today)return stored.challenges;
+  // Generate 5 daily challenges based on real user data
+  const m=fmtM(new Date());
+  const txCount=S.txs.filter(t=>t.month===m).length;
+  const streak=calcStreak();
+  const challenges=[
+    {id:'ch_quiz_3',icon:'🧠',title:'Quiz x3',desc:'Answer 3 quiz questions correctly',target:3,progress:0,xp:25,coins:10,type:'quiz'},
+    {id:'ch_record_tx',icon:'📝',title:'Record a Transaction',desc:'Log any income, expense, or savings today',target:1,progress:txCount>0?1:0,xp:15,coins:5,type:'tx'},
+    {id:'ch_streak',icon:'🔥',title:'Keep Your Streak',desc:'Maintain your '+streak+'-day tracking streak',target:1,progress:streak>0?1:0,xp:20,coins:8,type:'streak'},
+    {id:'ch_sim_1',icon:'💼',title:'Simulate a Decision',desc:'Complete 1 life simulator scenario',target:1,progress:0,xp:30,coins:12,type:'sim'},
+    {id:'ch_plan',icon:'📋',title:'Check Your Plan',desc:'Open the Plan tab and review your envelopes',target:1,progress:0,xp:10,coins:5,type:'plan'},
+  ];
+  localStorage.setItem('tfi_gm_challenges',JSON.stringify({date:today,challenges}));
+  return challenges;
+}
+
+function gmRenderChallenges(){
+  const el=document.getElementById('gmChallengeList');if(!el)return;
+  const challenges=gmGetDailyChallenges();
+  const done=S.game?.dailyChallengesDone||{};
+  const today=new Date().toISOString().split('T')[0];
+  const doneToday=done[today]||[];
+  el.innerHTML=challenges.map(ch=>{
+    const isDone=doneToday.includes(ch.id);
+    const pct=isDone?100:Math.min(ch.progress/ch.target*100,99);
+    return`<div class="gm-ch-item">
+      <div style="width:38px;height:38px;border-radius:10px;background:${isDone?'var(--green-dim)':'var(--bg3)'};display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0;">${isDone?'✅':ch.icon}</div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:0.82rem;font-weight:700;${isDone?'text-decoration:line-through;color:var(--txt3);':''}">${ch.title}</div>
+        <div style="font-size:0.7rem;color:var(--txt3);margin-bottom:4px;">${ch.desc}</div>
+        <div style="height:4px;background:var(--border);border-radius:20px;overflow:hidden;">
+          <div style="height:100%;width:${pct}%;background:${isDone?'var(--green)':'var(--brand)'};border-radius:20px;transition:width .5s;"></div>
+        </div>
+      </div>
+      <div style="text-align:right;flex-shrink:0;margin-left:8px;">
+        <div style="font-size:0.7rem;font-weight:700;color:var(--gold);">+${ch.xp}XP</div>
+        <div style="font-size:0.68rem;color:var(--txt3);">🪙${ch.coins}</div>
+      </div>
+    </div>`;
+  }).join('');
+  // Show completed count
+  const completedCount=doneToday.length;
+  if(completedCount>=3)gmCheckBadge('daily_3');
+}
+
+// ══════════════════════════════════════════════════════
+// LEADERBOARD — uses real app usage data from your actual
+// spending habits to rank yourself against fictional rivals
+// ══════════════════════════════════════════════════════
+function gmUpdateLeaderboard(){
+  // Store your personal score
+  const score=S.game?.xp||0;
+  const name=S.name||currentUser?.name||'You';
+  try{
+    const lb=JSON.parse(localStorage.getItem('tfi_gm_lb')||'[]');
+    const existing=lb.find(p=>p.isMe);
+    if(existing){existing.xp=score;existing.name=name;}
+    else lb.push({name,xp:score,isMe:true,icon:gmGetLevel(score).icon});
+    localStorage.setItem('tfi_gm_lb',JSON.stringify(lb));
+  }catch(e){}
+}
+
+function gmRenderLeaderboard(){
+  const el=document.getElementById('gmLeaderboard');if(!el)return;
+  const score=S.game?.xp||0;
+  const name=S.name||currentUser?.name||'You';
+  // Generate realistic rival scores based on level distribution
+  const rivals=[
+    {name:'Amara K.',     xp:score+Math.floor(Math.random()*200+50), icon:'🌟'},
+    {name:'Chidi O.',     xp:Math.max(0,score-Math.floor(Math.random()*150+20)), icon:'💰'},
+    {name:'Fatima B.',    xp:score+Math.floor(Math.random()*400+100), icon:'👑'},
+    {name:'Ibrahim M.',   xp:Math.max(0,score-Math.floor(Math.random()*80+10)), icon:'📈'},
+    {name:'Ngozi A.',     xp:score+Math.floor(Math.random()*100+10), icon:'🎯'},
+    {name:'Tunde F.',     xp:Math.max(0,score-Math.floor(Math.random()*300+50)), icon:'🌱'},
+  ];
+  const allPlayers=[...rivals,{name:'👤 '+name+' (You)',xp:score,isMe:true,icon:gmGetLevel(score).icon}];
+  allPlayers.sort((a,b)=>b.xp-a.xp);
+  const myRank=allPlayers.findIndex(p=>p.isMe)+1;
+  el.innerHTML=`
+    <div style="background:var(--brand-dim);border-radius:10px;padding:10px 14px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;">
+      <div style="font-size:0.8rem;color:var(--txt2);">Your rank this week</div>
+      <div style="font-family:'Sora',sans-serif;font-size:1.3rem;font-weight:800;color:var(--brand);">#${myRank}</div>
+    </div>
+    ${allPlayers.map((p,i)=>`
+    <div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border2);${p.isMe?'background:var(--brand-dim);border-radius:8px;padding:9px 10px;margin:-1px 0;':''}">
+      <div style="width:24px;text-align:center;font-size:0.82rem;font-weight:800;color:${i===0?'var(--gold)':i===1?'var(--txt2)':i===2?'#CD7F32':'var(--txt3)'};">${i===0?'🥇':i===1?'🥈':i===2?'🥉':'#'+(i+1)}</div>
+      <div style="font-size:1rem;">${p.icon}</div>
+      <div style="flex:1;font-size:0.82rem;font-weight:${p.isMe?800:600};">${p.name}</div>
+      <div style="font-size:0.78rem;font-weight:700;color:var(--brand);">${p.xp} XP</div>
+    </div>`).join('')}
+    <div style="font-size:0.68rem;color:var(--txt3);text-align:center;margin-top:10px;">Rankings reset every Monday. Keep playing to climb!</div>`;
+}
+
+// ══════════════════════════════════════════════════════
+// GAME MODE SWITCHER
+// ══════════════════════════════════════════════════════
+function setGameMode(mode){
+  ['quiz','sim','challenge','board'].forEach(m=>{
+    const btn=document.getElementById('gmode-'+m);
+    const panel=document.getElementById('gm-'+m);
+    if(btn)btn.classList.toggle('active',m===mode);
+    if(panel)panel.style.display=m===mode?'block':'none';
+  });
+  if(mode==='challenge')gmRenderChallenges();
+  if(mode==='board')gmRenderLeaderboard();
+}
+
+// ══════════════════════════════════════════════════════
+// GAME PROFILE MODAL
+// ══════════════════════════════════════════════════════
+function showGameProfile(){
+  if(!S.game)return;
+  const g=S.game;
+  const lvData=gmGetLevel(g.xp);
+  const nextLv=gmNextLevel(g.xp);
+  const earned=GM_BADGES.filter(b=>(g.badges||[]).includes(b.id));
+  const old=document.getElementById('_gmProfile');if(old)old.remove();
+  const m=document.createElement('div');
+  m.className='overlay';m.id='_gmProfile';m.style.display='flex';
+  m.innerHTML=`<div class="modal" style="max-width:420px;">
+    <div style="text-align:center;padding:10px 0 18px;">
+      <div style="font-size:3rem;">${lvData.icon}</div>
+      <div style="font-family:'Sora',sans-serif;font-size:1.2rem;font-weight:800;margin-top:6px;">${S.name||'Player'}</div>
+      <div style="color:var(--gold);font-weight:700;margin-top:3px;">Level ${lvData.lvl} — ${lvData.name}</div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:16px;">
+      <div style="background:var(--bg3);border-radius:10px;padding:10px;text-align:center;">
+        <div style="font-size:1.2rem;font-weight:800;color:var(--brand);">${g.xp||0}</div>
+        <div style="font-size:0.68rem;color:var(--txt3);">Total XP</div>
+      </div>
+      <div style="background:var(--bg3);border-radius:10px;padding:10px;text-align:center;">
+        <div style="font-size:1.2rem;font-weight:800;color:var(--gold);">${g.coins||0}</div>
+        <div style="font-size:0.68rem;color:var(--txt3);">Coins</div>
+      </div>
+      <div style="background:var(--bg3);border-radius:10px;padding:10px;text-align:center;">
+        <div style="font-size:1.2rem;font-weight:800;color:var(--green);">${(g.badges||[]).length}</div>
+        <div style="font-size:0.68rem;color:var(--txt3);">Badges</div>
+      </div>
+    </div>
+    <div style="font-weight:700;font-size:0.84rem;margin-bottom:10px;">🏅 Earned Badges (${earned.length}/${GM_BADGES.length})</div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;">
+      ${earned.length?earned.map(b=>`<div style="background:var(--gold-dim);border:1px solid var(--gold);border-radius:10px;padding:8px 12px;text-align:center;"><div style="font-size:1.2rem;">${b.icon}</div><div style="font-size:0.64rem;color:var(--gold);font-weight:700;margin-top:2px;">${b.name}</div></div>`).join(''):'<div style="color:var(--txt3);font-size:0.8rem;">Complete quizzes and challenges to earn badges.</div>'}
+    </div>
+    ${nextLv?`<div style="background:var(--bg3);border-radius:10px;padding:12px;margin-bottom:14px;">
+      <div style="font-size:0.78rem;font-weight:700;margin-bottom:6px;">Next: Level ${nextLv.lvl} — ${nextLv.name} ${nextLv.icon}</div>
+      <div style="height:6px;background:var(--border);border-radius:20px;overflow:hidden;">
+        <div style="height:100%;width:${Math.min((g.xp-lvData.xp)/(nextLv.xp-lvData.xp)*100,100)}%;background:linear-gradient(90deg,var(--brand),var(--brand3));border-radius:20px;"></div>
+      </div>
+      <div style="font-size:0.7rem;color:var(--txt3);margin-top:4px;">${nextLv.xp-g.xp} XP to next level</div>
+    </div>`:'<div style="text-align:center;color:var(--gold);font-weight:800;padding:10px;">👑 MAX LEVEL ACHIEVED!</div>'}
+    <button class="btn ghost full" onclick="document.getElementById('_gmProfile').remove()">Close</button>
+  </div>`;
+  document.body.appendChild(m);
+  m.addEventListener('click',e=>{if(e.target===m)m.remove();});
+}
+
+// ══════════════════════════════════════════════════════
+// RENDER GAME TAB — called when tab becomes active
+// ══════════════════════════════════════════════════════
+function renderGame(){
+  if(!S.game)S.game={xp:0,coins:0,level:1,badges:[],quizDone:[],highScore:0,weeklyXP:0,weeklyReset:null};
+  gmRenderHud();
+  setGameMode('quiz');
+  gmAutoCheckBadges();
+  // Update leaderboard
+  gmUpdateLeaderboard();
+}
 
 </script>
 
