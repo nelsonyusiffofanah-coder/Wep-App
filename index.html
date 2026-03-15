@@ -428,7 +428,7 @@ function dismissInstall(){
 })();
 </script>
 <title>Trackinfin — Your Money, Your Control</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Sora:wght@400;600;700;800&display=swap" rel="stylesheet"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
@@ -448,19 +448,12 @@ function dismissInstall(){
 
 /* 1. Midnight — Deep navy, sky blue, gold (DEFAULT) */
 [data-theme="midnight"],[data-theme="dark"] {
-  --brand:#2563EB; --brand2:#3B82F6; --brand3:#1D4ED8;
-  --brand-dim:rgba(37,99,235,.12); --brand-glow:rgba(37,99,235,.4);
-  --brand-gradient:linear-gradient(135deg,#2563EB,#7C3AED);
-  --gold:#F59E0B; --gold2:#FCD34D; --gold-dim:rgba(245,158,11,.12);
-  --green:#10B981; --green-dim:rgba(16,185,129,.12);
-  --red:#F43F5E;   --red-dim:rgba(244,63,94,.12);
-  --purple:#8B5CF6; --purple-dim:rgba(139,92,246,.12);
-  --bg:#060B14; --bg2:#0D1526; --bg3:#131F35; --bg4:#1A2845; --bg5:#1F3055;
-  --txt:#F0F6FF; --txt2:#7C95B4; --txt3:#3A5470;
-  --border:rgba(255,255,255,.07); --border2:rgba(255,255,255,.04);
-  --border-accent:rgba(37,99,235,.3);
-  --shadow-sm:0 1px 3px rgba(0,0,0,.4); --shadow-md:0 4px 16px rgba(0,0,0,.5);
-  --radius:14px; --radius-lg:20px;
+  --brand:#0EA5E9; --brand2:#38BDF8; --brand3:#0284C7;
+  --brand-dim:rgba(14,165,233,.12); --brand-glow:rgba(14,165,233,.3);
+  --gold:#F0B429; --gold2:#FFD166; --gold-dim:rgba(240,180,41,.12);
+  --bg:#050D18; --bg2:#0A1628; --bg3:#0F1E35; --bg4:#152440;
+  --txt:#EEF6FF; --txt2:#8BAFC9; --txt3:#3D6680;
+  --border:rgba(14,165,233,.12); --border2:rgba(255,255,255,.05);
   --input:#0C1A2C; --shadow:0 8px 40px rgba(0,0,0,.7);
   --overlay:rgba(0,0,0,.85);
 }
@@ -635,19 +628,12 @@ function dismissInstall(){
    Inspired by Figma, GitHub, Linear dashboard
    "Professional. Focused. Disciplined."                 */
 [data-theme="slate"] {
-  --brand:#2563EB; --brand2:#3B82F6; --brand3:#1D4ED8;
-  --brand-dim:rgba(37,99,235,.10); --brand-glow:rgba(37,99,235,.25);
-  --brand-gradient:linear-gradient(135deg,#2563EB,#7C3AED);
-  --gold:#F59E0B; --gold2:#FCD34D; --gold-dim:rgba(245,158,11,.1);
-  --green:#059669; --green-dim:rgba(5,150,105,.1);
-  --red:#DC2626;   --red-dim:rgba(220,38,38,.1);
-  --purple:#7C3AED; --purple-dim:rgba(124,58,237,.1);
-  --bg:#F8FAFC; --bg2:#FFFFFF; --bg3:#F1F5F9; --bg4:#E2E8F0; --bg5:#EEF2F9;
+  --brand:#3B82F6; --brand2:#60A5FA; --brand3:#1D4ED8;
+  --brand-dim:rgba(59,130,246,.1); --brand-glow:rgba(59,130,246,.2);
+  --gold:#0EA5E9; --gold2:#38BDF8; --gold-dim:rgba(14,165,233,.1);
+  --bg:#F8FAFC; --bg2:#FFFFFF; --bg3:#F1F5F9; --bg4:#E2E8F0;
   --txt:#0F172A; --txt2:#334155; --txt3:#94A3B8;
-  --border:rgba(37,99,235,.12); --border2:rgba(0,0,0,.07);
-  --border-accent:rgba(37,99,235,.3);
-  --shadow-sm:0 1px 3px rgba(0,0,0,.08); --shadow-md:0 4px 16px rgba(0,0,0,.1);
-  --radius:14px; --radius-lg:20px;
+  --border:rgba(59,130,246,.12); --border2:rgba(0,0,0,.08);
   --input:#F8FAFC; --shadow:0 4px 20px rgba(59,130,246,.1);
   --overlay:rgba(15,23,42,.6);
   --green:#059669; --red:#DC2626;
@@ -744,7 +730,7 @@ function dismissInstall(){
 }
 
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
-html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:var(--txt);overflow-x:hidden;}
+html,body{height:100%;font-family:'Outfit',sans-serif;background:var(--bg);color:var(--txt);overflow-x:hidden;}
 body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
   background:radial-gradient(ellipse 80% 50% at 100% 0%,rgba(14,165,233,.05),transparent 60%),
              radial-gradient(ellipse 60% 40% at 0% 100%,rgba(240,180,41,.03),transparent 55%);}
@@ -2810,139 +2796,100 @@ input:checked + .toggle-slider { box-shadow: 0 0 0 2px var(--brand-dim) !importa
 
     <!-- ══ GAME TAB ══ -->
     <div class="tab-panel" id="tab-game">
-      <div class="tgm-page">
+      <div style="padding:16px 16px 120px;">
 
-        <!-- ── Header ── -->
-        <div class="tgm-header">
+        <!-- Header -->
+        <div class="row-between mb-18">
           <div>
-            <div class="tgm-title">MoneyMaster</div>
-            <div class="tgm-sub">Level up your financial intelligence</div>
+            <div style="font-family:'Sora',sans-serif;font-size:1.1rem;font-weight:800;">🎮 MoneyMaster</div>
+            <div class="f-sm c-txt3">Learn. Play. Win. Build real money skills.</div>
           </div>
-          <div id="gmXpBadge" class="tgm-xp-badge" onclick="showGameProfile()">⭐ 0 XP</div>
+          <div id="gmXpBadge" style="background:linear-gradient(135deg,var(--brand),var(--brand3));border-radius:20px;padding:5px 12px;font-size:0.72rem;font-weight:800;color:#fff;cursor:pointer;" onclick="showGameProfile()">⭐ XP: 0</div>
         </div>
 
-        <!-- ── Player HUD ── -->
-        <div id="gmHud" class="tgm-hud">
-          <div class="tgm-hud-top">
-            <div class="tgm-hud-left">
-              <div id="gmAvatar" class="tgm-avatar">👤</div>
+        <!-- Player HUD -->
+        <div id="gmHud" style="background:linear-gradient(135deg,var(--bg2),var(--bg3));border:1px solid var(--border);border-radius:16px;padding:14px 16px;margin-bottom:18px;">
+          <div class="row-between mb-10">
+            <div class="row gap-10">
+              <div id="gmAvatar" style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--brand),var(--brand3));display:flex;align-items:center;justify-content:center;font-size:1.3rem;border:3px solid rgba(255,255,255,.15);">👤</div>
               <div>
-                <div id="gmPlayerName" class="tgm-name">—</div>
-                <div id="gmLevelBadge" class="tgm-level">⚡ Level 1 · Rookie</div>
+                <div id="gmPlayerName" style="font-weight:800;font-size:0.9rem;">—</div>
+                <div id="gmLevelBadge" style="font-size:0.68rem;color:var(--gold);font-weight:700;">⚡ Level 1 — Rookie</div>
               </div>
             </div>
-            <div class="tgm-hud-right">
-              <div id="gmCoins" class="tgm-coins">🪙 0</div>
-              <div class="tgm-coins-lbl">Coins</div>
+            <div class="text-right">
+              <div class="f-sm c-txt3">Coins</div>
+              <div id="gmCoins" style="font-family:'Sora',sans-serif;font-size:1.1rem;font-weight:800;color:var(--gold);">🪙 0</div>
             </div>
           </div>
-          <div class="tgm-xp-row">
-            <div id="gmXpLabel" class="tgm-xp-lbl">0 XP</div>
-            <div class="tgm-xp-track"><div id="gmXpBar" class="tgm-xp-fill"></div></div>
+          <!-- XP Bar -->
+          <div class="row gap-8">
+            <div style="font-size:0.64rem;color:var(--txt3);white-space:nowrap;" id="gmXpLabel">0 / 100 XP</div>
+            <div style="flex:1;height:6px;background:var(--border);border-radius:20px;overflow:hidden;">
+              <div id="gmXpBar" style="height:100%;width:0%;background:linear-gradient(90deg,var(--brand),var(--brand3));border-radius:20px;transition:width .5s cubic-bezier(.34,1.56,.64,1);"></div>
+            </div>
           </div>
-          <div class="tgm-week" id="gmWeekDots"></div>
+          <!-- Weekly streak -->
+          <div style="display:flex;gap:6px;margin-top:10px;" id="gmWeekDots"></div>
         </div>
 
-        <!-- ── Mode Grid (N26 style 3×2) ── -->
-        <div class="tgm-section-lbl">Choose Mode</div>
-        <div class="tgm-grid">
-          <div class="tgm-card tgm-card-on" id="gmode-quiz"      onclick="setGameMode('quiz')">
-            <span class="tgm-card-ico">🧠</span>
-            <span class="tgm-card-name">Quiz</span>
-            <span class="tgm-card-desc">Test knowledge</span>
-          </div>
-          <div class="tgm-card" id="gmode-sim"       onclick="setGameMode('sim')">
-            <span class="tgm-card-ico">💼</span>
-            <span class="tgm-card-name">Simulator</span>
-            <span class="tgm-card-desc">Real decisions</span>
-          </div>
-          <div class="tgm-card" id="gmode-budget"    onclick="setGameMode('budget')">
-            <span class="tgm-card-ico">💰</span>
-            <span class="tgm-card-name">Budget Blitz</span>
-            <span class="tgm-card-desc">60 sec race</span>
-          </div>
-          <div class="tgm-card" id="gmode-invest"    onclick="setGameMode('invest')">
-            <span class="tgm-card-ico">📈</span>
-            <span class="tgm-card-name">Invest Race</span>
-            <span class="tgm-card-desc">Beat market</span>
-          </div>
-          <div class="tgm-card" id="gmode-challenge" onclick="setGameMode('challenge')">
-            <span class="tgm-card-ico">⚔️</span>
-            <span class="tgm-card-name">Challenges</span>
-            <span class="tgm-card-desc">Daily missions</span>
-          </div>
-          <div class="tgm-card" id="gmode-board"     onclick="setGameMode('board')">
-            <span class="tgm-card-ico">🏆</span>
-            <span class="tgm-card-name">Leaderboard</span>
-            <span class="tgm-card-desc">Weekly rank</span>
-          </div>
+        <!-- Game Mode Selector -->
+        <div style="display:flex;gap:8px;margin-bottom:16px;overflow-x:auto;padding-bottom:4px;">
+          <div class="gm-mode-btn active" id="gmode-quiz" onclick="setGameMode('quiz')">🧠 Quiz</div>
+          <div class="gm-mode-btn" id="gmode-sim" onclick="setGameMode('sim')">💼 Simulator</div>
+          <div class="gm-mode-btn" id="gmode-challenge" onclick="setGameMode('challenge')">⚔️ Challenge</div>
+          <div class="gm-mode-btn" id="gmode-board" onclick="setGameMode('board')">🏆 Leaderboard</div>
         </div>
 
-        <!-- ── Badges ── -->
-        <div class="tgm-section-lbl">Achievements</div>
-        <div class="tgm-badges" id="gmBadges"></div>
-
-        <!-- ── Content panels ── -->
+        <!-- QUIZ MODE -->
         <div id="gm-quiz">
-          <div class="tgm-panel" id="gmQuizCard">
-            <div id="gmQuizContent" class="tgm-splash">
-              <span class="tgm-splash-ico">🧠</span>
-              <div class="tgm-splash-title">Financial Quiz</div>
-              <div class="tgm-splash-txt">Answer questions, earn XP. Build a streak for bonus points.</div>
-              <button class="btn tgm-cta-btn" onclick="startQuiz()">▶ Start Quiz</button>
+          <div id="gmQuizCard" style="background:var(--bg2);border:1px solid var(--border);border-radius:18px;padding:20px;margin-bottom:14px;min-height:200px;">
+            <div id="gmQuizContent">
+              <div style="text-align:center;padding:24px 0;">
+                <div style="font-size:2.5rem;margin-bottom:12px;">🧠</div>
+                <div class="fw-700 mb-6">Financial Quiz</div>
+                <div class="f-base c-txt3 mb-18">Test your money knowledge. Earn XP and coins for every correct answer.</div>
+                <button class="btn" onclick="startQuiz()">▶ Start Quiz</button>
+              </div>
             </div>
           </div>
+          <!-- Badges row -->
+          <div style="font-size:0.78rem;font-weight:700;color:var(--txt3);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px;">Your Badges</div>
+          <div id="gmBadges" class="d-flex flex-wrap gap-8"></div>
         </div>
 
+        <!-- SIMULATOR MODE -->
         <div id="gm-sim" style="display:none;">
-          <div class="tgm-panel" id="gmSimCard">
-            <div id="gmSimContent" class="tgm-splash">
-              <span class="tgm-splash-ico">💼</span>
-              <div class="tgm-splash-title">Life Simulator</div>
-              <div class="tgm-splash-txt">Make real financial decisions without risking real money.</div>
-              <button class="btn tgm-cta-btn" onclick="startSimulator()">▶ Start Scenario</button>
+          <div id="gmSimCard" class="panel-lg mb-14">
+            <div id="gmSimContent">
+              <div style="text-align:center;padding:16px 0;">
+                <div style="font-size:2rem;margin-bottom:10px;">💼</div>
+                <div class="fw-700 mb-6">Life Simulator</div>
+                <div class="f-base c-txt3 mb-18">Make financial decisions. See the consequences. Learn without losing real money.</div>
+                <button class="btn" onclick="startSimulator()">▶ Start Scenario</button>
+              </div>
             </div>
           </div>
         </div>
 
-        <div id="gm-budget" style="display:none;">
-          <div class="tgm-panel" id="gmBudgetCard">
-            <div id="gmBudgetContent" class="tgm-splash">
-              <span class="tgm-splash-ico">💰</span>
-              <div class="tgm-splash-title">Budget Blitz</div>
-              <div class="tgm-splash-txt">60 seconds. Allocate income across categories. Hit the ideal budget.</div>
-              <button class="btn tgm-cta-btn" onclick="startBudgetBlitz()">▶ Start Blitz</button>
-            </div>
-          </div>
-        </div>
-
-        <div id="gm-invest" style="display:none;">
-          <div class="tgm-panel" id="gmInvestCard">
-            <div id="gmInvestContent" class="tgm-splash">
-              <span class="tgm-splash-ico">📈</span>
-              <div class="tgm-splash-title">Investment Race</div>
-              <div class="tgm-splash-txt">Pick 3 assets. Simulate 6 months. Beat the market average to win.</div>
-              <button class="btn tgm-cta-btn" onclick="startInvestRace()">▶ Start Race</button>
-            </div>
-          </div>
-        </div>
-
+        <!-- CHALLENGE MODE -->
         <div id="gm-challenge" style="display:none;">
-          <div class="tgm-panel">
-            <div class="tgm-panel-title">⚔️ Daily Challenges</div>
+          <div class="panel-lg mb-14">
+            <div class="panel-title mb-14">⚔️ Daily Challenges</div>
             <div id="gmChallengeList"></div>
           </div>
         </div>
 
+        <!-- LEADERBOARD -->
         <div id="gm-board" style="display:none;">
-          <div class="tgm-panel">
-            <div class="tgm-panel-title">🏆 Weekly Leaderboard</div>
+          <div class="panel-lg">
+            <div class="panel-title mb-14">🏆 Leaderboard</div>
             <div id="gmLeaderboard"></div>
           </div>
         </div>
 
       </div>
-    </div>    </div>
+    </div>
 
   </main>
 
@@ -3527,31 +3474,31 @@ input:checked + .toggle-slider { box-shadow: 0 0 0 2px var(--brand-dim) !importa
 <!-- Admin Panel -->
 <div id="adminPanel" class="admin-panel">
 
-  <!-- Admin Header — Command Center -->
-  <div class="adm-topbar">
-    <div class="adm-brand">
-      <div class="adm-logo">🔐</div>
+  <!-- Admin Header -->
+  <div class="admin-header">
+    <div class="row gap-12">
+      <div class="ico-box bg-brand-gradient">🔐</div>
       <div>
-        <div class="adm-title">Command Center</div>
-        <div class="adm-sub">Signed in as: <span id="adminEmailShow" class="adm-blur" onclick="this.style.filter=this.style.filter?'':'blur(4px)'">•••</span></div>
+        <div class="font-sora fw-800 text-lg">Admin Panel</div>
+        <div class="text-xs c-txt3">Signed in as: <span id="adminEmailShow" class="admin-email-blur" onclick="this.style.filter=this.style.filter?'':'blur(4px)'">•••</span></div>
       </div>
     </div>
-    <div class="adm-actions">
-      <button class="adm-ico-btn" onclick="renderAdminStats()" title="Refresh">↺</button>
-      <button class="adm-ico-btn adm-ico-close" onclick="closeAdminPanel()" title="Close">✕</button>
+    <div class="flex gap-6 flex-wrap">
+      <button class="btn ghost sm" onclick="renderAdminStats()">🔄 Refresh</button>
+      <button class="btn ghost sm" onclick="closeAdminPanel()">✕ Close</button>
     </div>
   </div>
 
-  <!-- Admin Nav -->
-  <div class="adm-nav-strip">
-    <div class="adm-nav-chip adm-active" id="atab-dashboard" onclick="switchAdminTab('dashboard')">📊 Dashboard</div>
-    <div class="adm-nav-chip" id="atab-users"     onclick="switchAdminTab('users')">👥 Users</div>
-    <div class="adm-nav-chip" id="atab-features"  onclick="switchAdminTab('features')">🎛️ Features</div>
-    <div class="adm-nav-chip" id="atab-broadcast" onclick="switchAdminTab('broadcast')">📢 Broadcast</div>
-    <div class="adm-nav-chip" id="atab-feedback"  onclick="switchAdminTab('feedback')">💬 Feedback</div>
-    <div class="adm-nav-chip" id="atab-logs"      onclick="switchAdminTab('logs')">📋 Logs</div>
-    <div class="adm-nav-chip" id="atab-analytics" onclick="switchAdminTab('analytics')">📈 Analytics</div>
-    <div class="adm-nav-chip" id="atab-settings"  onclick="switchAdminTab('settings')">⚙️ Settings</div>
+  <!-- Admin Tabs -->
+  <div class="admin-tab-bar">
+    <div class="admin-tab active" id="atab-dashboard" onclick="switchAdminTab('dashboard')">📊 Dashboard</div>
+    <div class="admin-tab" id="atab-users" onclick="switchAdminTab('users')">👥 Users</div>
+    <div class="admin-tab" id="atab-features" onclick="switchAdminTab('features')">🎛️ Features</div>
+    <div class="admin-tab" id="atab-broadcast" onclick="switchAdminTab('broadcast')">📢 Broadcast</div>
+    <div class="admin-tab" id="atab-feedback" onclick="switchAdminTab('feedback')">💬 Feedback</div>
+    <div class="admin-tab" id="atab-logs" onclick="switchAdminTab('logs')">📋 Logs</div>
+    <div class="admin-tab" id="atab-analytics" onclick="switchAdminTab('analytics')">📈 Analytics</div>
+    <div class="admin-tab" id="atab-settings" onclick="switchAdminTab('settings')">⚙️ Settings</div>
   </div>
 
   <div class="admin-wrap">
@@ -7576,441 +7523,6 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--brand);outline-offs
 .sett-ico.purple { background: var(--purple-dim); }
 .sett-ico.bg3    { background: var(--bg3);        }
 
-
-/* ═══════════════════════════════════════════════════════════════
-   TRACKINFIN PREMIUM UI — injected clean, works on ALL themes
-   Revolut · Monzo · N26 · Duolingo inspired
-═══════════════════════════════════════════════════════════════ */
-
-/* ── Typography ── */
-.tgm-title,.tgm-splash-title,.tgm-panel-title,.adm-title {
-  font-family:'Plus Jakarta Sans',sans-serif !important;
-}
-.tgm-name,.tgm-coins,.adm-stat-val {
-  font-family:'Plus Jakarta Sans',sans-serif !important;
-  font-variant-numeric:tabular-nums;
-}
-
-/* ── Buttons — gradient + ripple ── */
-.btn {
-  font-family:'Inter',sans-serif !important;
-  font-weight:600 !important;
-  border-radius:12px !important;
-  position:relative !important;
-  overflow:hidden !important;
-  transition:transform .15s,box-shadow .15s,filter .15s !important;
-}
-.btn:not(.ghost):not(.danger) {
-  background:var(--brand-gradient,linear-gradient(135deg,var(--brand),var(--brand3))) !important;
-  box-shadow:0 4px 14px rgba(37,99,235,.28) !important;
-}
-.btn:hover:not(:disabled)  { transform:translateY(-1px) !important; filter:brightness(1.07) !important; }
-.btn:active                { transform:scale(.97) !important; }
-.btn.danger {
-  background:linear-gradient(135deg,#F43F5E,#E11D48) !important;
-  box-shadow:0 4px 14px rgba(244,63,94,.3) !important;
-}
-.btn .ripple {
-  position:absolute; border-radius:50%;
-  background:rgba(255,255,255,.28); transform:scale(0);
-  animation:_ripple .5s linear; pointer-events:none;
-  width:100px; height:100px; margin:-50px;
-}
-@keyframes _ripple { to { transform:scale(4); opacity:0; } }
-
-/* ── Hero balance card ── */
-.mhero {
-  border-radius:22px !important;
-  box-shadow:0 8px 32px rgba(37,99,235,.12),0 0 0 1px var(--border) !important;
-  overflow:hidden !important; position:relative !important;
-}
-[data-theme="midnight"] .mhero,
-[data-theme="dark"] .mhero {
-  background:linear-gradient(160deg,var(--bg2),var(--bg3)) !important;
-  box-shadow:0 12px 40px rgba(0,0,0,.5),0 0 0 1px rgba(37,99,235,.2) !important;
-}
-.mhero::before {
-  content:''; position:absolute; top:-40px; right:-40px;
-  width:160px; height:160px; border-radius:50%;
-  background:radial-gradient(circle,var(--brand-glow),transparent 70%);
-  pointer-events:none; z-index:0;
-}
-.mhero-content { position:relative; z-index:1; }
-
-/* Balance number — Plus Jakarta Sans */
-#balanceDisplay, .mhero-bal {
-  font-family:'Plus Jakarta Sans',sans-serif !important;
-  font-size:2.5rem !important; font-weight:900 !important;
-  letter-spacing:-2px !important; font-variant-numeric:tabular-nums !important;
-}
-
-/* ── Bottom Nav ── */
-#bottomNav {
-  backdrop-filter:blur(24px) saturate(180%) !important;
-  -webkit-backdrop-filter:blur(24px) saturate(180%) !important;
-  border-top:1px solid var(--border) !important;
-}
-[data-theme="midnight"] #bottomNav,
-[data-theme="dark"] #bottomNav {
-  background:rgba(6,11,20,.92) !important;
-  border-top:1px solid rgba(255,255,255,.07) !important;
-  box-shadow:0 -20px 60px rgba(0,0,0,.5) !important;
-}
-.bnav-item { transition:all .18s cubic-bezier(.34,1.56,.64,1) !important; position:relative; }
-.bnav-item:active { transform:scale(.87) !important; }
-.bnav-item.active::before {
-  content:''; position:absolute; top:0; left:50%; transform:translateX(-50%);
-  width:24px; height:2.5px; border-radius:0 0 4px 4px;
-  background:var(--brand-gradient,var(--brand));
-  box-shadow:0 0 10px var(--brand-glow);
-}
-.bnav-item.active .bico { transform:scale(1.18) translateY(-1px) !important; }
-
-/* ── Panels / Cards ── */
-.panel, .card-lg {
-  border-radius:18px !important;
-  transition:box-shadow .2s, transform .2s !important;
-}
-.panel:hover { box-shadow:var(--shadow-md,0 4px 16px rgba(0,0,0,.12)) !important; }
-
-/* ── Fields ── */
-.field:focus {
-  border-color:var(--brand) !important;
-  box-shadow:0 0 0 3px var(--brand-dim) !important;
-  outline:none !important;
-}
-
-/* ── Modal ── */
-@keyframes _sheetUp {
-  from { transform:translateY(22px); opacity:0; }
-  to   { transform:none; opacity:1; }
-}
-.modal { animation:_sheetUp .26s cubic-bezier(.34,1.56,.64,1) both !important; }
-
-/* ── Tab panels ── */
-.tab-panel { display:none; }
-.tab-panel.active { display:block; animation:_tpIn .22s ease both; }
-@keyframes _tpIn { from{opacity:0;transform:translateY(6px);} to{opacity:1;transform:none;} }
-.tab-slide-in-r { animation:_slR .26s cubic-bezier(.25,.46,.45,.94) both !important; }
-.tab-slide-in-l { animation:_slL .26s cubic-bezier(.25,.46,.45,.94) both !important; }
-@keyframes _slR { from{opacity:0;transform:translateX(40px);} to{opacity:1;transform:none;} }
-@keyframes _slL { from{opacity:0;transform:translateX(-40px);} to{opacity:1;transform:none;} }
-
-/* ── Swipe dots ── */
-#swipeDots { position:fixed; bottom:calc(62px + env(safe-area-inset-bottom)); left:50%; transform:translateX(-50%); display:flex; gap:6px; z-index:199; pointer-events:none; }
-.sdot { width:6px; height:6px; border-radius:50%; background:rgba(127,127,127,.2); transition:all .3s cubic-bezier(.34,1.56,.64,1); }
-.sdot.sdot-active { width:22px; border-radius:4px; background:var(--brand); box-shadow:0 0 10px var(--brand-glow); }
-
-/* ── Charts ── */
-canvas { display:block; max-width:100%; }
-#reportChart,#goalsChart,#bizChart,#netWorthChart,
-#analyticsGrowthChart,#analyticsTypesChart { height:180px !important; }
-
-/* ── Skeleton ── */
-.skeleton {
-  background:linear-gradient(90deg,var(--bg3) 25%,var(--bg4,var(--bg2)) 50%,var(--bg3) 75%);
-  background-size:400% 100%; animation:_skel 1.4s ease infinite; border-radius:8px;
-}
-@keyframes _skel { 0%{background-position:100% 50%;} 100%{background-position:0% 50%;} }
-
-/* ── Progress bar ── */
-.prog-track { height:6px; background:var(--border2,rgba(0,0,0,.07)); border-radius:20px; overflow:hidden; }
-.prog-fill   { height:100%; border-radius:20px; transition:width .5s cubic-bezier(.34,1.56,.64,1); }
-
-/* ════════════════════════════════════
-   GAME TAB — tgm-* prefix, no conflicts
-════════════════════════════════════ */
-.tgm-page { padding:16px 16px 120px; font-family:'Inter',sans-serif; }
-
-/* Header */
-.tgm-header { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:20px; }
-.tgm-title  { font-family:'Plus Jakarta Sans',sans-serif; font-size:1.5rem; font-weight:900; letter-spacing:-1px; color:var(--txt); line-height:1; }
-.tgm-sub    { font-size:0.72rem; color:var(--txt3); margin-top:4px; }
-
-/* XP Badge */
-.tgm-xp-badge {
-  background:var(--brand-gradient,linear-gradient(135deg,var(--brand),var(--brand3)));
-  border-radius:22px; padding:7px 14px;
-  font-size:0.72rem; font-weight:800; color:#fff;
-  box-shadow:0 4px 16px var(--brand-glow,rgba(37,99,235,.3));
-  cursor:pointer; position:relative; overflow:hidden;
-  display:inline-flex; align-items:center; gap:4px; white-space:nowrap;
-}
-.tgm-xp-badge::after {
-  content:''; position:absolute; top:-50%; left:-50%;
-  width:200%; height:200%;
-  background:linear-gradient(90deg,transparent,rgba(255,255,255,.2),transparent);
-  animation:_badgeShine 2.5s infinite;
-}
-@keyframes _badgeShine { from{transform:translateX(-100%);} to{transform:translateX(100%);} }
-
-/* HUD */
-.tgm-hud {
-  border-radius:20px; padding:18px; margin-bottom:22px;
-  border:1px solid var(--border-accent,var(--border));
-  background:var(--bg2);
-  box-shadow:var(--shadow-md,0 4px 16px rgba(0,0,0,.1));
-  position:relative; overflow:hidden;
-}
-[data-theme="midnight"] .tgm-hud,
-[data-theme="dark"] .tgm-hud {
-  background:linear-gradient(145deg,rgba(37,99,235,.12),rgba(124,58,237,.07));
-  backdrop-filter:blur(16px);
-  box-shadow:0 8px 32px rgba(37,99,235,.1),inset 0 1px 0 rgba(255,255,255,.07);
-}
-.tgm-hud::before {
-  content:''; position:absolute; top:-50px; right:-50px;
-  width:160px; height:160px; border-radius:50%;
-  background:radial-gradient(circle,var(--brand-glow,rgba(37,99,235,.15)),transparent 70%);
-  pointer-events:none;
-}
-.tgm-hud-top  { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; position:relative; z-index:1; }
-.tgm-hud-left { display:flex; align-items:center; gap:12px; }
-.tgm-hud-right { text-align:right; }
-
-/* Avatar */
-.tgm-avatar {
-  width:48px; height:48px; border-radius:16px; flex-shrink:0;
-  background:var(--brand-gradient,linear-gradient(135deg,var(--brand),var(--brand3)));
-  display:flex; align-items:center; justify-content:center;
-  font-size:1.4rem; box-shadow:0 4px 14px var(--brand-glow,rgba(37,99,235,.3));
-}
-.tgm-name   { font-family:'Plus Jakarta Sans',sans-serif; font-size:1rem; font-weight:800; letter-spacing:-.3px; color:var(--txt); }
-.tgm-level  { font-size:0.68rem; color:var(--gold); font-weight:700; margin-top:3px; }
-.tgm-coins  { font-family:'Plus Jakarta Sans',sans-serif; font-size:1.2rem; font-weight:900; color:var(--gold); letter-spacing:-.5px; line-height:1; }
-.tgm-coins-lbl { font-size:0.64rem; color:var(--txt3); margin-top:3px; }
-
-/* XP row */
-.tgm-xp-row   { display:flex; align-items:center; gap:10px; margin-bottom:12px; position:relative; z-index:1; }
-.tgm-xp-lbl   { font-size:0.64rem; color:var(--txt3); white-space:nowrap; font-weight:600; }
-.tgm-xp-track { flex:1; height:8px; background:var(--border2,rgba(0,0,0,.07)); border-radius:20px; overflow:hidden; }
-.tgm-xp-fill  { height:100%; border-radius:20px; background:var(--brand-gradient,linear-gradient(90deg,var(--brand),var(--brand3))); transition:width .8s cubic-bezier(.34,1.56,.64,1); }
-[data-theme="midnight"] .tgm-xp-fill,
-[data-theme="dark"] .tgm-xp-fill { box-shadow:0 0 12px var(--brand-glow); }
-
-/* Week strip */
-.tgm-week { display:flex; gap:6px; position:relative; z-index:1; }
-.tgm-wdot {
-  width:30px; height:30px; border-radius:50%;
-  background:var(--bg3); border:2px solid transparent;
-  display:flex; align-items:center; justify-content:center;
-  font-size:0.6rem; font-weight:700; color:var(--txt3); transition:all .2s;
-}
-.tgm-wdot.on { background:var(--green,#059669); color:#fff; border-color:transparent; }
-.tgm-wdot.today { border-color:var(--brand) !important; }
-
-/* Section label */
-.tgm-section-lbl {
-  font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:1px;
-  color:var(--txt3); margin-bottom:12px; display:block;
-}
-
-/* Mode grid — 3 cols */
-.tgm-grid {
-  display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:24px;
-}
-.tgm-card {
-  background:var(--bg2); border:1.5px solid var(--border);
-  border-radius:16px; padding:14px 6px 12px;
-  text-align:center; cursor:pointer;
-  transition:all .2s cubic-bezier(.34,1.56,.64,1);
-  display:flex; flex-direction:column; align-items:center;
-}
-.tgm-card:active { transform:scale(.92); }
-.tgm-card:hover:not(.tgm-card-on) {
-  border-color:var(--brand-dim,var(--brand)); transform:translateY(-2px);
-}
-.tgm-card.tgm-card-on {
-  border-color:var(--brand);
-  background:var(--brand-dim,rgba(37,99,235,.08));
-  box-shadow:0 4px 18px var(--brand-glow,rgba(37,99,235,.18));
-}
-.tgm-card-ico  { font-size:1.6rem; display:block; margin-bottom:7px; }
-.tgm-card-name { font-family:'Plus Jakarta Sans',sans-serif; font-size:0.72rem; font-weight:800; color:var(--txt); line-height:1.2; }
-.tgm-card.tgm-card-on .tgm-card-name { color:var(--brand); }
-.tgm-card-desc { font-size:0.6rem; color:var(--txt3); margin-top:2px; }
-
-/* Badges */
-.tgm-badges {
-  display:flex; gap:10px; overflow-x:auto; padding-bottom:6px; margin-bottom:22px;
-  scrollbar-width:none;
-}
-.tgm-badges::-webkit-scrollbar { display:none; }
-.tgm-badge {
-  flex-shrink:0; background:var(--bg2); border:1.5px solid var(--border);
-  border-radius:14px; padding:12px 14px; text-align:center; min-width:70px;
-  transition:all .2s;
-}
-.tgm-badge.earned {
-  border-color:var(--gold,#F59E0B);
-  background:var(--gold-dim,rgba(245,158,11,.1));
-  box-shadow:0 0 18px var(--gold-dim,rgba(245,158,11,.1));
-}
-.tgm-badge-ico  { font-size:1.5rem; display:block; margin-bottom:5px; }
-.tgm-badge-name { font-size:0.6rem; font-weight:700; color:var(--txt3); line-height:1.3; }
-.tgm-badge.earned .tgm-badge-name { color:var(--gold,#F59E0B); }
-@keyframes _badgePop { from{transform:scale(.7);opacity:0;} to{transform:scale(1);opacity:1;} }
-
-/* Game content panels */
-.tgm-panel {
-  background:var(--bg2); border:1px solid var(--border);
-  border-radius:20px; overflow:hidden;
-  box-shadow:var(--shadow-sm,0 1px 3px rgba(0,0,0,.08));
-  margin-bottom:16px;
-}
-.tgm-panel-title {
-  font-family:'Plus Jakarta Sans',sans-serif; font-size:0.9rem; font-weight:800;
-  padding:16px 18px 12px; border-bottom:1px solid var(--border2,var(--border));
-  letter-spacing:-.3px; color:var(--txt);
-}
-
-/* Splash */
-.tgm-splash { padding:36px 20px; text-align:center; }
-.tgm-splash-ico {
-  font-size:3.5rem; display:block; margin-bottom:16px;
-  filter:drop-shadow(0 4px 10px var(--brand-glow,rgba(37,99,235,.2)));
-}
-.tgm-splash-title { font-family:'Plus Jakarta Sans',sans-serif; font-size:1.2rem; font-weight:900; letter-spacing:-.5px; margin-bottom:10px; color:var(--txt); }
-.tgm-splash-txt   { font-size:0.82rem; color:var(--txt3); line-height:1.7; margin-bottom:24px; max-width:280px; margin-left:auto; margin-right:auto; }
-.tgm-cta-btn { padding:14px 36px !important; border-radius:14px !important; font-size:0.9rem !important; }
-
-/* Quiz opts */
-.tgm-opt {
-  width:100%; background:var(--bg3); border:1.5px solid var(--border2,var(--border));
-  border-radius:14px; padding:14px 16px;
-  font-size:0.875rem; font-weight:500; color:var(--txt);
-  cursor:pointer; text-align:left; margin-bottom:9px;
-  transition:all .15s cubic-bezier(.34,1.56,.64,1);
-  display:flex; align-items:flex-start; gap:12px;
-  position:relative; overflow:hidden; line-height:1.5;
-  font-family:'Inter',sans-serif;
-}
-.tgm-opt::before { content:''; position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--border2,var(--border)); transition:background .15s; }
-.tgm-opt:hover:not(:disabled) { background:var(--brand-dim,rgba(37,99,235,.08)); border-color:var(--brand); transform:translateX(3px); }
-.tgm-opt:hover:not(:disabled)::before { background:var(--brand); }
-.tgm-opt.correct { background:var(--green-dim,rgba(5,150,105,.1)) !important; border-color:var(--green,#059669) !important; }
-.tgm-opt.correct::before { background:var(--green,#059669) !important; }
-.tgm-opt.wrong   { background:var(--red-dim,rgba(220,38,38,.1)) !important; border-color:var(--red,#DC2626) !important; }
-.tgm-opt.wrong::before { background:var(--red,#DC2626) !important; }
-.tgm-opt.reveal  { background:var(--green-dim,rgba(5,150,105,.1)) !important; border-color:var(--green,#059669) !important; }
-.tgm-opt-letter {
-  width:28px; height:28px; flex-shrink:0; border-radius:8px;
-  background:var(--bg4,var(--bg3)); border:1px solid var(--border2,var(--border));
-  display:flex; align-items:center; justify-content:center;
-  font-size:0.72rem; font-weight:800; color:var(--txt3); transition:all .15s;
-}
-.tgm-opt:hover:not(:disabled) .tgm-opt-letter { background:var(--brand); color:#fff; border-color:var(--brand); }
-.tgm-opt.correct .tgm-opt-letter { background:var(--green,#059669); color:#fff; }
-.tgm-opt.wrong   .tgm-opt-letter { background:var(--red,#DC2626); color:#fff; }
-
-/* Feedback */
-.tgm-fb-ok  { background:var(--green-dim,rgba(5,150,105,.08)); border:1px solid var(--green,#059669); border-radius:12px; padding:12px; margin-top:10px; }
-.tgm-fb-err { background:var(--red-dim,rgba(220,38,38,.08)); border:1px solid var(--red,#DC2626); border-radius:12px; padding:12px; margin-top:10px; }
-
-/* Cat tag, question */
-.tgm-cat { display:inline-block; font-size:0.72rem; padding:3px 10px; border-radius:20px; background:var(--brand-dim); color:var(--brand); font-weight:700; }
-.tgm-q   { font-family:'Plus Jakarta Sans',sans-serif; font-size:0.9rem; font-weight:700; line-height:1.55; margin-bottom:16px; color:var(--txt); }
-
-/* XP pop */
-.tgm-xp-pop { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); font-family:'Plus Jakarta Sans',sans-serif; font-size:2rem; font-weight:900; pointer-events:none; animation:_xpPop .8s ease forwards; z-index:9999; color:var(--brand); }
-@keyframes _xpPop { 0%{opacity:1;transform:translate(-50%,-50%) scale(.5);} 50%{transform:translate(-50%,-80%) scale(1.2);} 100%{opacity:0;transform:translate(-50%,-130%) scale(1);} }
-
-/* Budget Blitz */
-.tgm-bcat { background:var(--bg3); border:1.5px solid var(--border2,var(--border)); border-radius:13px; padding:13px; margin-bottom:9px; transition:border-color .2s,background .2s; }
-.tgm-bcat.safe    { border-color:var(--green,#059669); background:var(--green-dim,rgba(5,150,105,.08)); }
-.tgm-bcat.warning { border-color:var(--gold,#F59E0B); background:var(--gold-dim,rgba(245,158,11,.08)); }
-.tgm-bcat.danger  { border-color:var(--red,#DC2626); background:var(--red-dim,rgba(220,38,38,.08)); }
-
-/* Invest Race */
-.tgm-asset { background:var(--bg3); border:1.5px solid var(--border2,var(--border)); border-radius:13px; padding:12px 14px; display:flex; align-items:center; gap:12px; cursor:pointer; transition:all .18s; margin-bottom:8px; }
-.tgm-asset:hover,.tgm-asset.sel { border-color:var(--brand); background:var(--brand-dim,rgba(37,99,235,.08)); }
-
-/* Timer */
-.tgm-timer { font-family:'Plus Jakarta Sans',sans-serif; font-size:2.4rem; font-weight:900; color:var(--brand); letter-spacing:-2px; line-height:1; text-align:center; }
-.tgm-timer.warn   { color:var(--gold,#F59E0B); }
-.tgm-timer.danger { color:var(--red,#DC2626); animation:_timerPulse .5s infinite; }
-@keyframes _timerPulse { 0%,100%{opacity:1;} 50%{opacity:.35;} }
-
-/* Leaderboard rows */
-.tgm-lb-row { display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid var(--border2,var(--border)); }
-.tgm-lb-row:last-child { border:none; }
-.tgm-lb-me { background:var(--brand-dim,rgba(37,99,235,.08)); border-radius:10px; padding:10px; margin:-2px -4px; border:none !important; }
-
-/* ════════════════════════════════════
-   ADMIN — adm-* prefix, no conflicts
-════════════════════════════════════ */
-.admin-panel { display:none; position:fixed; inset:0; z-index:9995; background:var(--bg); overflow-y:auto; }
-
-.adm-topbar {
-  display:flex; align-items:center; justify-content:space-between;
-  padding:14px 18px; background:var(--bg);
-  border-bottom:1px solid var(--border);
-  position:sticky; top:0; z-index:10;
-  backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px);
-}
-.adm-brand  { display:flex; align-items:center; gap:12px; }
-.adm-logo {
-  width:40px; height:40px; border-radius:12px;
-  background:var(--brand-gradient,linear-gradient(135deg,var(--brand),var(--brand3)));
-  display:flex; align-items:center; justify-content:center;
-  font-size:1.1rem; box-shadow:0 4px 12px var(--brand-glow,rgba(37,99,235,.3));
-}
-.adm-title { font-family:'Plus Jakarta Sans',sans-serif; font-size:0.96rem; font-weight:900; letter-spacing:-.3px; color:var(--txt); }
-.adm-sub   { font-size:0.68rem; color:var(--txt3); margin-top:2px; }
-.adm-blur  { filter:blur(4px); cursor:pointer; }
-.adm-actions { display:flex; gap:8px; }
-
-.adm-ico-btn {
-  width:36px; height:36px; border-radius:10px;
-  background:var(--bg3); border:1px solid var(--border2,var(--border));
-  color:var(--txt2); cursor:pointer; font-size:0.9rem; font-weight:700;
-  display:flex; align-items:center; justify-content:center;
-  transition:all .15s;
-}
-.adm-ico-btn:hover       { background:var(--brand-dim); color:var(--brand); border-color:var(--brand); }
-.adm-ico-btn:active      { transform:scale(.9); }
-.adm-ico-close:hover     { background:var(--red-dim,rgba(220,38,38,.1)); color:var(--red,#DC2626); border-color:var(--red,#DC2626); }
-
-.adm-nav-strip {
-  display:flex; gap:6px; overflow-x:auto; padding:10px 16px;
-  background:var(--bg); border-bottom:1px solid var(--border);
-  position:sticky; top:57px; z-index:9; scrollbar-width:none;
-}
-.adm-nav-strip::-webkit-scrollbar { display:none; }
-.adm-nav-chip {
-  display:inline-flex; align-items:center; gap:5px;
-  padding:8px 14px; border-radius:22px; white-space:nowrap;
-  font-size:0.76rem; font-weight:600; cursor:pointer; flex-shrink:0;
-  border:1.5px solid var(--border2,var(--border)); color:var(--txt3);
-  background:var(--bg2); transition:all .18s;
-}
-.adm-nav-chip:hover { border-color:var(--brand-dim,var(--brand)); color:var(--txt); }
-.adm-nav-chip:active { transform:scale(.95); }
-.adm-nav-chip.active,
-.adm-nav-chip.adm-active {
-  background:var(--brand-dim,rgba(37,99,235,.1));
-  border-color:var(--brand); color:var(--brand);
-  box-shadow:0 2px 10px var(--brand-glow,rgba(37,99,235,.15));
-}
-.admin-wrap { padding:20px; }
-
-/* Admin stat cards */
-.adm-stat {
-  background:var(--bg2); border:1px solid var(--border);
-  border-left:3px solid var(--adm-accent,var(--brand));
-  border-radius:16px; padding:16px 14px; transition:all .2s;
-}
-.adm-stat:hover { transform:translateY(-2px); box-shadow:var(--shadow-md,0 4px 16px rgba(0,0,0,.1)); }
-.adm-stat-lbl { font-size:0.64rem; font-weight:700; text-transform:uppercase; letter-spacing:.8px; color:var(--txt3); margin-bottom:5px; }
-.adm-stat-val { font-family:'Plus Jakarta Sans',sans-serif; font-size:1.8rem; font-weight:900; letter-spacing:-1.5px; line-height:1; margin-bottom:7px; color:var(--txt); }
-.adm-stat-tag { display:inline-flex; align-items:center; font-size:0.68rem; font-weight:600; padding:2px 8px; border-radius:20px; background:var(--bg3); color:var(--txt3); }
-.adm-tag-green { background:var(--green-dim,rgba(5,150,105,.1)); color:var(--green,#059669); }
-.adm-tag-red   { background:var(--red-dim,rgba(220,38,38,.1)); color:var(--red,#DC2626); }
-
-/* Admin table rows */
-tbody tr { transition:background .12s; }
-tbody tr:hover { background:var(--brand-dim,rgba(37,99,235,.05)); }
-
 </style></head>
     <body>
     <h1>💰 Trackinfin — Financial Report</h1>
@@ -8339,7 +7851,7 @@ function switchAdminTab(tab){
   ['dashboard','users','features','broadcast','feedback','logs','analytics','settings'].forEach(t=>{
     const btn=document.getElementById('atab-'+t);
     const content=document.getElementById('atab-content-'+t);
-    if(btn){btn.classList.toggle('active',t===tab);btn.classList.toggle('adm-active',t===tab);}
+    if(btn)btn.classList.toggle('active',t===tab);
     if(content)content.style.display=t===tab?'block':'none';
   });
   if(tab==='users')renderAdminUsers();
@@ -11339,381 +10851,6 @@ function renderGame(){
   gmAutoCheckBadges();
   // Update leaderboard
   gmUpdateLeaderboard();
-}
-
-
-
-// ════════════════════════════════════════════════════════
-// TRACKINFIN PREMIUM JS — injected clean
-// ════════════════════════════════════════════════════════
-
-// ── Ripple effect on all .btn ──
-document.addEventListener('click', function(e){
-  var btn = e.target.closest('.btn');
-  if(!btn || btn.disabled) return;
-  var r = document.createElement('span');
-  r.className = 'ripple';
-  var rect = btn.getBoundingClientRect();
-  r.style.left = (e.clientX - rect.left - 50) + 'px';
-  r.style.top  = (e.clientY - rect.top  - 50) + 'px';
-  btn.appendChild(r);
-  setTimeout(function(){ r.remove(); }, 600);
-});
-
-// ── Chart.js global defaults ──
-function _premiumChartDefaults(){
-  if(typeof Chart === 'undefined') return;
-  Chart.defaults.font.family = "'Inter',sans-serif";
-  Chart.defaults.font.size   = 11;
-  var style = getComputedStyle(document.documentElement);
-  var txt3  = style.getPropertyValue('--txt3').trim()||'rgba(100,120,140,.6)';
-  Chart.defaults.color       = txt3;
-  Chart.defaults.borderColor = style.getPropertyValue('--border').trim()||'rgba(0,0,0,.07)';
-  if(Chart.defaults.plugins && Chart.defaults.plugins.tooltip){
-    var bg2 = style.getPropertyValue('--bg2').trim();
-    Chart.defaults.plugins.tooltip.backgroundColor = bg2||'rgba(255,255,255,.97)';
-    Chart.defaults.plugins.tooltip.titleFont  = {family:"'Plus Jakarta Sans',sans-serif",size:12,weight:'800'};
-    Chart.defaults.plugins.tooltip.bodyFont   = {family:"'Inter',sans-serif",size:11};
-    Chart.defaults.plugins.tooltip.padding    = 12;
-    Chart.defaults.plugins.tooltip.cornerRadius = 12;
-    Chart.defaults.plugins.tooltip.borderWidth = 1;
-    Chart.defaults.plugins.tooltip.borderColor = style.getPropertyValue('--border').trim();
-  }
-}
-setTimeout(_premiumChartDefaults, 500);
-
-// ── Currency helpers ──
-function gmCurr(){ return (typeof S!=='undefined'&&S.currency)||localStorage.getItem('tfi_currency')||'₦'; }
-function gmFmt(n){ return gmCurr()+' '+Number(n||0).toLocaleString('en',{minimumFractionDigits:0,maximumFractionDigits:0}); }
-
-// ── Override setGameMode — supports 6 modes + new card classes ──
-function setGameMode(mode){
-  ['quiz','sim','budget','invest','challenge','board'].forEach(function(m){
-    var card  = document.getElementById('gmode-'+m);
-    var panel = document.getElementById('gm-'+m);
-    if(card){ card.classList.toggle('tgm-card-on', m===mode); card.classList.toggle('active', m===mode); }
-    if(panel) panel.style.display = m===mode ? 'block' : 'none';
-  });
-  if(mode==='challenge') gmRenderChallenges();
-  if(mode==='board')     _tgmRenderLeaderboard();
-  if(mode==='budget')    _tgmInitBudget();
-  if(mode==='invest')    _tgmInitInvest();
-}
-
-// ── Override gmRenderHud — uses new tgm-* classes ──
-function gmRenderHud(){
-  if(!S.game) S.game={xp:0,coins:0,level:1,badges:[],quizDone:[],highScore:0};
-  var g=S.game, lvData=gmGetLevel(g.xp), nextLv=gmNextLevel(g.xp);
-  var pct = nextLv ? Math.min((g.xp-lvData.xp)/(nextLv.xp-lvData.xp)*100,100) : 100;
-  var el  = function(id){ return document.getElementById(id); };
-  if(el('gmPlayerName')) el('gmPlayerName').textContent = S.name||(typeof currentUser!=='undefined'&&currentUser&&currentUser.name)||'Player';
-  if(el('gmAvatar'))     el('gmAvatar').textContent     = lvData.icon;
-  if(el('gmLevelBadge')) el('gmLevelBadge').textContent = '⚡ Level '+lvData.lvl+' · '+lvData.name;
-  if(el('gmCoins'))      el('gmCoins').textContent      = '🪙 '+(g.coins||0).toLocaleString();
-  if(el('gmXpBar'))      el('gmXpBar').style.width      = pct+'%';
-  if(el('gmXpLabel'))    el('gmXpLabel').textContent    = (g.xp||0)+' XP'+(nextLv?' · '+nextLv.xp+' to Lv'+(lvData.lvl+1):'');
-  if(el('gmXpBadge'))    el('gmXpBadge').textContent    = '⭐ '+(g.xp||0)+' XP';
-  var dots=el('gmWeekDots');
-  if(dots){
-    var days=['S','M','T','W','T','F','S'], today=new Date().getDay();
-    var txDays=new Set((S.txs||[]).filter(function(t){ return Math.ceil((new Date()-new Date(t.date))/86400000)<=7; }).map(function(t){ return new Date(t.date).getDay(); }));
-    dots.innerHTML=days.map(function(d,i){ return '<div class="tgm-wdot'+(txDays.has(i)||i===today?' on':'')+(i===today?' today':'')+'">'+d+'</div>'; }).join('');
-  }
-  _tgmRenderBadges();
-}
-
-// ── Override gmRenderBadges — new tgm-badge classes ──
-function _tgmRenderBadges(){
-  var el=document.getElementById('gmBadges'); if(!el) return;
-  var earned=(S.game&&S.game.badges)||[];
-  if(typeof GM_BADGES==='undefined') return;
-  el.innerHTML=GM_BADGES.map(function(b){
-    return '<div class="tgm-badge'+(earned.indexOf(b.id)>-1?' earned':'')+'" title="'+b.desc+'"><span class="tgm-badge-ico">'+b.icon+'</span><div class="tgm-badge-name">'+b.name+'</div></div>';
-  }).join('');
-}
-// Alias
-var gmRenderBadges = _tgmRenderBadges;
-
-// ── Override gmShowQuestion — new tgm-opt classes ──
-function gmShowQuestion(){
-  var qIdx=gmQPool[gmQIdx%gmQPool.length];
-  gmCurrentQ=Object.assign({},GM_QUESTIONS[qIdx],{idx:qIdx});
-  gmAnswered=false;
-  var el=document.getElementById('gmQuizContent'); if(!el) return;
-  var cur=gmCurr();
-  var q=gmCurrentQ.q.replace(/₦/g,cur);
-  var opts=gmCurrentQ.opts.map(function(o){ return o.replace(/₦/g,cur); });
-  gmCurrentQ._q=q; gmCurrentQ._opts=opts; gmCurrentQ._exp=(gmCurrentQ.exp||'').replace(/₦/g,cur);
-  var done=(S.game&&S.game.quizDone&&S.game.quizDone.length)||0;
-  el.innerHTML=
-    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">'+
-    '<span class="tgm-cat">'+gmCurrentQ.cat+'</span>'+
-    '<span style="font-size:0.7rem;color:var(--txt3);">🔥 Streak: '+gmStreak+' · '+done+'/'+GM_QUESTIONS.length+'</span></div>'+
-    '<div class="tgm-q">'+q+'</div>'+
-    '<div id="gmOpts">'+
-    opts.map(function(o,i){
-      return '<button class="tgm-opt" onclick="gmPickAnswer('+i+')"><span class="tgm-opt-letter">'+String.fromCharCode(65+i)+'</span><span>'+o+'</span></button>';
-    }).join('')+
-    '</div>'+
-    '<div id="gmFeedback" style="display:none;"></div>'+
-    '<div id="gmNextBtn" style="display:none;margin-top:14px;"><button class="btn w-full" onclick="gmNextQuestion()">Next Question →</button></div>';
-}
-
-function gmPickAnswer(chosen){
-  if(gmAnswered) return; gmAnswered=true;
-  var correct=gmCurrentQ.ans;
-  document.querySelectorAll('.tgm-opt').forEach(function(btn,i){
-    btn.disabled=true;
-    if(i===correct) btn.classList.add('correct');
-    else if(i===chosen) btn.classList.add('wrong');
-  });
-  var isRight=chosen===correct;
-  if(isRight){
-    gmStreak++;
-    var bonus=gmStreak>=5?20:gmStreak>=3?10:0;
-    gmAward(15+bonus,5+(gmStreak>=3?5:0),'Quiz');
-    if(!S.game.quizDone) S.game.quizDone=[];
-    if(S.game.quizDone.indexOf(gmCurrentQ.idx)<0) S.game.quizDone.push(gmCurrentQ.idx);
-    if(gmStreak>=5) gmCheckBadge('perfect_5');
-    gmCheckBadge('first_quiz'); gmAutoCheckBadges();
-    var fb=document.getElementById('gmFeedback');
-    if(fb){ fb.style.display='block'; fb.innerHTML='<div class="tgm-fb-ok"><div style="font-family:\'Plus Jakarta Sans\',sans-serif;font-weight:800;color:var(--green);margin-bottom:5px;">✅ Correct!'+( gmStreak>=3?' 🔥 Streak x'+gmStreak:'')+( bonus?' +'+bonus+' bonus XP':'')+' </div><div style="font-size:0.78rem;color:var(--txt2);line-height:1.6;">'+gmCurrentQ._exp+'</div></div>'; }
-  } else {
-    gmStreak=0;
-    document.querySelectorAll('.tgm-opt')[correct] && document.querySelectorAll('.tgm-opt')[correct].classList.add('reveal');
-    var fb=document.getElementById('gmFeedback');
-    if(fb){ fb.style.display='block'; fb.innerHTML='<div class="tgm-fb-err"><div style="font-family:\'Plus Jakarta Sans\',sans-serif;font-weight:800;color:var(--red);margin-bottom:5px;">❌ Correct: '+String.fromCharCode(65+correct)+'</div><div style="font-size:0.78rem;color:var(--txt2);line-height:1.6;">'+gmCurrentQ._exp+'</div></div>'; }
-  }
-  var nb=document.getElementById('gmNextBtn'); if(nb) nb.style.display='block';
-}
-function gmNextQuestion(){ gmQIdx++; gmShowQuestion(); }
-
-// ── Override startSimulator ──
-function startSimulator(){
-  var done=S.game&&S.game.simDone||[];
-  var cur=gmCurr();
-  var scenarios=GM_SCENARIOS.map(function(s){
-    return Object.assign({},s,{story:s.story.replace(/₦/g,cur),choices:s.choices.map(function(ch){ return Object.assign({},ch,{text:ch.text.replace(/₦/g,cur),outcome:ch.outcome.replace(/₦/g,cur)}); })});
-  });
-  var avail=scenarios.filter(function(s){ return done.indexOf(s.id)<0; });
-  var sc=avail.length ? avail[Math.floor(Math.random()*avail.length)] : scenarios[Math.floor(Math.random()*scenarios.length)];
-  gmSimState={scenario:sc,answered:false};
-  var el=document.getElementById('gmSimContent'); if(!el) return;
-  el.innerHTML=
-    '<div style="text-align:center;margin-bottom:14px;"><div style="font-size:2rem;">'+sc.icon+'</div><div style="font-family:\'Plus Jakarta Sans\',sans-serif;font-size:1rem;font-weight:900;margin-top:8px;">'+sc.title+'</div></div>'+
-    '<div style="background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:16px;font-size:0.84rem;line-height:1.7;color:var(--txt2);">'+sc.story+'</div>'+
-    '<div style="font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--txt3);margin-bottom:10px;">What do you do?</div>'+
-    sc.choices.map(function(ch,i){ return '<button class="tgm-opt" onclick="gmPickSim('+i+')"><span class="tgm-opt-letter">'+String.fromCharCode(65+i)+'</span><span>'+ch.text+'</span></button>'; }).join('');
-}
-
-function gmPickSim(i){
-  if(gmSimState.answered) return; gmSimState.answered=true;
-  var ch=gmSimState.scenario.choices[i];
-  document.querySelectorAll('#gmSimContent .tgm-opt').forEach(function(btn,j){ btn.disabled=true; if(j===i) btn.classList.add(ch.good?'correct':'wrong'); });
-  gmAward(ch.xp,ch.coins,'Simulator');
-  if(ch.good){ if(!S.game.simDone)S.game.simDone=[]; if(S.game.simDone.indexOf(gmSimState.scenario.id)<0)S.game.simDone.push(gmSimState.scenario.id); gmCheckBadge('sim_winner'); }
-  gmAutoCheckBadges();
-  var el=document.getElementById('gmSimContent');
-  var fb=document.createElement('div');
-  fb.innerHTML='<div class="'+(ch.good?'tgm-fb-ok':'tgm-fb-err')+'" style="margin-top:12px;"><div style="font-family:\'Plus Jakarta Sans\',sans-serif;font-weight:800;color:var('+(ch.good?'--green':'--red')+');margin-bottom:5px;">'+(ch.good?'🏆 Great decision!':'📚 Learning moment')+' +'+ch.xp+' XP</div><div style="font-size:0.8rem;line-height:1.6;color:var(--txt2);">'+ch.outcome+'</div><button class="btn w-full" style="margin-top:12px;" onclick="startSimulator()">▶ Next Scenario</button></div>';
-  el.appendChild(fb);
-}
-
-// ── Leaderboard ──
-function _tgmRenderLeaderboard(){
-  var el=document.getElementById('gmLeaderboard'); if(!el) return;
-  var score=(S.game&&S.game.xp)||0;
-  var name=S.name||(typeof currentUser!=='undefined'&&currentUser&&currentUser.name)||'You';
-  var rivals=[
-    {name:'Amara K.',  xp:score+Math.floor(Math.random()*200+50),  icon:'🌟'},
-    {name:'Chidi O.',  xp:Math.max(0,score-Math.floor(Math.random()*150+20)),icon:'💰'},
-    {name:'Fatima B.', xp:score+Math.floor(Math.random()*400+100),icon:'👑'},
-    {name:'Ibrahim M.',xp:Math.max(0,score-Math.floor(Math.random()*80+10)), icon:'📈'},
-    {name:'Ngozi A.',  xp:score+Math.floor(Math.random()*100+10), icon:'🎯'},
-    {name:'Tunde F.',  xp:Math.max(0,score-Math.floor(Math.random()*300+50)),icon:'🌱'},
-  ];
-  var all=[].concat(rivals,[{name:'👤 '+name+' (You)',xp:score,isMe:true,icon:'⭐'}]);
-  all.sort(function(a,b){ return b.xp-a.xp; });
-  var myRank=all.findIndex(function(p){ return p.isMe; })+1;
-  el.innerHTML=
-    '<div style="background:var(--brand-dim);border-radius:12px;padding:12px 16px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;">'+
-    '<div style="font-size:0.78rem;color:var(--txt2);">Your rank this week</div>'+
-    '<div style="font-family:\'Plus Jakarta Sans\',sans-serif;font-size:1.4rem;font-weight:900;color:var(--brand);letter-spacing:-1px;">#'+myRank+'</div></div>'+
-    all.map(function(p,i){
-      return '<div class="tgm-lb-row'+(p.isMe?' tgm-lb-me':'')+'">'+
-        '<div style="width:28px;text-align:center;font-weight:800;">'+(i===0?'🥇':i===1?'🥈':i===2?'🥉':'#'+(i+1))+'</div>'+
-        '<div style="font-size:1rem;">'+p.icon+'</div>'+
-        '<div style="flex:1;font-size:0.82rem;font-weight:'+(p.isMe?800:600)+';">'+p.name+'</div>'+
-        '<div style="font-family:\'Plus Jakarta Sans\',sans-serif;font-size:0.82rem;font-weight:800;color:var(--brand);">'+p.xp+' XP</div></div>';
-    }).join('')+
-    '<div style="font-size:0.68rem;color:var(--txt3);text-align:center;margin-top:12px;">Resets every Monday · Keep playing!</div>';
-}
-
-// ── Budget Blitz ──
-var _BB_CATS=[
-  {id:'housing',name:'🏠 Housing',ideal:30,min:0,max:50},
-  {id:'food',name:'🍱 Food',ideal:15,min:0,max:30},
-  {id:'transport',name:'🚗 Transport',ideal:10,min:0,max:25},
-  {id:'savings',name:'💰 Savings',ideal:20,min:0,max:40},
-  {id:'utilities',name:'💡 Utilities',ideal:8,min:0,max:20},
-  {id:'health',name:'🏥 Health',ideal:7,min:0,max:15},
-  {id:'fun',name:'🎮 Fun',ideal:5,min:0,max:20},
-  {id:'other',name:'📦 Other',ideal:5,min:0,max:20},
-];
-var _bb=null;
-function _tgmInitBudget(){
-  var el=document.getElementById('gmBudgetContent'); if(!el) return;
-  el.innerHTML='<div class="tgm-splash"><span class="tgm-splash-ico">💰</span><div class="tgm-splash-title">Budget Blitz</div><div class="tgm-splash-txt">60 seconds. Allocate income across categories. Hit the ideal budget to score big.</div><button class="btn tgm-cta-btn" onclick="startBudgetBlitz()">▶ Start Blitz</button></div>';
-}
-function startBudgetBlitz(){
-  var incomes=[100000,150000,200000,250000,300000,500000];
-  var income=incomes[Math.floor(Math.random()*incomes.length)];
-  _bb={income:income,alloc:{},timer:60,interval:null,done:false};
-  _BB_CATS.forEach(function(cat){ _bb.alloc[cat.id]=cat.ideal; });
-  _bbRender();
-  _bb.interval=setInterval(function(){
-    _bb.timer--;
-    var te=document.getElementById('_bbTimer');
-    if(te){ te.textContent=_bb.timer+'s'; te.className='tgm-timer'+((_bb.timer<=10?' danger':_bb.timer<=20?' warn':'')); }
-    if(_bb.timer<=0){ clearInterval(_bb.interval); _bbEnd(); }
-  },1000);
-}
-function _bbRender(){
-  var el=document.getElementById('gmBudgetContent'); if(!el) return;
-  var cur=gmCurr(), inc=_bb.income;
-  var totalPct=Object.values(_bb.alloc).reduce(function(s,v){ return s+v; },0);
-  el.innerHTML=
-    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">'+
-    '<div><div style="font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--txt3);">Monthly Income</div><div style="font-family:\'Plus Jakarta Sans\',sans-serif;font-size:1.3rem;font-weight:900;color:var(--green);">'+gmFmt(inc)+'</div></div>'+
-    '<div style="text-align:right;"><div style="font-size:0.68rem;color:var(--txt3);">Time</div><div id="_bbTimer" class="tgm-timer">'+_bb.timer+'s</div></div></div>'+
-    '<div style="display:flex;justify-content:space-between;background:var(--bg3);border-radius:10px;padding:10px 12px;margin-bottom:12px;font-size:0.78rem;">'+
-    '<span>Allocated: <strong style="color:'+(totalPct>100?'var(--red)':totalPct===100?'var(--green)':'var(--txt)')+'">'+totalPct+'%</strong></span>'+
-    '<span>Remaining: <strong style="color:'+(100-totalPct<0?'var(--red)':'var(--brand)')+'">'+Math.max(0,100-totalPct)+'%</strong></span></div>'+
-    _BB_CATS.map(function(cat){
-      var pct=_bb.alloc[cat.id], amt=Math.round(inc*pct/100);
-      var diff=Math.abs(pct-cat.ideal), cls=diff<=3?'safe':diff<=8?'warning':'danger';
-      return '<div class="tgm-bcat '+cls+'">'+
-        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;">'+
-        '<span style="font-weight:700;font-size:0.82rem;">'+cat.name+'</span>'+
-        '<span style="font-size:0.68rem;color:var(--txt3);">Ideal: '+cat.ideal+'%</span></div>'+
-        '<div style="display:flex;align-items:center;gap:8px;">'+
-        '<button onclick="_bbAdj(\''+cat.id+'\',-1)" style="width:32px;height:32px;border-radius:8px;border:1.5px solid var(--border);background:var(--bg2);cursor:pointer;font-size:1.1rem;font-weight:800;flex-shrink:0;color:var(--txt);"'+(pct<=0?' disabled':'')+'>−</button>'+
-        '<div style="flex:1;"><div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span style="font-family:\'Plus Jakarta Sans\',sans-serif;font-weight:800;font-size:0.9rem;">'+pct+'%</span><span style="font-size:0.72rem;color:var(--txt3);">'+cur+' '+amt.toLocaleString()+'</span></div>'+
-        '<div class="prog-track"><div class="prog-fill" style="width:'+Math.min(pct/40*100,100)+'%;background:'+(diff<=3?'var(--green)':diff<=8?'var(--gold)':'var(--red)')+';"></div></div></div>'+
-        '<button onclick="_bbAdj(\''+cat.id+'\',1)" style="width:32px;height:32px;border-radius:8px;border:1.5px solid var(--border);background:var(--bg2);cursor:pointer;font-size:1.1rem;font-weight:800;flex-shrink:0;color:var(--txt);"'+(totalPct>=100?' disabled':'')+'>+</button></div></div>';
-    }).join('')+
-    '<button class="btn w-full" style="margin-top:14px;" onclick="_bbEnd()">✅ Submit Budget</button>';
-}
-function _bbAdj(id,d){
-  if(!_bb||_bb.done) return;
-  var total=Object.values(_bb.alloc).reduce(function(s,v){ return s+v; },0);
-  var cur=_bb.alloc[id], nv=Math.max(0,Math.min(50,cur+d));
-  if(d>0&&total>=100) return;
-  _bb.alloc[id]=nv; _bbRender();
-  var te=document.getElementById('_bbTimer');
-  if(te){ te.textContent=_bb.timer+'s'; te.className='tgm-timer'+((_bb.timer<=10?' danger':_bb.timer<=20?' warn':'')); }
-}
-function _bbEnd(){
-  if(_bb&&_bb.interval){ clearInterval(_bb.interval); _bb.interval=null; }
-  if(_bb) _bb.done=true;
-  var dev=0; _BB_CATS.forEach(function(cat){ dev+=Math.abs((_bb&&_bb.alloc[cat.id]||0)-cat.ideal); });
-  var avg=dev/_BB_CATS.length, score=Math.max(0,Math.round(100-avg/20*100));
-  var xp=Math.round(score*.8), coins=Math.round(score*.3);
-  gmAward(xp,coins,'Budget Blitz'); gmAutoCheckBadges();
-  var grade=score>=90?'A+':score>=80?'A':score>=70?'B+':score>=60?'B':score>=50?'C':'D';
-  var gc=score>=80?'var(--green)':score>=60?'var(--gold)':'var(--red)';
-  var el=document.getElementById('gmBudgetContent'); if(!el) return;
-  el.innerHTML='<div style="text-align:center;padding:20px 0;">'+
-    '<div style="font-size:3rem;margin-bottom:10px;">📊</div>'+
-    '<div style="font-family:\'Plus Jakarta Sans\',sans-serif;font-size:4rem;font-weight:900;color:'+gc+';letter-spacing:-3px;line-height:1;">'+grade+'</div>'+
-    '<div style="font-size:0.82rem;color:var(--txt3);margin:8px 0 16px;">Score '+score+'/100 · Avg deviation '+avg.toFixed(1)+'%</div>'+
-    '<div style="display:flex;gap:10px;justify-content:center;margin-bottom:18px;">'+
-    '<div style="background:var(--green-dim);border-radius:12px;padding:12px 18px;"><div style="font-family:\'Plus Jakarta Sans\',sans-serif;font-size:1.2rem;font-weight:900;color:var(--green);">+'+xp+' XP</div></div>'+
-    '<div style="background:var(--gold-dim);border-radius:12px;padding:12px 18px;"><div style="font-family:\'Plus Jakarta Sans\',sans-serif;font-size:1.2rem;font-weight:900;color:var(--gold);">🪙 '+coins+'</div></div></div>'+
-    '<button class="btn w-full" onclick="startBudgetBlitz()">▶ Play Again</button></div>';
-}
-
-// ── Investment Race ──
-var _IR_ASSETS=[
-  {id:'tbills',name:'T-Bills',ico:'🏛️',type:'Safe',ret:.12,vol:.01,desc:'Gov bonds. Guaranteed.'},
-  {id:'realty',name:'Real Estate',ico:'🏠',type:'Property',ret:.18,vol:.08,desc:'Rental + appreciation.'},
-  {id:'gold',name:'Gold',ico:'🥇',type:'Commodity',ret:.08,vol:.12,desc:'Inflation hedge.'},
-  {id:'tech',name:'Tech Fund',ico:'💻',type:'Growth',ret:.35,vol:.28,desc:'High growth, high risk.'},
-  {id:'bank',name:'Fixed Deposit',ico:'🏦',type:'Safe',ret:.14,vol:.005,desc:'Predictable bank rate.'},
-  {id:'fmcg',name:'Consumer Fund',ico:'🛒',type:'Stable',ret:.22,vol:.10,desc:'Everyday goods. Resilient.'},
-  {id:'agric',name:'Agriculture',ico:'🌾',type:'Seasonal',ret:.25,vol:.20,desc:'Seasonal weather risk.'},
-  {id:'startup',name:'Startup',ico:'🚀',type:'High Risk',ret:.60,vol:.55,desc:'Could 2x or bust.'},
-];
-var _ir=null;
-function _tgmInitInvest(){
-  var el=document.getElementById('gmInvestContent'); if(!el) return;
-  el.innerHTML='<div class="tgm-splash"><span class="tgm-splash-ico">📈</span><div class="tgm-splash-title">Investment Race</div><div class="tgm-splash-txt">Pick 3 assets. Simulate 6 months of returns. Beat the market average to win.</div><button class="btn tgm-cta-btn" onclick="startInvestRace()">▶ Start Race</button></div>';
-}
-function startInvestRace(){
-  var budgets=[500000,1000000,2000000];
-  _ir={budget:budgets[Math.floor(Math.random()*budgets.length)],sel:[],done:false};
-  _irRenderPick();
-}
-function _irRenderPick(){
-  var el=document.getElementById('gmInvestContent'); if(!el||!_ir) return;
-  var sel=_ir.sel;
-  el.innerHTML=
-    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">'+
-    '<div><div style="font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--txt3);">Budget</div><div style="font-family:\'Plus Jakarta Sans\',sans-serif;font-size:1.3rem;font-weight:900;color:var(--green);">'+gmFmt(_ir.budget)+'</div></div>'+
-    '<div style="text-align:right;"><div style="font-size:0.68rem;color:var(--txt3);">Selected</div><div style="font-family:\'Plus Jakarta Sans\',sans-serif;font-size:1.3rem;font-weight:900;">'+sel.length+'/3</div></div></div>'+
-    _IR_ASSETS.map(function(a){
-      var on=sel.indexOf(a.id)>-1;
-      return '<div class="tgm-asset'+(on?' sel':'')+'" onclick="_irToggle(\''+a.id+'\')">'+
-        '<div style="font-size:1.4rem;flex-shrink:0;">'+a.ico+'</div>'+
-        '<div style="flex:1;min-width:0;"><div style="font-weight:700;font-size:0.82rem;">'+a.name+' <span style="font-size:0.68rem;color:var(--txt3);">'+a.type+'</span></div>'+
-        '<div style="font-size:0.68rem;color:var(--txt3);margin-top:2px;">'+a.desc+'</div></div>'+
-        '<div style="font-weight:700;font-size:0.78rem;color:'+(a.ret>=.3?'var(--green)':a.ret>=.15?'var(--brand)':'var(--txt3)')+';">~'+Math.round(a.ret*100)+'%/yr</div>'+
-        '<div style="width:22px;height:22px;border-radius:6px;border:2px solid '+(on?'var(--brand)':'var(--border)')+';background:'+(on?'var(--brand)':'transparent')+';display:flex;align-items:center;justify-content:center;color:#fff;font-size:0.75rem;flex-shrink:0;">'+(on?'✓':'')+'</div></div>';
-    }).join('')+
-    '<button class="btn w-full" style="margin-top:14px;" onclick="_irConfirm()"'+(sel.length<3?' disabled style="opacity:.45;"':'')+'>▶ Invest '+(sel.length===3?gmFmt(_ir.budget/3)+' each':'(select 3 assets)')+'</button>';
-}
-function _irToggle(id){
-  if(!_ir) return;
-  var idx=_ir.sel.indexOf(id);
-  if(idx>-1) _ir.sel.splice(idx,1);
-  else if(_ir.sel.length<3) _ir.sel.push(id);
-  _irRenderPick();
-}
-function _irConfirm(){
-  if(!_ir||_ir.sel.length<3) return;
-  var per=_ir.budget/3, results={};
-  _ir.sel.forEach(function(id){
-    var a=_IR_ASSETS.find(function(x){ return x.id===id; });
-    var val=per, hist=[val];
-    for(var i=0;i<6;i++){ var r=a.ret/12+(Math.random()-.5)*2*a.vol; val*=(1+r); hist.push(Math.round(val)); }
-    results[id]={asset:a,hist:hist,final:Math.round(val),init:per};
-  });
-  var mkt=_ir.budget; for(var i=0;i<6;i++) mkt*=(1+.18/12+(Math.random()-.5)*.02);
-  var total=Object.values(results).reduce(function(s,r){ return s+r.final; },0);
-  var gain=total-_ir.budget, beat=total>mkt;
-  var xp=beat?80:gain>0?40:15, coins=beat?35:gain>0?15:5;
-  gmAward(xp,coins,'Invest Race'); if(beat) gmCheckBadge('sim_winner'); gmAutoCheckBadges();
-  var el=document.getElementById('gmInvestContent'); if(!el) return;
-  el.innerHTML=
-    '<div style="text-align:center;margin-bottom:16px;"><div style="font-size:2rem;">'+(beat?'🏆':'📊')+'</div>'+
-    '<div style="font-family:\'Plus Jakarta Sans\',sans-serif;font-size:1rem;font-weight:900;margin-top:8px;">'+(beat?'You Beat the Market!':'6-Month Results')+'</div>'+
-    '<div style="display:flex;gap:10px;justify-content:center;margin-top:12px;">'+
-    '<div style="background:var(--bg3);border-radius:12px;padding:12px 16px;text-align:center;"><div style="font-size:0.68rem;color:var(--txt3);margin-bottom:4px;">Your Portfolio</div>'+
-    '<div style="font-family:\'Plus Jakarta Sans\',sans-serif;font-size:1.1rem;font-weight:900;color:'+(gain>=0?'var(--green)':'var(--red)')+';">'+gmFmt(total)+'</div>'+
-    '<div style="font-size:0.72rem;color:'+(gain>=0?'var(--green)':'var(--red)')+';">'+(gain>=0?'+':'')+gmFmt(gain)+'</div></div>'+
-    '<div style="background:var(--bg3);border-radius:12px;padding:12px 16px;text-align:center;"><div style="font-size:0.68rem;color:var(--txt3);margin-bottom:4px;">Market Avg</div>'+
-    '<div style="font-family:\'Plus Jakarta Sans\',sans-serif;font-size:1.1rem;font-weight:900;color:var(--txt2);">'+gmFmt(Math.round(mkt))+'</div></div></div></div>'+
-    Object.entries(results).map(function(entry){
-      var r=entry[1], g=r.final-r.init, pct=((g/r.init)*100).toFixed(1);
-      return '<div class="tgm-bcat '+(g>=0?'safe':'danger')+'" style="margin-bottom:8px;">'+
-        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">'+
-        '<span style="font-weight:700;">'+r.asset.ico+' '+r.asset.name+'</span>'+
-        '<span style="font-family:\'Plus Jakarta Sans\',sans-serif;font-weight:900;color:'+(g>=0?'var(--green)':'var(--red)')+';">'+(g>=0?'+':'')+pct+'%</span></div>'+
-        '<div style="display:flex;align-items:flex-end;gap:3px;height:22px;">'+
-        r.hist.slice(1).map(function(v,idx){ var prev=r.hist[idx], up=v>=prev, h=Math.max(4,Math.min(22,Math.round(Math.abs(v-prev)/r.init*400+4))); return '<div style="flex:1;height:'+h+'px;background:'+(up?'var(--green)':'var(--red)')+';border-radius:2px 2px 0 0;opacity:.75;"></div>'; }).join('')+
-        '</div></div>';
-    }).join('')+
-    '<div style="display:flex;gap:8px;margin-top:14px;"><button class="btn" style="flex:1;" onclick="startInvestRace()">▶ Race Again</button><button class="btn ghost" style="flex:1;" onclick="_tgmInitInvest()">← Back</button></div>';
 }
 
 </script>
